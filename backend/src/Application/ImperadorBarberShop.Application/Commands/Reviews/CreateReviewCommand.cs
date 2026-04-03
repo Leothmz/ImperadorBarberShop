@@ -1,6 +1,7 @@
 using FluentValidation;
 using ImperadorBarberShop.Domain.Entities;
 using ImperadorBarberShop.Domain.Enums;
+using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
 using MediatR;
 
@@ -49,7 +50,7 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
             throw new KeyNotFoundException($"Appointment '{request.AppointmentId}' not found.");
 
         if (appointment.ClientId != request.ClientId)
-            throw new UnauthorizedAccessException("You are not authorized to review this appointment.");
+            throw new ForbiddenException("You are not authorized to review this appointment.");
 
         if (appointment.Status != AppointmentStatus.Completed)
             throw new InvalidOperationException("Can only review completed appointments.");
@@ -67,12 +68,10 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
 
         await _reviewRepository.AddAsync(review, cancellationToken);
 
-        // Recalculate barber average rating
-        var newAverage = await _reviewRepository.GetAverageRatingByBarberIdAsync(appointment.BarberId, cancellationToken);
-        // Save review first, then update average including new review
+        // Persist the new review first so the average includes it
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Update barber average rating (recalculate after save)
+        // Recalculate barber average rating after the review is persisted
         var updatedAverage = await _reviewRepository.GetAverageRatingByBarberIdAsync(appointment.BarberId, cancellationToken);
         var barber = await _barberRepository.GetByIdAsync(appointment.BarberId, cancellationToken);
         if (barber is not null)

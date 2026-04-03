@@ -1,4 +1,5 @@
 using FluentValidation;
+using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
 using MediatR;
 
@@ -36,10 +37,11 @@ public class CancelAppointmentCommandHandler : IRequestHandler<CancelAppointment
 
         // Security: only the client who created the appointment can cancel it
         if (appointment.ClientId != request.ClientId)
-            throw new UnauthorizedAccessException("You are not authorized to cancel this appointment.");
+            throw new ForbiddenException("You are not authorized to cancel this appointment.");
 
         // Business rule: cannot cancel within 2 hours of scheduled time
-        if (appointment.ScheduledAt - DateTime.UtcNow < TimeSpan.FromHours(2))
+        // Rule: ScheduledAt must be MORE THAN 2 hours away; "exactly 2h" is not enough — use <=
+        if (appointment.ScheduledAt - DateTime.UtcNow <= TimeSpan.FromHours(2))
             throw new InvalidOperationException("Cannot cancel an appointment within 2 hours of the scheduled time.");
 
         appointment.Cancel();

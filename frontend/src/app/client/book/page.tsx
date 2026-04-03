@@ -60,9 +60,11 @@ export default function BookPage() {
   async function handleConfirm() {
     if (!selectedBarber || !selectedDate || !selectedSlot) return
 
-    const [hours, minutes] = selectedSlot.split(':')
-    const scheduledAt = new Date(selectedDate)
-    scheduledAt.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+    // Build a UTC ISO string by combining the local date string with the slot
+    // time directly, avoiding setHours() which would apply a local-timezone
+    // offset and produce an incorrect UTC value for clients not in UTC.
+    const dateString = toApiDate(selectedDate) // "YYYY-MM-DD"
+    const scheduledAt = new Date(`${dateString}T${selectedSlot}:00`)
 
     try {
       await createAppointment.mutateAsync({
@@ -180,6 +182,7 @@ export default function BookPage() {
           <SlotPicker
             barberId={selectedBarber.id}
             serviceIds={selectedServiceIds}
+            barberAvailability={selectedBarber.availability}
             selectedDate={selectedDate}
             selectedSlot={selectedSlot}
             onDateChange={(d) => {

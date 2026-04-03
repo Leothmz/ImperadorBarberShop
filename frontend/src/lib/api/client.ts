@@ -4,6 +4,22 @@ import type { LoginResult } from '@/types/api.types'
 const REFRESH_TOKEN_KEY = 'imperador_refresh_token'
 const USER_ID_KEY = 'imperador_user_id'
 
+// SECURITY NOTE — token storage strategy:
+// - Access token: kept in-memory only (_accessToken below). Never written to
+//   localStorage, sessionStorage, or a JS-readable cookie, so it is not
+//   reachable by XSS payloads. It is intentionally lost on page refresh and
+//   recovered via the refresh-token flow in AuthProvider on mount.
+//
+// - Refresh token: stored in localStorage so that sessions survive page
+//   reloads. This does expose it to XSS. The ideal mitigation is to have the
+//   backend set the refresh token in an HttpOnly cookie (not readable by JS),
+//   which requires a coordinated backend change. Until that is implemented,
+//   the surface is limited to the refresh token only — the short-lived access
+//   token is never persisted to any storage accessible by JavaScript.
+//
+// - userId: stored alongside the refresh token in localStorage solely to
+//   fulfil the /auth/refresh request body; it carries no privilege by itself.
+
 // In-memory access token store (persists across hook calls, lost on page refresh)
 let _accessToken: string | null = null
 
@@ -37,8 +53,12 @@ export function clearStoredAuth() {
   localStorage.removeItem(USER_ID_KEY)
 }
 
+// NEXT_PUBLIC_API_URL must be set to the API origin WITHOUT the path prefix,
+// e.g. http://localhost:5000 (as documented in CLAUDE.md and .env.local).
+// The /api/v1 version prefix is appended here so that the single env variable
+// stays clean and consistent with the backend base URL convention.
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api/v1',
+  baseURL: `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -98,7 +118,7 @@ apiClient.interceptors.response.use(
 
       try {
         const response = await axios.post<LoginResult>(
-          `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api/v1'}/auth/refresh`,
+          `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'}/api/v1/auth/refresh`,
           { userId, refreshToken }
         )
         const { accessToken, refreshToken: newRefreshToken, userId: newUserId } = response.data

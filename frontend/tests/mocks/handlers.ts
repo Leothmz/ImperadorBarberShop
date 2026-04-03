@@ -108,6 +108,7 @@ export const mockAppointments: Appointment[] = [
     services: [
       { id: 'service-1', name: 'Corte Clássico', durationMinutes: 30, price: 45.0 },
     ],
+    hasReview: false,
   },
   {
     id: 'appt-2',
@@ -123,6 +124,7 @@ export const mockAppointments: Appointment[] = [
     services: [
       { id: 'service-3', name: 'Corte + Barba', durationMinutes: 50, price: 70.0 },
     ],
+    hasReview: false,
   },
 ]
 
@@ -141,6 +143,7 @@ export const mockBarberAppointments: Appointment[] = [
     services: [
       { id: 'service-1', name: 'Corte Clássico', durationMinutes: 30, price: 45.0 },
     ],
+    hasReview: false,
   },
   {
     id: 'appt-accepted-1',
@@ -156,6 +159,7 @@ export const mockBarberAppointments: Appointment[] = [
     services: [
       { id: 'service-3', name: 'Corte + Barba', durationMinutes: 50, price: 70.0 },
     ],
+    hasReview: false,
   },
 ]
 
@@ -256,6 +260,7 @@ export const handlers = [
       services: [
         { id: 'service-1', name: 'Corte Clássico', durationMinutes: 30, price: 45.0 },
       ],
+      hasReview: false,
     }
     return HttpResponse.json(newAppointment, { status: 201 })
   }),

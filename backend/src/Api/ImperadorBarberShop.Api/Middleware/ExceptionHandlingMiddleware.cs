@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using FluentValidation;
+using ImperadorBarberShop.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ImperadorBarberShop.Api.Middleware;
@@ -47,7 +48,15 @@ public class ExceptionHandlingMiddleware
                 exception.Message,
                 (object?)null),
 
+            // Invalid credentials (login/refresh) → 401 Unauthorized
             UnauthorizedAccessException => (
+                HttpStatusCode.Unauthorized,
+                "Unauthorized",
+                exception.Message,
+                (object?)null),
+
+            // IDOR — accessing another user's resource → 403 Forbidden
+            ForbiddenException => (
                 HttpStatusCode.Forbidden,
                 "Forbidden",
                 exception.Message,

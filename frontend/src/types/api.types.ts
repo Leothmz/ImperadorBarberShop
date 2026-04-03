@@ -44,6 +44,9 @@ export interface Appointment {
   notes: string | null
   createdAt: string
   services: ServiceRef[]
+  // Indicates whether the client already submitted a review for this appointment.
+  // Used to suppress the "Avaliar" button and prevent duplicate-review errors (422).
+  hasReview: boolean
 }
 
 export interface Review {

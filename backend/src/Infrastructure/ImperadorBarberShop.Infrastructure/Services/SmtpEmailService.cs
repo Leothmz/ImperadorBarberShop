@@ -20,7 +20,7 @@ public class SmtpEmailService : IEmailService
         string barberEmail, string barberName, string clientName, DateTime scheduledAt,
         CancellationToken cancellationToken = default)
     {
-        var subject = "Novo agendamento recebido";
+        var subject = $"Novo agendamento de {clientName}";
         var body = $"Olá {barberName},\n\n" +
                    $"O cliente {clientName} agendou um atendimento para {scheduledAt:dd/MM/yyyy HH:mm}.\n\n" +
                    "Acesse o sistema para aceitar ou rejeitar o agendamento.\n\n" +
@@ -33,7 +33,7 @@ public class SmtpEmailService : IEmailService
         string clientEmail, string clientName, DateTime scheduledAt,
         CancellationToken cancellationToken = default)
     {
-        var subject = "Seu agendamento foi confirmado!";
+        var subject = "Seu agendamento foi aceito!";
         var body = $"Olá {clientName},\n\n" +
                    $"Seu agendamento para {scheduledAt:dd/MM/yyyy HH:mm} foi confirmado.\n\n" +
                    "Esperamos por você!\n\n" +
@@ -46,7 +46,7 @@ public class SmtpEmailService : IEmailService
         string clientEmail, string clientName, DateTime scheduledAt,
         CancellationToken cancellationToken = default)
     {
-        var subject = "Agendamento não disponível";
+        var subject = "Seu agendamento foi recusado";
         var body = $"Olá {clientName},\n\n" +
                    $"Infelizmente seu agendamento para {scheduledAt:dd/MM/yyyy HH:mm} não pôde ser confirmado.\n\n" +
                    "Por favor, tente outro horário.\n\n" +

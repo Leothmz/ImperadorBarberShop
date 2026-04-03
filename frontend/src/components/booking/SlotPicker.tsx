@@ -6,10 +6,12 @@ import { useAvailableSlots } from '@/hooks/useAvailableSlots'
 import { Spinner } from '@/components/ui/Spinner'
 import { formatTimeSlot, toApiDate } from '@/lib/utils/formatDateTime'
 import { ptBR } from 'date-fns/locale'
+import type { BarberAvailability } from '@/types/api.types'
 
 interface SlotPickerProps {
   barberId: string
   serviceIds: string[]
+  barberAvailability: BarberAvailability[]
   selectedDate: Date | null
   selectedSlot: string | null
   onDateChange: (date: Date) => void
@@ -19,6 +21,7 @@ interface SlotPickerProps {
 export function SlotPicker({
   barberId,
   serviceIds,
+  barberAvailability,
   selectedDate,
   selectedSlot,
   onDateChange,
@@ -38,12 +41,18 @@ export function SlotPicker({
     serviceIds,
   })
 
-  // Disable past dates and Sundays
+  // Build a set of days-of-week (0=Sun…6=Sat) on which this barber has
+  // configured availability. Only these days are selectable on the calendar.
+  const availableDays = new Set(barberAvailability.map((a) => a.dayOfWeek))
+
+  // Disable past dates and any day not covered by the barber's availability.
+  // Do NOT hardcode Sunday (or any day) — availability is driven entirely by
+  // the BarberAvailability data returned from the API.
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
   function isDisabled(date: Date): boolean {
-    return date < today || date.getDay() === 0
+    return date < today || !availableDays.has(date.getDay())
   }
 
   return (

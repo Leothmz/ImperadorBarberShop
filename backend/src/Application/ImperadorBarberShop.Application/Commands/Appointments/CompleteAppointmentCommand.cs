@@ -1,4 +1,5 @@
 using FluentValidation;
+using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
 using MediatR;
 
@@ -35,7 +36,7 @@ public class CompleteAppointmentCommandHandler : IRequestHandler<CompleteAppoint
             throw new KeyNotFoundException($"Appointment '{request.AppointmentId}' not found.");
 
         if (appointment.BarberId != request.BarberId)
-            throw new UnauthorizedAccessException("You are not authorized to complete this appointment.");
+            throw new ForbiddenException("You are not authorized to complete this appointment.");
 
         appointment.Complete();
         await _appointmentRepository.UpdateAsync(appointment, cancellationToken);

@@ -97,7 +97,13 @@ export function ClientAppointmentList() {
               key={appointment.id}
               appointment={appointment}
               actions={
-                appointment.status === 'Completed' && !reviewedIds.has(appointment.id) ? (
+                // Show "Avaliar" only when the appointment is Completed AND
+                // neither the API (hasReview) nor the local optimistic state
+                // indicates a review has already been submitted. This prevents
+                // a 422 duplicate-review error from the backend.
+                appointment.status === 'Completed' &&
+                !appointment.hasReview &&
+                !reviewedIds.has(appointment.id) ? (
                   <Button
                     variant="secondary"
                     size="sm"

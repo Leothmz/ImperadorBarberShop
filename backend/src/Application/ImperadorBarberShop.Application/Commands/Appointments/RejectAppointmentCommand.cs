@@ -1,5 +1,6 @@
 using FluentValidation;
 using ImperadorBarberShop.Application.Interfaces;
+using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
 using MediatR;
 
@@ -42,7 +43,7 @@ public class RejectAppointmentCommandHandler : IRequestHandler<RejectAppointment
             throw new KeyNotFoundException($"Appointment '{request.AppointmentId}' not found.");
 
         if (appointment.BarberId != request.BarberId)
-            throw new UnauthorizedAccessException("You are not authorized to reject this appointment.");
+            throw new ForbiddenException("You are not authorized to reject this appointment.");
 
         appointment.Reject();
         await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
