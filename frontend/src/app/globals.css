@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-gold: #C9A84C;
+  --color-brand-gold-light: #E8C96A;
+  --color-brand-gold-dark: #A8872E;
+  --color-brand-black: #0D0D0D;
+  --color-brand-black-soft: #1A1A1A;
+  --color-brand-white: #F5F5F5;
+
+  --font-montserrat: var(--font-montserrat);
+  --font-inter: var(--font-inter);
+}
+
+:root {
+  --background: #0D0D0D;
+  --foreground: #F5F5F5;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1A1A1A;
+}
+::-webkit-scrollbar-thumb {
+  background: #C9A84C;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E8C96A;
+}
+
+/* react-day-picker custom */
+.rdp-root {
+  --rdp-accent-color: #C9A84C;
+  --rdp-accent-background-color: rgba(201, 168, 76, 0.2);
+  --rdp-day-width: 40px;
+  --rdp-day-height: 40px;
+}
