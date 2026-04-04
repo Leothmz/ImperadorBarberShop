@@ -8,8 +8,18 @@ import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { authApi } from '@/lib/api/auth.api'
-import { useAuth } from '@/hooks/useAuth'
-import type { BarberAvailability } from '@/types/api.types'
+import type { BarberAvailability, DayOfWeekString } from '@/types/api.types'
+
+// Maps JS getDay()-compatible integers to the string enum the backend expects.
+const DAY_OF_WEEK_STRINGS: Record<number, DayOfWeekString> = {
+  0: 'Sunday',
+  1: 'Monday',
+  2: 'Tuesday',
+  3: 'Wednesday',
+  4: 'Thursday',
+  5: 'Friday',
+  6: 'Saturday',
+}
 
 const WEEKDAYS = [
   { label: 'Segunda', value: 1 },
@@ -47,7 +57,6 @@ const registerSchema = z
 type RegisterFormData = z.infer<typeof registerSchema>
 
 export function BarberRegisterForm() {
-  const { login } = useAuth()
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
 
@@ -77,20 +86,21 @@ export function BarberRegisterForm() {
     const availability: BarberAvailability[] = data.availability
       .filter((a) => a.enabled)
       .map((a) => ({
-        dayOfWeek: a.dayOfWeek,
+        dayOfWeek: DAY_OF_WEEK_STRINGS[a.dayOfWeek],
         startTime: `${a.startTime}:00`,
         endTime: `${a.endTime}:00`,
       }))
 
     try {
-      const res = await authApi.registerBarber({
+      await authApi.registerBarber({
         name: data.name,
         email: data.email,
         password: data.password,
         availability,
       })
-      login(res.data)
-      router.push('/barber/dashboard')
+      // Registration returns only { id } — redirect to login so the user
+      // obtains a valid token via the proper login flow.
+      router.push('/login?registered=1')
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { detail?: string; errors?: Record<string, string[]> } } }
       const data = axiosErr?.response?.data

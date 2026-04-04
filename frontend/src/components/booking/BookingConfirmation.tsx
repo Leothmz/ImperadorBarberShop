@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/Button'
-import { formatCurrency, formatDateTime, formatTimeSlot, toApiDate } from '@/lib/utils/formatDateTime'
+import { formatCurrency, formatDateTime, toApiDate } from '@/lib/utils/formatDateTime'
 import { formatDuration } from '@/lib/utils/formatDuration'
 import type { Barber, Service } from '@/types/api.types'
 
@@ -29,10 +29,10 @@ export function BookingConfirmation({
   const totalDuration = services.reduce((acc, s) => acc + s.durationMinutes, 0)
   const totalPrice = services.reduce((acc, s) => acc + s.price, 0)
 
-  // Build ISO datetime from date + slot
-  const [hours, minutes] = selectedSlot.split(':')
-  const scheduledAt = new Date(selectedDate)
-  scheduledAt.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+  // Build UTC ISO datetime the same way book/page.tsx does before sending to
+  // the API — append "Z" so the display matches the value that will be stored.
+  const dateString = toApiDate(selectedDate) // "YYYY-MM-DD"
+  const scheduledAt = new Date(`${dateString}T${selectedSlot}Z`)
 
   return (
     <div className="flex flex-col gap-6">

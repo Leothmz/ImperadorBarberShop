@@ -72,12 +72,16 @@ public class BarbersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateAvailability(
-        [FromBody] List<AvailabilitySlotInput> availability,
+        [FromBody] UpdateAvailabilityRequest request,
         CancellationToken cancellationToken)
     {
         var barberId = Guid.Parse(User.FindFirstValue("barberId")!);
-        var command = new UpdateBarberAvailabilityCommand(barberId, availability);
+        var command = new UpdateBarberAvailabilityCommand(barberId, request.Availability);
         await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
 }
+
+/// <summary>Wrapper DTO for PUT /barbers/me/availability.</summary>
+/// <param name="Availability">List of availability windows to replace the barber's current schedule.</param>
+public record UpdateAvailabilityRequest(List<AvailabilitySlotInput> Availability);

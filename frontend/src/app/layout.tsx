@@ -31,7 +31,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={`${montserrat.variable} ${inter.variable}`}>
-      <body className="min-h-screen flex flex-col bg-brand-black text-brand-white antialiased">
+      <body className="min-h-screen flex flex-col bg-brand-black text-brand-white antialiased" suppressHydrationWarning>
         <QueryProvider>
           <AuthProvider>
             <Header />

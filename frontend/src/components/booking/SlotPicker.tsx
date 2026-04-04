@@ -41,9 +41,21 @@ export function SlotPicker({
     serviceIds,
   })
 
-  // Build a set of days-of-week (0=Sun…6=Sat) on which this barber has
-  // configured availability. Only these days are selectable on the calendar.
-  const availableDays = new Set(barberAvailability.map((a) => a.dayOfWeek))
+  // The API returns dayOfWeek as a string enum (e.g. "Monday") because the
+  // backend uses JsonStringEnumConverter. Map to JS Date.getDay() integers
+  // (0=Sun, 1=Mon, …, 6=Sat) so Set.has() matches correctly.
+  const DAY_NAME_TO_INDEX: Record<string, number> = {
+    Sunday: 0,
+    Monday: 1,
+    Tuesday: 2,
+    Wednesday: 3,
+    Thursday: 4,
+    Friday: 5,
+    Saturday: 6,
+  }
+  const availableDays = new Set(
+    barberAvailability.map((a) => DAY_NAME_TO_INDEX[a.dayOfWeek])
+  )
 
   // Disable past dates and any day not covered by the barber's availability.
   // Do NOT hardcode Sunday (or any day) — availability is driven entirely by

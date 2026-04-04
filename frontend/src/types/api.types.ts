@@ -10,8 +10,17 @@ export interface Service {
   isActive: boolean
 }
 
+export type DayOfWeekString =
+  | 'Sunday'
+  | 'Monday'
+  | 'Tuesday'
+  | 'Wednesday'
+  | 'Thursday'
+  | 'Friday'
+  | 'Saturday'
+
 export interface BarberAvailability {
-  dayOfWeek: number // 0=Sun, 1=Mon, ...
+  dayOfWeek: DayOfWeekString // API returns string enum (JsonStringEnumConverter)
   startTime: string // "HH:mm:ss"
   endTime: string
 }

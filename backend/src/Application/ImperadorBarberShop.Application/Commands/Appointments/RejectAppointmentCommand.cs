@@ -52,11 +52,18 @@ public class RejectAppointmentCommandHandler : IRequestHandler<RejectAppointment
         var client = await _userRepository.GetByIdAsync(appointment.ClientId, cancellationToken);
         if (client is not null)
         {
-            await _emailService.SendAppointmentRejectedAsync(
-                client.Email,
-                client.Name,
-                appointment.ScheduledAt,
-                cancellationToken);
+            try
+            {
+                await _emailService.SendAppointmentRejectedAsync(
+                    client.Email,
+                    client.Name,
+                    appointment.ScheduledAt,
+                    cancellationToken);
+            }
+            catch
+            {
+                // Notification failure is non-critical; status change is already persisted
+            }
         }
     }
 }

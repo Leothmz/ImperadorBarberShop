@@ -86,7 +86,7 @@ public class AppointmentsControllerTests : IClassFixture<WebAppFixture>
         {
             barberId,
             scheduledAt = scheduledAt.ToString("o"),
-            serviceIds = new[] { ServiceConfiguration.HaircutId },
+            serviceIds = new[] { ServiceConfiguration.CorteId },
             notes = (string?)null
         };
 
@@ -106,7 +106,7 @@ public class AppointmentsControllerTests : IClassFixture<WebAppFixture>
         {
             barberId,
             scheduledAt = scheduledAt.ToString("o"),
-            serviceIds = new[] { ServiceConfiguration.BeardId }
+            serviceIds = new[] { ServiceConfiguration.BarbaId }
         };
 
         var createResp = await AuthClient(clientToken).PostAsJsonAsync("/api/v1/appointments", payload);

@@ -6,16 +6,37 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { ReviewForm } from './ReviewForm'
 import { Spinner } from '@/components/ui/Spinner'
-import { useClientAppointments } from '@/hooks/useAppointments'
+import { useClientAppointments, useCancelAppointment } from '@/hooks/useAppointments'
 import type { Appointment } from '@/types/api.types'
 
 type Tab = 'upcoming' | 'history'
 
 export function ClientAppointmentList() {
   const { data: appointments, isLoading, isError } = useClientAppointments()
+  const cancelAppointment = useCancelAppointment()
   const [activeTab, setActiveTab] = useState<Tab>('upcoming')
   const [reviewAppointment, setReviewAppointment] = useState<Appointment | null>(null)
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set())
+  const [cancelError, setCancelError] = useState<string | null>(null)
+
+  // Returns true when the appointment is still eligible for cancellation:
+  // status is Pending or Accepted, and it starts more than 2 hours from now.
+  function isCancellable(appointment: Appointment): boolean {
+    if (appointment.status !== 'Pending' && appointment.status !== 'Accepted') {
+      return false
+    }
+    const twoHoursFromNow = Date.now() + 2 * 60 * 60 * 1000
+    return new Date(appointment.scheduledAt).getTime() > twoHoursFromNow
+  }
+
+  async function handleCancel(appointment: Appointment) {
+    setCancelError(null)
+    try {
+      await cancelAppointment.mutateAsync(appointment.id)
+    } catch {
+      setCancelError('Não foi possível cancelar o agendamento. Tente novamente.')
+    }
+  }
 
   const now = new Date()
 
@@ -92,30 +113,61 @@ export function ClientAppointmentList() {
         </p>
       ) : (
         <div className="flex flex-col gap-3">
-          {displayed.map((appointment) => (
-            <AppointmentCard
-              key={appointment.id}
-              appointment={appointment}
-              actions={
-                // Show "Avaliar" only when the appointment is Completed AND
-                // neither the API (hasReview) nor the local optimistic state
-                // indicates a review has already been submitted. This prevents
-                // a 422 duplicate-review error from the backend.
-                appointment.status === 'Completed' &&
-                !appointment.hasReview &&
-                !reviewedIds.has(appointment.id) ? (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setReviewAppointment(appointment)}
-                  >
-                    Avaliar
-                  </Button>
-                ) : undefined
-              }
-            />
-          ))}
+          {displayed.map((appointment) => {
+            const cancellable = isCancellable(appointment)
+            const isCancelling =
+              cancelAppointment.isPending &&
+              cancelAppointment.variables === appointment.id
+
+            const showReview =
+              appointment.status === 'Completed' &&
+              !appointment.hasReview &&
+              !reviewedIds.has(appointment.id)
+
+            return (
+              <AppointmentCard
+                key={appointment.id}
+                appointment={appointment}
+                actions={
+                  showReview || cancellable ? (
+                    <>
+                      {/* Show "Avaliar" only when the appointment is Completed AND
+                          neither the API (hasReview) nor the local optimistic state
+                          indicates a review has already been submitted. This prevents
+                          a 422 duplicate-review error from the backend. */}
+                      {showReview && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setReviewAppointment(appointment)}
+                        >
+                          Avaliar
+                        </Button>
+                      )}
+                      {cancellable && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          isLoading={isCancelling}
+                          onClick={() => handleCancel(appointment)}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                        >
+                          Cancelar
+                        </Button>
+                      )}
+                    </>
+                  ) : undefined
+                }
+              />
+            )
+          })}
         </div>
+      )}
+
+      {cancelError && (
+        <p role="alert" className="text-sm text-red-400 text-center">
+          {cancelError}
+        </p>
       )}
 
       {/* Review modal */}

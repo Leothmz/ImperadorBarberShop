@@ -60,11 +60,11 @@ export default function BookPage() {
   async function handleConfirm() {
     if (!selectedBarber || !selectedDate || !selectedSlot) return
 
-    // Build a UTC ISO string by combining the local date string with the slot
-    // time directly, avoiding setHours() which would apply a local-timezone
-    // offset and produce an incorrect UTC value for clients not in UTC.
+    // Append "Z" so the Date constructor treats the value as UTC, not local
+    // time. Without "Z", a client in UTC-3 booking a 10:00 slot would send
+    // 13:00:00Z to the backend — 3 hours off.
     const dateString = toApiDate(selectedDate) // "YYYY-MM-DD"
-    const scheduledAt = new Date(`${dateString}T${selectedSlot}:00`)
+    const scheduledAt = new Date(`${dateString}T${selectedSlot}Z`)
 
     try {
       await createAppointment.mutateAsync({

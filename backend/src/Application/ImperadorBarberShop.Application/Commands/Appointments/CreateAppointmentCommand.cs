@@ -87,16 +87,23 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         await _appointmentRepository.AddAsync(appointment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Send notification to barber
+        // Send notification to barber (best-effort — email failure must not roll back the appointment)
         var client = await _userRepository.GetByIdAsync(request.ClientId, cancellationToken);
         if (client is not null && barber.User is not null)
         {
-            await _emailService.SendAppointmentCreatedAsync(
-                barber.User.Email,
-                barber.User.Name,
-                client.Name,
-                request.ScheduledAt,
-                cancellationToken);
+            try
+            {
+                await _emailService.SendAppointmentCreatedAsync(
+                    barber.User.Email,
+                    barber.User.Name,
+                    client.Name,
+                    request.ScheduledAt,
+                    cancellationToken);
+            }
+            catch
+            {
+                // Notification failure is non-critical; appointment is already persisted
+            }
         }
 
         return appointment.Id;

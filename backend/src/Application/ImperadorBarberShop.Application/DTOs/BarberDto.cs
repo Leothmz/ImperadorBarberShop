@@ -1,14 +1,18 @@
 namespace ImperadorBarberShop.Application.DTOs;
 
-public record BarberDto(
-    Guid Id,
-    Guid UserId,
-    string Name,
-    string Email,
-    decimal AverageRating,
-    List<BarberAvailabilityDto> Availability);
+public record BarberDto
+{
+    public Guid Id { get; init; }
+    public Guid UserId { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public decimal AverageRating { get; init; }
+    public List<BarberAvailabilityDto> Availability { get; init; } = [];
+}
 
-public record BarberAvailabilityDto(
-    DayOfWeek DayOfWeek,
-    TimeOnly StartTime,
-    TimeOnly EndTime);
+public record BarberAvailabilityDto
+{
+    public DayOfWeek DayOfWeek { get; init; }
+    public TimeOnly StartTime { get; init; }
+    public TimeOnly EndTime { get; init; }
+}

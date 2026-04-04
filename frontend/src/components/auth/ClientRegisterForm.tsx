@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { authApi } from '@/lib/api/auth.api'
-import { useAuth } from '@/hooks/useAuth'
 
 const registerSchema = z
   .object({
@@ -25,7 +24,6 @@ const registerSchema = z
 type RegisterFormData = z.infer<typeof registerSchema>
 
 export function ClientRegisterForm() {
-  const { login } = useAuth()
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
 
@@ -40,13 +38,14 @@ export function ClientRegisterForm() {
   async function onSubmit(data: RegisterFormData) {
     setServerError(null)
     try {
-      const res = await authApi.registerClient({
+      await authApi.registerClient({
         name: data.name,
         email: data.email,
         password: data.password,
       })
-      login(res.data)
-      router.push('/client/dashboard')
+      // Registration returns only { id } — redirect to login so the user
+      // obtains a valid token via the proper login flow.
+      router.push('/login?registered=1')
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { detail?: string; errors?: Record<string, string[]> } } }
       const data = axiosErr?.response?.data

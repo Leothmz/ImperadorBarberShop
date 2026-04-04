@@ -1,6 +1,8 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { LoginForm } from '@/components/auth/LoginForm'
 import type { Metadata } from 'next'
+import { LoginPageContent } from './LoginPageContent'
 
 export const metadata: Metadata = {
   title: 'Entrar | O Imperador Barber Shop',
@@ -16,6 +18,11 @@ export default function LoginPage() {
           </h1>
           <p className="mt-2 text-brand-white/60">Entre na sua conta para continuar</p>
         </div>
+
+        {/* Suspense required because LoginPageContent uses useSearchParams() */}
+        <Suspense fallback={null}>
+          <LoginPageContent />
+        </Suspense>
 
         <div className="rounded-xl border border-brand-white/10 bg-brand-black-soft p-8">
           <LoginForm />

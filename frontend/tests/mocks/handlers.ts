@@ -35,11 +35,11 @@ export const mockBarbers: Barber[] = [
     email: 'carlos@imperador.com',
     averageRating: 4.8,
     availability: [
-      { dayOfWeek: 1, startTime: '09:00:00', endTime: '18:00:00' },
-      { dayOfWeek: 2, startTime: '09:00:00', endTime: '18:00:00' },
-      { dayOfWeek: 3, startTime: '09:00:00', endTime: '18:00:00' },
-      { dayOfWeek: 4, startTime: '09:00:00', endTime: '18:00:00' },
-      { dayOfWeek: 5, startTime: '09:00:00', endTime: '18:00:00' },
+      { dayOfWeek: 'Monday', startTime: '09:00:00', endTime: '18:00:00' },
+      { dayOfWeek: 'Tuesday', startTime: '09:00:00', endTime: '18:00:00' },
+      { dayOfWeek: 'Wednesday', startTime: '09:00:00', endTime: '18:00:00' },
+      { dayOfWeek: 'Thursday', startTime: '09:00:00', endTime: '18:00:00' },
+      { dayOfWeek: 'Friday', startTime: '09:00:00', endTime: '18:00:00' },
     ],
   },
   {
@@ -49,11 +49,11 @@ export const mockBarbers: Barber[] = [
     email: 'rafael@imperador.com',
     averageRating: 4.5,
     availability: [
-      { dayOfWeek: 2, startTime: '10:00:00', endTime: '19:00:00' },
-      { dayOfWeek: 3, startTime: '10:00:00', endTime: '19:00:00' },
-      { dayOfWeek: 4, startTime: '10:00:00', endTime: '19:00:00' },
-      { dayOfWeek: 5, startTime: '10:00:00', endTime: '19:00:00' },
-      { dayOfWeek: 6, startTime: '10:00:00', endTime: '17:00:00' },
+      { dayOfWeek: 'Tuesday', startTime: '10:00:00', endTime: '19:00:00' },
+      { dayOfWeek: 'Wednesday', startTime: '10:00:00', endTime: '19:00:00' },
+      { dayOfWeek: 'Thursday', startTime: '10:00:00', endTime: '19:00:00' },
+      { dayOfWeek: 'Friday', startTime: '10:00:00', endTime: '19:00:00' },
+      { dayOfWeek: 'Saturday', startTime: '10:00:00', endTime: '17:00:00' },
     ],
   },
 ]
