@@ -13,42 +13,43 @@ public class CreateAppointmentCommandHandlerTests
     private readonly IServiceRepository _serviceRepository = Substitute.For<IServiceRepository>();
     private readonly IAppointmentRepository _appointmentRepository = Substitute.For<IAppointmentRepository>();
     private readonly IEmailService _emailService = Substitute.For<IEmailService>();
-    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CreateAppointmentCommandHandler _handler;
 
     public CreateAppointmentCommandHandlerTests()
     {
         _handler = new CreateAppointmentCommandHandler(
-            _barberRepository, _serviceRepository, _appointmentRepository,
-            _emailService, _userRepository, _unitOfWork);
+            _barberRepository, _serviceRepository, _appointmentRepository, _emailService, _unitOfWork);
     }
 
-    [Fact]
-    public async Task Handle_ValidCommand_ReturnsAppointmentId()
+    private void SetupHappyPath(Guid barberId, Service service)
     {
-        var barberId = Guid.NewGuid();
-        var clientId = Guid.NewGuid();
-        var serviceId = Guid.NewGuid();
-        var scheduledAt = DateTime.UtcNow.AddDays(1);
-
         var barberUser = User.CreateBarber("Carlos", "carlos@email.com", "hash");
         var barber = Barber.Create(barberUser.Id);
-        var service = Service.Create("Corte", "Corte moderno", 30, 35.00m);
-        var client = User.CreateClient("João", "joao@email.com", "hash");
-
         _barberRepository.GetByIdAsync(barberId, Arg.Any<CancellationToken>()).Returns(barber);
         _serviceRepository.GetByIdsAsync(Arg.Any<List<Guid>>(), Arg.Any<CancellationToken>())
             .Returns(new List<Service> { service });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(barberId, Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
             .Returns(new List<Appointment>());
-        _userRepository.GetByIdAsync(clientId, Arg.Any<CancellationToken>()).Returns(client);
+        _appointmentRepository.CountCreatedByPhoneSinceAsync(Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(0);
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
+    }
 
-        var command = new CreateAppointmentCommand(clientId, barberId, scheduledAt, new List<Guid> { serviceId }, null);
+    [Fact]
+    public async Task Handle_ValidCommand_ReturnsIdAndAccessToken()
+    {
+        var barberId = Guid.NewGuid();
+        var serviceId = Guid.NewGuid();
+        var service = Service.Create("Corte", "Corte moderno", 30, 35.00m);
+        SetupHappyPath(barberId, service);
+
+        var command = new CreateAppointmentCommand(
+            "João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), new List<Guid> { serviceId }, null);
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        result.Should().NotBeEmpty();
+        result.Id.Should().NotBeEmpty();
+        result.AccessToken.Should().NotBeNullOrEmpty();
         await _appointmentRepository.Received(1).AddAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
     }
 
@@ -58,8 +59,7 @@ public class CreateAppointmentCommandHandlerTests
         _barberRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((Barber?)null);
 
         var command = new CreateAppointmentCommand(
-            Guid.NewGuid(), Guid.NewGuid(), DateTime.UtcNow.AddDays(1),
-            new List<Guid> { Guid.NewGuid() }, null);
+            "João", "+5511999990000", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), new List<Guid> { Guid.NewGuid() }, null);
 
         var act = () => _handler.Handle(command, CancellationToken.None);
 
@@ -73,11 +73,10 @@ public class CreateAppointmentCommandHandlerTests
         var barber = Barber.Create(Guid.NewGuid());
         _barberRepository.GetByIdAsync(barberId, Arg.Any<CancellationToken>()).Returns(barber);
         _serviceRepository.GetByIdsAsync(Arg.Any<List<Guid>>(), Arg.Any<CancellationToken>())
-            .Returns(new List<Service>()); // empty — mismatch with requested ids
+            .Returns(new List<Service>());
 
         var command = new CreateAppointmentCommand(
-            Guid.NewGuid(), barberId, DateTime.UtcNow.AddDays(1),
-            new List<Guid> { Guid.NewGuid() }, null);
+            "João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), new List<Guid> { Guid.NewGuid() }, null);
 
         var act = () => _handler.Handle(command, CancellationToken.None);
 
@@ -88,27 +87,41 @@ public class CreateAppointmentCommandHandlerTests
     public async Task Handle_TimeSlotOccupied_ThrowsInvalidOperationException()
     {
         var barberId = Guid.NewGuid();
-        var clientId = Guid.NewGuid();
         var scheduledAt = DateTime.UtcNow.AddDays(1).Date.AddHours(10);
-
         var barber = Barber.Create(Guid.NewGuid());
         var service = Service.Create("Corte", "Corte", 30, 35.00m);
-
-        // Existing appointment occupies 10:00 - 10:30
-        var existingAppt = Appointment.Create(
-            Guid.NewGuid(), barberId, scheduledAt, 30, null, new[] { Guid.NewGuid() });
+        var existingAppt = Appointment.Create("Maria", "+5511999990001", barberId, scheduledAt, 30, null, new[] { Guid.NewGuid() });
 
         _barberRepository.GetByIdAsync(barberId, Arg.Any<CancellationToken>()).Returns(barber);
         _serviceRepository.GetByIdsAsync(Arg.Any<List<Guid>>(), Arg.Any<CancellationToken>())
             .Returns(new List<Service> { service });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(barberId, Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
             .Returns(new List<Appointment> { existingAppt });
+        _appointmentRepository.CountCreatedByPhoneSinceAsync(Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(0);
 
         var command = new CreateAppointmentCommand(
-            clientId, barberId, scheduledAt, new List<Guid> { Guid.NewGuid() }, null);
+            "João", "+5511999990000", barberId, scheduledAt, new List<Guid> { Guid.NewGuid() }, null);
 
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*not available*");
+    }
+
+    [Fact]
+    public async Task Handle_TooManyRecentRequestsFromPhone_ThrowsInvalidOperationException()
+    {
+        var barberId = Guid.NewGuid();
+        var service = Service.Create("Corte", "Corte", 30, 35.00m);
+        SetupHappyPath(barberId, service);
+        _appointmentRepository.CountCreatedByPhoneSinceAsync(Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(3);
+
+        var command = new CreateAppointmentCommand(
+            "João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), new List<Guid> { Guid.NewGuid() }, null);
+
+        var act = () => _handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Too many*");
     }
 }

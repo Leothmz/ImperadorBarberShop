@@ -17,42 +17,16 @@ public class SmtpEmailService : IEmailService
     }
 
     public async Task SendAppointmentCreatedAsync(
-        string barberEmail, string barberName, string clientName, DateTime scheduledAt,
+        string barberEmail, string barberName, string clientName, string clientPhone, DateTime scheduledAt,
         CancellationToken cancellationToken = default)
     {
         var subject = $"Novo agendamento de {clientName}";
         var body = $"Olá {barberName},\n\n" +
-                   $"O cliente {clientName} agendou um atendimento para {scheduledAt:dd/MM/yyyy HH:mm}.\n\n" +
-                   "Acesse o sistema para aceitar ou rejeitar o agendamento.\n\n" +
+                   $"O cliente {clientName} (WhatsApp {clientPhone}) agendou um atendimento para {scheduledAt:dd/MM/yyyy HH:mm}.\n\n" +
+                   "O agendamento já está confirmado automaticamente.\n\n" +
                    "O Imperador Barber Shop";
 
         await SendAsync(barberEmail, subject, body, cancellationToken);
-    }
-
-    public async Task SendAppointmentAcceptedAsync(
-        string clientEmail, string clientName, DateTime scheduledAt,
-        CancellationToken cancellationToken = default)
-    {
-        var subject = "Seu agendamento foi aceito!";
-        var body = $"Olá {clientName},\n\n" +
-                   $"Seu agendamento para {scheduledAt:dd/MM/yyyy HH:mm} foi confirmado.\n\n" +
-                   "Esperamos por você!\n\n" +
-                   "O Imperador Barber Shop";
-
-        await SendAsync(clientEmail, subject, body, cancellationToken);
-    }
-
-    public async Task SendAppointmentRejectedAsync(
-        string clientEmail, string clientName, DateTime scheduledAt,
-        CancellationToken cancellationToken = default)
-    {
-        var subject = "Seu agendamento foi recusado";
-        var body = $"Olá {clientName},\n\n" +
-                   $"Infelizmente seu agendamento para {scheduledAt:dd/MM/yyyy HH:mm} não pôde ser confirmado.\n\n" +
-                   "Por favor, tente outro horário.\n\n" +
-                   "O Imperador Barber Shop";
-
-        await SendAsync(clientEmail, subject, body, cancellationToken);
     }
 
     private async Task SendAsync(string toEmail, string subject, string body, CancellationToken cancellationToken)
