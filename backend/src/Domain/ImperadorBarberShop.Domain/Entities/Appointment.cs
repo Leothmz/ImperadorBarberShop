@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using ImperadorBarberShop.Domain.Enums;
 
 namespace ImperadorBarberShop.Domain.Entities;
@@ -7,7 +8,9 @@ public class Appointment
     private readonly List<AppointmentService> _appointmentServices = new();
 
     public Guid Id { get; private set; }
-    public Guid ClientId { get; private set; }
+    public string ClientName { get; private set; } = string.Empty;
+    public string ClientPhone { get; private set; } = string.Empty;
+    public string AccessToken { get; private set; } = string.Empty;
     public Guid BarberId { get; private set; }
     public DateTime ScheduledAt { get; private set; }
     public int TotalDurationMinutes { get; private set; }
@@ -15,7 +18,6 @@ public class Appointment
     public string? Notes { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
-    public User Client { get; private set; } = null!;
     public Barber Barber { get; private set; } = null!;
     public IReadOnlyCollection<AppointmentService> AppointmentServices => _appointmentServices.AsReadOnly();
 
@@ -23,7 +25,8 @@ public class Appointment
     private Appointment() { }
 
     public static Appointment Create(
-        Guid clientId,
+        string clientName,
+        string clientPhone,
         Guid barberId,
         DateTime scheduledAt,
         int totalDurationMinutes,
@@ -34,11 +37,13 @@ public class Appointment
         var appointment = new Appointment
         {
             Id = Guid.NewGuid(),
-            ClientId = clientId,
+            ClientName = clientName,
+            ClientPhone = clientPhone,
+            AccessToken = GenerateAccessToken(),
             BarberId = barberId,
             ScheduledAt = scheduledAt,
             TotalDurationMinutes = totalDurationMinutes,
-            Status = AppointmentStatus.Pending,
+            Status = AppointmentStatus.Accepted,
             Notes = notes,
             CreatedAt = now,
             UpdatedAt = now
@@ -50,25 +55,9 @@ public class Appointment
         return appointment;
     }
 
-    public void Accept()
-    {
-        if (Status != AppointmentStatus.Pending)
-            throw new InvalidOperationException($"Cannot accept appointment in status {Status}.");
-        Status = AppointmentStatus.Accepted;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void Reject()
-    {
-        if (Status != AppointmentStatus.Pending)
-            throw new InvalidOperationException($"Cannot reject appointment in status {Status}.");
-        Status = AppointmentStatus.Rejected;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
     public void Cancel()
     {
-        if (Status is not (AppointmentStatus.Pending or AppointmentStatus.Accepted))
+        if (Status != AppointmentStatus.Accepted)
             throw new InvalidOperationException($"Cannot cancel appointment in status {Status}.");
         Status = AppointmentStatus.Cancelled;
         UpdatedAt = DateTime.UtcNow;
@@ -80,5 +69,11 @@ public class Appointment
             throw new InvalidOperationException($"Cannot complete appointment in status {Status}.");
         Status = AppointmentStatus.Completed;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    private static string GenerateAccessToken()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(32);
+        return Convert.ToBase64String(bytes).Replace('+', '-').Replace('/', '_').TrimEnd('=');
     }
 }
