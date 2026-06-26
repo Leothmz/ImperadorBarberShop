@@ -98,7 +98,7 @@ public class GetAvailableSlotsQueryHandlerTests
 
         var mondayDate = _monday;
         var existingAppt = Appointment.Create(
-            Guid.NewGuid(), _barberId,
+            "João", "+5511999990000", _barberId,
             mondayDate.ToDateTime(new TimeOnly(9, 0)),
             30, null, new[] { Guid.NewGuid() });
 
@@ -171,7 +171,7 @@ public class GetAvailableSlotsQueryHandlerTests
             .Returns(new List<Service> { service });
 
         var existingAppt = Appointment.Create(
-            Guid.NewGuid(), _barberId,
+            "João", "+5511999990000", _barberId,
             _monday.ToDateTime(new TimeOnly(10, 0)),
             30, null, new[] { Guid.NewGuid() });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
