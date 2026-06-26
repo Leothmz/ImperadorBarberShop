@@ -6,6 +6,7 @@ using ImperadorBarberShop.Infrastructure;
 using ImperadorBarberShop.Infrastructure.Persistence;
 using ImperadorBarberShop.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -74,7 +75,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("RequireClientRole", policy => policy.RequireClaim("role", "Client"));
     options.AddPolicy("RequireBarberRole", policy => policy.RequireClaim("role", "Barber"));
 });
 
@@ -86,6 +86,19 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(frontendUrl)
               .AllowAnyHeader()
               .AllowAnyMethod());
+});
+
+// Anti-spam: cap public appointment creation per client IP. A second,
+// phone-number-based check lives in CreateAppointmentCommandHandler since the
+// rate limiter's partition key cannot see the deserialized request body.
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("appointment-creation", limiterOptions =>
+    {
+        limiterOptions.Window = TimeSpan.FromHours(1);
+        limiterOptions.PermitLimit = 5;
+        limiterOptions.QueueLimit = 0;
+    });
 });
 
 var app = builder.Build();
@@ -106,6 +119,7 @@ app.UseHttpsRedirection();
 app.UseCors("FrontendPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 
 app.Run();
