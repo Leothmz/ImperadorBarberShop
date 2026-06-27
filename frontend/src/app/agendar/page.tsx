@@ -9,19 +9,15 @@ import { BookingConfirmation } from '@/components/booking/BookingConfirmation'
 import { Button } from '@/components/ui/Button'
 import { useCreateAppointment } from '@/hooks/useAppointments'
 import { useServices } from '@/hooks/useServices'
+import { normalizeBrPhone } from '@/lib/utils/phone'
 import { toApiDate } from '@/lib/utils/formatDateTime'
 import type { Barber, Service } from '@/types/api.types'
 
 type Step = 1 | 2 | 3 | 4
 
-const STEP_LABELS = [
-  'Barbeiro',
-  'Serviços',
-  'Data e Horário',
-  'Confirmar',
-]
+const STEP_LABELS = ['Barbeiro', 'Serviços', 'Data e Horário', 'Confirmar']
 
-export default function BookPage() {
+export default function AgendarPage() {
   const router = useRouter()
   const [step, setStep] = useState<Step>(1)
 
@@ -30,15 +26,15 @@ export default function BookPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
+  const [clientName, setClientName] = useState('')
+  const [clientPhone, setClientPhone] = useState('')
 
   const { data: allServices } = useServices()
   const createAppointment = useCreateAppointment()
 
   function toggleService(service: Service) {
     setSelectedServiceIds((prev) =>
-      prev.includes(service.id)
-        ? prev.filter((id) => id !== service.id)
-        : [...prev, service.id]
+      prev.includes(service.id) ? prev.filter((id) => id !== service.id) : [...prev, service.id]
     )
   }
 
@@ -60,20 +56,19 @@ export default function BookPage() {
   async function handleConfirm() {
     if (!selectedBarber || !selectedDate || !selectedSlot) return
 
-    // Append "Z" so the Date constructor treats the value as UTC, not local
-    // time. Without "Z", a client in UTC-3 booking a 10:00 slot would send
-    // 13:00:00Z to the backend — 3 hours off.
-    const dateString = toApiDate(selectedDate) // "YYYY-MM-DD"
+    const dateString = toApiDate(selectedDate)
     const scheduledAt = new Date(`${dateString}T${selectedSlot}Z`)
 
     try {
-      await createAppointment.mutateAsync({
+      const result = await createAppointment.mutateAsync({
+        clientName: clientName.trim(),
+        clientPhone: normalizeBrPhone(clientPhone),
         barberId: selectedBarber.id,
         scheduledAt: scheduledAt.toISOString(),
         serviceIds: selectedServiceIds,
         notes: notes.trim() || undefined,
       })
-      router.push('/client/dashboard')
+      router.push(`/agendamento/${result.accessToken}`)
     } catch {
       // Error handled by mutation state
     }
@@ -83,17 +78,11 @@ export default function BookPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      {/* Page header */}
       <div className="mb-8">
-        <h1 className="font-montserrat text-2xl font-black text-brand-white">
-          Novo Agendamento
-        </h1>
-        <p className="mt-1 text-sm text-brand-white/50">
-          Siga os passos para agendar seu atendimento
-        </p>
+        <h1 className="font-montserrat text-2xl font-black text-brand-white">Novo Agendamento</h1>
+        <p className="mt-1 text-sm text-brand-white/50">Siga os passos para agendar seu atendimento</p>
       </div>
 
-      {/* Step indicator */}
       <nav aria-label="Progresso do agendamento" className="mb-8">
         <ol className="flex items-center gap-0">
           {STEP_LABELS.map((label, idx) => {
@@ -151,7 +140,6 @@ export default function BookPage() {
         </ol>
       </nav>
 
-      {/* Step content */}
       <div className="rounded-xl border border-brand-white/10 bg-brand-black-soft p-6 mb-6">
         <h2 className="font-montserrat font-bold text-brand-white mb-6">
           {step === 1 && 'Escolha o Barbeiro'}
@@ -165,18 +153,12 @@ export default function BookPage() {
             selectedBarberId={selectedBarber?.id ?? null}
             onSelect={(barber) => {
               setSelectedBarber(barber)
-              // Reset downstream selections when barber changes
               setSelectedSlot(null)
             }}
           />
         )}
 
-        {step === 2 && (
-          <ServicePicker
-            selectedServiceIds={selectedServiceIds}
-            onToggle={toggleService}
-          />
-        )}
+        {step === 2 && <ServicePicker selectedServiceIds={selectedServiceIds} onToggle={toggleService} />}
 
         {step === 3 && selectedBarber && (
           <SlotPicker
@@ -187,7 +169,7 @@ export default function BookPage() {
             selectedSlot={selectedSlot}
             onDateChange={(d) => {
               setSelectedDate(d)
-              setSelectedSlot(null) // Reset slot when date changes
+              setSelectedSlot(null)
             }}
             onSlotChange={setSelectedSlot}
           />
@@ -201,6 +183,10 @@ export default function BookPage() {
             selectedSlot={selectedSlot}
             notes={notes}
             onNotesChange={setNotes}
+            clientName={clientName}
+            onClientNameChange={setClientName}
+            clientPhone={clientPhone}
+            onClientPhoneChange={setClientPhone}
             onConfirm={handleConfirm}
             isLoading={createAppointment.isPending}
           />
@@ -213,20 +199,12 @@ export default function BookPage() {
         )}
       </div>
 
-      {/* Navigation buttons (hide on step 4 since confirmation has its own button) */}
       {step < 4 && (
         <div className="flex justify-between">
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            disabled={step === 1}
-          >
+          <Button variant="ghost" onClick={handleBack} disabled={step === 1}>
             Voltar
           </Button>
-          <Button
-            onClick={handleNext}
-            disabled={!canAdvance()}
-          >
+          <Button onClick={handleNext} disabled={!canAdvance()}>
             Próximo
           </Button>
         </div>
