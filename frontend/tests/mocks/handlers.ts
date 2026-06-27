@@ -218,10 +218,7 @@ export const handlers = [
   }),
 
   http.post(`${BASE_URL}/appointments/manage/:token/review`, async () => {
-    return HttpResponse.json(
-      { id: 'review-new-1', clientName: 'João Silva', rating: 5, comment: 'Ótimo serviço!', createdAt: new Date().toISOString() },
-      { status: 201 }
-    )
+    return HttpResponse.json({ id: 'review-new-1' }, { status: 201 })
   }),
 
   http.get(`${BASE_URL}/appointments/barber`, () => {

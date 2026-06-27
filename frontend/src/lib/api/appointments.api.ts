@@ -5,7 +5,7 @@ import type {
   CreateAppointmentPayload,
   CreateAppointmentResult,
   CreateReviewByTokenPayload,
-  Review,
+  CreateReviewByTokenResult,
 } from '@/types/api.types'
 
 export const appointmentsApi = {
@@ -22,7 +22,7 @@ export const appointmentsApi = {
   },
 
   reviewByToken(token: string, payload: CreateReviewByTokenPayload) {
-    return apiClient.post<Review>(`/appointments/manage/${token}/review`, payload)
+    return apiClient.post<CreateReviewByTokenResult>(`/appointments/manage/${token}/review`, payload)
   },
 
   getBarberAppointments() {

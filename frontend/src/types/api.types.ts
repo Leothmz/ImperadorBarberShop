@@ -112,3 +112,7 @@ export interface CreateReviewByTokenPayload {
   rating: number
   comment?: string
 }
+
+export interface CreateReviewByTokenResult {
+  id: string
+}

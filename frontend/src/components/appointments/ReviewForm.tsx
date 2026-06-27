@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { StarRatingInput } from '@/components/ui/StarRating'
-import { appointmentsApi } from '@/lib/api/appointments.api'
+import { useCreateReviewByToken } from '@/hooks/useAppointments'
 
 interface ReviewFormProps {
   accessToken: string
@@ -13,8 +13,8 @@ interface ReviewFormProps {
 export function ReviewForm({ accessToken, onSuccess }: ReviewFormProps) {
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const createReview = useCreateReviewByToken(accessToken)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -23,17 +23,14 @@ export function ReviewForm({ accessToken, onSuccess }: ReviewFormProps) {
       return
     }
     setError(null)
-    setIsSubmitting(true)
     try {
-      await appointmentsApi.reviewByToken(accessToken, {
+      await createReview.mutateAsync({
         rating,
         comment: comment.trim() || undefined,
       })
       onSuccess()
     } catch {
       setError('Erro ao enviar avaliação. Tente novamente.')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -69,7 +66,7 @@ export function ReviewForm({ accessToken, onSuccess }: ReviewFormProps) {
         </p>
       )}
 
-      <Button type="submit" isLoading={isSubmitting} className="w-full">
+      <Button type="submit" isLoading={createReview.isPending} className="w-full">
         Enviar avaliação
       </Button>
     </form>
