@@ -60,9 +60,11 @@ Fonts: **Montserrat** (headings), **Inter** (body).
 ### Enums
 
 ```csharp
-public enum UserRole          { Barber = 1 }
+public enum UserRole          { Client = 0, Barber = 1 }
 public enum AppointmentStatus { Accepted = 0, Cancelled = 1, Completed = 2 }
 ```
+
+`UserRole.Client` is unreachable via any public API — there is no client registration/login endpoint. It still exists in the enum for technical reasons only: the EF migration's backfill (`DELETE FROM "Users" WHERE "Role" = 0`) depends on the numeric value, and some internal test fixtures (`WebAppFixture`, auth tests) use `User.CreateClient(...)` as a generic test double. The Task 5 migration's backfill deletes every `Client`-role row, so in practice no `Client`-role `User` rows exist in the running system.
 
 ### Business Rules
 
