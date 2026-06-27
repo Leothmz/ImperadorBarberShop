@@ -93,6 +93,11 @@ builder.Services.AddCors(options =>
 // rate limiter's partition key cannot see the deserialized request body.
 builder.Services.AddRateLimiter(options =>
 {
+    // Default RejectionStatusCode for AddFixedWindowLimiter is 503 — override to the
+    // semantically correct 429 so clients (and tests) can distinguish "rate limited"
+    // from "server unavailable".
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
     options.AddFixedWindowLimiter("appointment-creation", limiterOptions =>
     {
         limiterOptions.Window = TimeSpan.FromHours(1);

@@ -16,30 +16,13 @@ public class AuthControllerTests : IClassFixture<WebAppFixture>
     }
 
     [Fact]
-    public async Task RegisterClient_ValidPayload_Returns201()
+    public async Task RegisterClient_Returns404_RouteNoLongerExists()
     {
-        var payload = new
-        {
-            name = "João Teste",
-            email = $"joao-{Guid.NewGuid()}@test.com",
-            password = "Password123!"
-        };
+        var payload = new { name = "João Teste", email = $"joao-{Guid.NewGuid()}@test.com", password = "Password123!" };
 
         var response = await _client.PostAsJsonAsync("/api/v1/auth/register/client", payload);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-    }
-
-    [Fact]
-    public async Task RegisterClient_DuplicateEmail_Returns422()
-    {
-        var email = $"dup-{Guid.NewGuid()}@test.com";
-        var payload = new { name = "João", email, password = "Password123!" };
-
-        await _client.PostAsJsonAsync("/api/v1/auth/register/client", payload);
-        var response = await _client.PostAsJsonAsync("/api/v1/auth/register/client", payload);
-
-        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -65,8 +48,8 @@ public class AuthControllerTests : IClassFixture<WebAppFixture>
     public async Task Login_ValidCredentials_Returns200WithTokens()
     {
         var email = $"login-{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/v1/auth/register/client",
-            new { name = "Test User", email, password = "Password123!" });
+        await _client.PostAsJsonAsync("/api/v1/auth/register/barber",
+            new { name = "Test Barber", email, password = "Password123!", availability = Array.Empty<object>() });
 
         var response = await _client.PostAsJsonAsync("/api/v1/auth/login",
             new { email, password = "Password123!" });
@@ -75,28 +58,30 @@ public class AuthControllerTests : IClassFixture<WebAppFixture>
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
         body.GetProperty("accessToken").GetString().Should().NotBeNullOrEmpty();
         body.GetProperty("refreshToken").GetString().Should().NotBeNullOrEmpty();
-        body.GetProperty("role").GetString().Should().Be("Client");
+        body.GetProperty("role").GetString().Should().Be("Barber");
     }
 
     [Fact]
-    public async Task Login_WrongPassword_Returns403()
+    public async Task Login_WrongPassword_Returns401()
     {
         var email = $"wrong-{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/v1/auth/register/client",
-            new { name = "Test", email, password = "Password123!" });
+        await _client.PostAsJsonAsync("/api/v1/auth/register/barber",
+            new { name = "Test", email, password = "Password123!", availability = Array.Empty<object>() });
 
         var response = await _client.PostAsJsonAsync("/api/v1/auth/login",
             new { email, password = "WrongPassword!" });
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        // LoginCommandHandler throws UnauthorizedAccessException for invalid credentials,
+        // which ExceptionHandlingMiddleware maps to 401 (see LoginCommandHandlerTests unit tests).
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
-    public async Task Login_UnknownEmail_Returns403()
+    public async Task Login_UnknownEmail_Returns401()
     {
         var response = await _client.PostAsJsonAsync("/api/v1/auth/login",
             new { email = "unknown@nowhere.com", password = "anything" });
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

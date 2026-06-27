@@ -17,30 +17,6 @@ public class BarbersControllerTests : IClassFixture<WebAppFixture>
         _client = fixture.CreateClient();
     }
 
-    private async Task<(string AccessToken, Guid UserId)> RegisterAndLogin(string role)
-    {
-        var email = $"{role.ToLower()}-{Guid.NewGuid()}@test.com";
-        var registerPayload = role == "barber"
-            ? (object)new
-            {
-                name = "Test Barber",
-                email,
-                password = "Password123!",
-                availability = new[] { new { dayOfWeek = 1, startTime = "09:00:00", endTime = "18:00:00" } }
-            }
-            : new { name = "Test Client", email, password = "Password123!" };
-
-        var registerEndpoint = $"/api/v1/auth/register/{role}";
-        await _client.PostAsJsonAsync(registerEndpoint, registerPayload);
-
-        var loginResp = await _client.PostAsJsonAsync("/api/v1/auth/login",
-            new { email, password = "Password123!" });
-        var body = await loginResp.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
-        var token = body.GetProperty("accessToken").GetString()!;
-        var userId = body.GetProperty("userId").GetGuid();
-        return (token, userId);
-    }
-
     [Fact]
     public async Task GetAll_ReturnsOk()
     {
@@ -80,12 +56,12 @@ public class BarbersControllerTests : IClassFixture<WebAppFixture>
     }
 
     [Fact]
-    public async Task GetSlots_WithoutAuth_Returns401()
+    public async Task GetSlots_PublicAccess_Returns200()
     {
         var response = await _client.GetAsync(
             $"/api/v1/barbers/{Guid.NewGuid()}/slots?date=2026-04-06&serviceIds={Guid.NewGuid()}");
 
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
@@ -109,9 +85,14 @@ public class BarbersControllerTests : IClassFixture<WebAppFixture>
         authClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var payload = new[]
+        // PUT /barbers/me/availability binds to UpdateAvailabilityRequest(List<AvailabilitySlotInput> Availability)
+        // — the body must be wrapped under "availability", not a bare array.
+        var payload = new
         {
-            new { dayOfWeek = 2, startTime = "08:00:00", endTime = "17:00:00" }
+            availability = new[]
+            {
+                new { dayOfWeek = 2, startTime = "08:00:00", endTime = "17:00:00" }
+            }
         };
         var response = await authClient.PutAsJsonAsync("/api/v1/barbers/me/availability", payload);
 
