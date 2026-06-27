@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/Badge'
 import type { AppointmentStatus } from '@/types/api.types'
 
 describe('Badge', () => {
-  const statuses: AppointmentStatus[] = ['Pending', 'Accepted', 'Rejected', 'Cancelled', 'Completed']
+  const statuses: AppointmentStatus[] = ['Accepted', 'Cancelled', 'Completed']
 
   it('renders without crashing for all statuses', () => {
     statuses.forEach((status) => {
@@ -13,19 +13,9 @@ describe('Badge', () => {
     })
   })
 
-  it('displays "Pendente" for Pending status', () => {
-    render(<Badge status="Pending" />)
-    expect(screen.getByText('Pendente')).toBeInTheDocument()
-  })
-
-  it('displays "Aceito" for Accepted status', () => {
+  it('displays "Confirmado" for Accepted status', () => {
     render(<Badge status="Accepted" />)
-    expect(screen.getByText('Aceito')).toBeInTheDocument()
-  })
-
-  it('displays "Recusado" for Rejected status', () => {
-    render(<Badge status="Rejected" />)
-    expect(screen.getByText('Recusado')).toBeInTheDocument()
+    expect(screen.getByText('Confirmado')).toBeInTheDocument()
   })
 
   it('displays "Cancelado" for Cancelled status', () => {
@@ -39,8 +29,8 @@ describe('Badge', () => {
   })
 
   it('applies custom className', () => {
-    render(<Badge status="Pending" className="test-class" />)
-    const badge = screen.getByText('Pendente')
+    render(<Badge status="Accepted" className="test-class" />)
+    const badge = screen.getByText('Confirmado')
     expect(badge.className).toContain('test-class')
   })
 })

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen, waitFor } from '../../test-utils'
-import { ManageAppointmentView } from '@/app/agendamento/[token]/page'
+import { ManageAppointmentView } from '@/app/agendamento/[token]/ManageAppointmentView'
 
 describe('ManageAppointmentPage', () => {
   it('renders the appointment summary for a valid token', async () => {

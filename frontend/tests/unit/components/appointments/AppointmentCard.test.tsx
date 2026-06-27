@@ -38,6 +38,11 @@ describe('AppointmentCard', () => {
     expect(screen.getByText(/João Silva/)).toBeInTheDocument()
   })
 
+  it('displays the client phone', () => {
+    render(<AppointmentCard appointment={mockAppointment} />)
+    expect(screen.getByText(/\+5511999990000/)).toBeInTheDocument()
+  })
+
   it('displays all service names', () => {
     render(<AppointmentCard appointment={mockAppointment} />)
     expect(screen.getByText('Corte Clássico')).toBeInTheDocument()
