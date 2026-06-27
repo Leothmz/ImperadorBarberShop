@@ -3,14 +3,14 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { StarRatingInput } from '@/components/ui/StarRating'
-import { reviewsApi } from '@/lib/api/reviews.api'
+import { appointmentsApi } from '@/lib/api/appointments.api'
 
 interface ReviewFormProps {
-  appointmentId: string
+  accessToken: string
   onSuccess: () => void
 }
 
-export function ReviewForm({ appointmentId, onSuccess }: ReviewFormProps) {
+export function ReviewForm({ accessToken, onSuccess }: ReviewFormProps) {
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -25,8 +25,7 @@ export function ReviewForm({ appointmentId, onSuccess }: ReviewFormProps) {
     setError(null)
     setIsSubmitting(true)
     try {
-      await reviewsApi.create({
-        appointmentId,
+      await appointmentsApi.reviewByToken(accessToken, {
         rating,
         comment: comment.trim() || undefined,
       })
@@ -51,10 +50,7 @@ export function ReviewForm({ appointmentId, onSuccess }: ReviewFormProps) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label
-          htmlFor="review-comment"
-          className="text-sm font-medium text-brand-white/80"
-        >
+        <label htmlFor="review-comment" className="text-sm font-medium text-brand-white/80">
           Comentário (opcional)
         </label>
         <textarea
