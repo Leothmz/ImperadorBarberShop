@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Threading.RateLimiting;
 using ImperadorBarberShop.Api.Middleware;
 using ImperadorBarberShop.Application;
 using ImperadorBarberShop.Infrastructure;
@@ -98,12 +99,15 @@ builder.Services.AddRateLimiter(options =>
     // from "server unavailable".
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-    options.AddFixedWindowLimiter("appointment-creation", limiterOptions =>
-    {
-        limiterOptions.Window = TimeSpan.FromHours(1);
-        limiterOptions.PermitLimit = 5;
-        limiterOptions.QueueLimit = 0;
-    });
+    options.AddPolicy("appointment-creation", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window = TimeSpan.FromHours(1),
+                PermitLimit = 5,
+                QueueLimit = 0
+            }));
 });
 
 var app = builder.Build();

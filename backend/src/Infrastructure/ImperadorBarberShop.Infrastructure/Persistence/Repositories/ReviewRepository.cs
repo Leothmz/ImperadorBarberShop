@@ -19,6 +19,7 @@ public class ReviewRepository : IReviewRepository
 
     public async Task<List<Review>> GetByBarberIdAsync(Guid barberId, CancellationToken cancellationToken = default)
         => await _context.Reviews
+            .Include(r => r.Appointment)
             .Where(r => r.BarberId == barberId)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(cancellationToken);

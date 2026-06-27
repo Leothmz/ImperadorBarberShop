@@ -25,6 +25,7 @@ public class MappingProfile : Profile
             .ForMember(d => d.BarberName, o => o.MapFrom(s => s.Barber.User.Name))
             .ForMember(d => d.Services, o => o.MapFrom(s => s.AppointmentServices.Select(a => a.Service)));
 
-        CreateMap<Review, ReviewDto>();
+        CreateMap<Review, ReviewDto>()
+            .ForMember(d => d.ClientName, o => o.MapFrom(s => s.Appointment.ClientName));
     }
 }

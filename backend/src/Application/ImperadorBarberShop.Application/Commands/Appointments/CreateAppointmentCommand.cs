@@ -22,7 +22,7 @@ public class CreateAppointmentCommandValidator : AbstractValidator<CreateAppoint
     {
         RuleFor(x => x.ClientName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.ClientPhone).NotEmpty()
-            .Matches(@"^\+55\d{10,11}$")
+            .Matches(@"^\+55\d{11}$")
             .WithMessage("ClientPhone must be in the format +55DDDXXXXXXXXX.");
         RuleFor(x => x.BarberId).NotEmpty();
         RuleFor(x => x.ScheduledAt).GreaterThan(DateTime.UtcNow)

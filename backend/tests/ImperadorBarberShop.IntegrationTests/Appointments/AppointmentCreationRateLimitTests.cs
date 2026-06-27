@@ -7,12 +7,15 @@ using ImperadorBarberShop.Infrastructure.Persistence.Configurations;
 namespace ImperadorBarberShop.IntegrationTests.Appointments;
 
 /// <summary>
-/// The "appointment-creation" rate limiter (Program.cs) is a single shared fixed
-/// window (5 requests/hour, no per-IP partitioning), so exhausting it here must
-/// not share a WebAppFixture/TestServer with any other test that creates
-/// appointments. IClassFixture gives this class its own fixture instance (and
-/// thus its own limiter bucket), isolating the other Appointments tests from
-/// 429s caused by this test exhausting the quota.
+/// The "appointment-creation" rate limiter (Program.cs) is partitioned per caller
+/// IP (5 requests/hour/IP). WebApplicationFactory's in-process TestServer has no
+/// real network layer, so every request in a test run reports the same fixed
+/// RemoteIpAddress — meaning all requests against a given WebAppFixture/TestServer
+/// share a single partition/bucket, just like a global limiter would. So
+/// exhausting it here must still not share a WebAppFixture/TestServer with any
+/// other test that creates appointments. IClassFixture gives this class its own
+/// fixture instance (and thus its own limiter bucket), isolating the other
+/// Appointments tests from 429s caused by this test exhausting the quota.
 /// </summary>
 public class AppointmentCreationRateLimitTests : IClassFixture<WebAppFixture>
 {
