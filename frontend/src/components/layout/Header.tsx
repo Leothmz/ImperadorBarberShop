@@ -17,7 +17,6 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-brand-white/10 bg-brand-black/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        {/* Logo */}
         <Link href="/" className="flex flex-col leading-none group">
           <span className="font-montserrat text-xl font-black tracking-widest text-brand-gold group-hover:text-brand-gold-light transition-colors">
             O IMPERADOR
@@ -27,37 +26,20 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Nav */}
         <nav className="flex items-center gap-3">
+          <Link href="/agendar">
+            <Button variant="primary" size="sm">
+              Agendar
+            </Button>
+          </Link>
           {!user ? (
-            <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  Entrar
-                </Button>
-              </Link>
-              <Link href="/register/client">
-                <Button variant="primary" size="sm">
-                  Cadastrar
-                </Button>
-              </Link>
-            </>
+            <Link href="/login">
+              <Button variant="ghost" size="sm">
+                Entrar
+              </Button>
+            </Link>
           ) : (
             <>
-              {user.role === 'Client' && (
-                <>
-                  <Link href="/client/dashboard">
-                    <Button variant="ghost" size="sm">
-                      Meus Agendamentos
-                    </Button>
-                  </Link>
-                  <Link href="/client/book">
-                    <Button variant="primary" size="sm">
-                      Agendar
-                    </Button>
-                  </Link>
-                </>
-              )}
               {user.role === 'Barber' && (
                 <Link href="/barber/dashboard">
                   <Button variant="ghost" size="sm">

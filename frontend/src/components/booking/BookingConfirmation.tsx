@@ -1,8 +1,10 @@
 'use client'
 
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { formatCurrency, formatDateTime, toApiDate } from '@/lib/utils/formatDateTime'
 import { formatDuration } from '@/lib/utils/formatDuration'
+import { isValidBrPhone } from '@/lib/utils/phone'
 import type { Barber, Service } from '@/types/api.types'
 
 interface BookingConfirmationProps {
@@ -12,6 +14,10 @@ interface BookingConfirmationProps {
   selectedSlot: string
   notes: string
   onNotesChange: (notes: string) => void
+  clientName: string
+  onClientNameChange: (name: string) => void
+  clientPhone: string
+  onClientPhoneChange: (phone: string) => void
   onConfirm: () => void
   isLoading: boolean
 }
@@ -23,6 +29,10 @@ export function BookingConfirmation({
   selectedSlot,
   notes,
   onNotesChange,
+  clientName,
+  onClientNameChange,
+  clientPhone,
+  onClientPhoneChange,
   onConfirm,
   isLoading,
 }: BookingConfirmationProps) {
@@ -34,8 +44,26 @@ export function BookingConfirmation({
   const dateString = toApiDate(selectedDate) // "YYYY-MM-DD"
   const scheduledAt = new Date(`${dateString}T${selectedSlot}Z`)
 
+  const canConfirm = clientName.trim().length > 0 && isValidBrPhone(clientPhone)
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Contact info */}
+      <div className="flex flex-col gap-3">
+        <Input
+          label="Nome completo"
+          value={clientName}
+          onChange={(e) => onClientNameChange(e.target.value)}
+          placeholder="Seu nome"
+        />
+        <Input
+          label="WhatsApp"
+          value={clientPhone}
+          onChange={(e) => onClientPhoneChange(e.target.value)}
+          placeholder="+55 11 99999-0000"
+        />
+      </div>
+
       {/* Summary card */}
       <div className="rounded-xl border border-brand-gold/30 bg-brand-black-soft p-6">
         <h3 className="font-montserrat font-bold text-brand-white mb-4">
@@ -100,6 +128,7 @@ export function BookingConfirmation({
       <Button
         onClick={onConfirm}
         isLoading={isLoading}
+        disabled={!canConfirm}
         size="lg"
         className="w-full"
       >

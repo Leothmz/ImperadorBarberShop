@@ -16,23 +16,18 @@ public class AppointmentRepository : IAppointmentRepository
 
     public async Task<Appointment?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => await _context.Appointments
-            .Include(a => a.Client)
             .Include(a => a.Barber).ThenInclude(b => b.User)
             .Include(a => a.AppointmentServices).ThenInclude(s => s.Service)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
 
-    public async Task<List<Appointment>> GetByClientIdAsync(Guid clientId, CancellationToken cancellationToken = default)
+    public async Task<Appointment?> GetByAccessTokenAsync(string accessToken, CancellationToken cancellationToken = default)
         => await _context.Appointments
-            .Include(a => a.Client)
             .Include(a => a.Barber).ThenInclude(b => b.User)
             .Include(a => a.AppointmentServices).ThenInclude(s => s.Service)
-            .Where(a => a.ClientId == clientId)
-            .OrderByDescending(a => a.ScheduledAt)
-            .ToListAsync(cancellationToken);
+            .FirstOrDefaultAsync(a => a.AccessToken == accessToken, cancellationToken);
 
     public async Task<List<Appointment>> GetByBarberIdAsync(Guid barberId, CancellationToken cancellationToken = default)
         => await _context.Appointments
-            .Include(a => a.Client)
             .Include(a => a.Barber).ThenInclude(b => b.User)
             .Include(a => a.AppointmentServices).ThenInclude(s => s.Service)
             .Where(a => a.BarberId == barberId)
@@ -49,10 +44,13 @@ public class AppointmentRepository : IAppointmentRepository
             .Where(a => a.BarberId == barberId
                 && a.ScheduledAt >= dayStart
                 && a.ScheduledAt <= dayEnd
-                && a.Status != AppointmentStatus.Rejected
                 && a.Status != AppointmentStatus.Cancelled)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<int> CountCreatedByPhoneSinceAsync(string clientPhone, DateTime since, CancellationToken cancellationToken = default)
+        => await _context.Appointments
+            .CountAsync(a => a.ClientPhone == clientPhone && a.CreatedAt >= since, cancellationToken);
 
     public async Task AddAsync(Appointment appointment, CancellationToken cancellationToken = default)
         => await _context.Appointments.AddAsync(appointment, cancellationToken);

@@ -7,17 +7,23 @@ using MediatR;
 namespace ImperadorBarberShop.Application.Commands.Appointments;
 
 public record CreateAppointmentCommand(
-    Guid ClientId,
+    string ClientName,
+    string ClientPhone,
     Guid BarberId,
     DateTime ScheduledAt,
     List<Guid> ServiceIds,
-    string? Notes) : IRequest<Guid>;
+    string? Notes) : IRequest<CreateAppointmentResult>;
+
+public record CreateAppointmentResult(Guid Id, string AccessToken);
 
 public class CreateAppointmentCommandValidator : AbstractValidator<CreateAppointmentCommand>
 {
     public CreateAppointmentCommandValidator()
     {
-        RuleFor(x => x.ClientId).NotEmpty();
+        RuleFor(x => x.ClientName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.ClientPhone).NotEmpty()
+            .Matches(@"^\+55\d{11}$")
+            .WithMessage("ClientPhone must be in the format +55DDDXXXXXXXXX.");
         RuleFor(x => x.BarberId).NotEmpty();
         RuleFor(x => x.ScheduledAt).GreaterThan(DateTime.UtcNow)
             .WithMessage("ScheduledAt must be in the future.");
@@ -26,13 +32,12 @@ public class CreateAppointmentCommandValidator : AbstractValidator<CreateAppoint
     }
 }
 
-public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointmentCommand, Guid>
+public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointmentCommand, CreateAppointmentResult>
 {
     private readonly IBarberRepository _barberRepository;
     private readonly IServiceRepository _serviceRepository;
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IEmailService _emailService;
-    private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateAppointmentCommandHandler(
@@ -40,18 +45,16 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         IServiceRepository serviceRepository,
         IAppointmentRepository appointmentRepository,
         IEmailService emailService,
-        IUserRepository userRepository,
         IUnitOfWork unitOfWork)
     {
         _barberRepository = barberRepository;
         _serviceRepository = serviceRepository;
         _appointmentRepository = appointmentRepository;
         _emailService = emailService;
-        _userRepository = userRepository;
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Guid> Handle(CreateAppointmentCommand request, CancellationToken cancellationToken)
+    public async Task<CreateAppointmentResult> Handle(CreateAppointmentCommand request, CancellationToken cancellationToken)
     {
         var barber = await _barberRepository.GetByIdAsync(request.BarberId, cancellationToken);
         if (barber is null)
@@ -60,6 +63,13 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         var services = await _serviceRepository.GetByIdsAsync(request.ServiceIds, cancellationToken);
         if (services.Count != request.ServiceIds.Count)
             throw new KeyNotFoundException("One or more services were not found.");
+
+        // Anti-spam: cap appointment creation per phone number, independent of the
+        // per-IP rate limit applied at the HTTP layer (Task 11).
+        var recentCount = await _appointmentRepository.CountCreatedByPhoneSinceAsync(
+            request.ClientPhone, DateTime.UtcNow.AddHours(-1), cancellationToken);
+        if (recentCount >= 3)
+            throw new InvalidOperationException("Too many appointment requests from this phone number. Try again later.");
 
         // Check slot availability — ensure no overlap with existing appointments
         var date = DateOnly.FromDateTime(request.ScheduledAt);
@@ -77,7 +87,8 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         }
 
         var appointment = Appointment.Create(
-            request.ClientId,
+            request.ClientName,
+            request.ClientPhone,
             request.BarberId,
             request.ScheduledAt,
             totalDuration,
@@ -88,15 +99,15 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Send notification to barber (best-effort — email failure must not roll back the appointment)
-        var client = await _userRepository.GetByIdAsync(request.ClientId, cancellationToken);
-        if (client is not null && barber.User is not null)
+        if (barber.User is not null)
         {
             try
             {
                 await _emailService.SendAppointmentCreatedAsync(
                     barber.User.Email,
                     barber.User.Name,
-                    client.Name,
+                    request.ClientName,
+                    request.ClientPhone,
                     request.ScheduledAt,
                     cancellationToken);
             }
@@ -106,6 +117,6 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
             }
         }
 
-        return appointment.Id;
+        return new CreateAppointmentResult(appointment.Id, appointment.AccessToken);
     }
 }

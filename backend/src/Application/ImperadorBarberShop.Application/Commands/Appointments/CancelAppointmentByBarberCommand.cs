@@ -5,23 +5,23 @@ using MediatR;
 
 namespace ImperadorBarberShop.Application.Commands.Appointments;
 
-public record CancelAppointmentCommand(Guid AppointmentId, Guid ClientId) : IRequest;
+public record CancelAppointmentByBarberCommand(Guid AppointmentId, Guid BarberId) : IRequest;
 
-public class CancelAppointmentCommandValidator : AbstractValidator<CancelAppointmentCommand>
+public class CancelAppointmentByBarberCommandValidator : AbstractValidator<CancelAppointmentByBarberCommand>
 {
-    public CancelAppointmentCommandValidator()
+    public CancelAppointmentByBarberCommandValidator()
     {
         RuleFor(x => x.AppointmentId).NotEmpty();
-        RuleFor(x => x.ClientId).NotEmpty();
+        RuleFor(x => x.BarberId).NotEmpty();
     }
 }
 
-public class CancelAppointmentCommandHandler : IRequestHandler<CancelAppointmentCommand>
+public class CancelAppointmentByBarberCommandHandler : IRequestHandler<CancelAppointmentByBarberCommand>
 {
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public CancelAppointmentCommandHandler(
+    public CancelAppointmentByBarberCommandHandler(
         IAppointmentRepository appointmentRepository,
         IUnitOfWork unitOfWork)
     {
@@ -29,20 +29,14 @@ public class CancelAppointmentCommandHandler : IRequestHandler<CancelAppointment
         _unitOfWork = unitOfWork;
     }
 
-    public async Task Handle(CancelAppointmentCommand request, CancellationToken cancellationToken)
+    public async Task Handle(CancelAppointmentByBarberCommand request, CancellationToken cancellationToken)
     {
         var appointment = await _appointmentRepository.GetByIdAsync(request.AppointmentId, cancellationToken);
         if (appointment is null)
             throw new KeyNotFoundException($"Appointment '{request.AppointmentId}' not found.");
 
-        // Security: only the client who created the appointment can cancel it
-        if (appointment.ClientId != request.ClientId)
+        if (appointment.BarberId != request.BarberId)
             throw new ForbiddenException("You are not authorized to cancel this appointment.");
-
-        // Business rule: cannot cancel within 2 hours of scheduled time
-        // Rule: ScheduledAt must be MORE THAN 2 hours away; "exactly 2h" is not enough — use <=
-        if (appointment.ScheduledAt - DateTime.UtcNow <= TimeSpan.FromHours(2))
-            throw new InvalidOperationException("Cannot cancel an appointment within 2 hours of the scheduled time.");
 
         appointment.Cancel();
         await _appointmentRepository.UpdateAsync(appointment, cancellationToken);

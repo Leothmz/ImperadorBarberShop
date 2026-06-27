@@ -5,15 +5,13 @@ import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import {
   useBarberAppointments,
-  useAcceptAppointment,
-  useRejectAppointment,
+  useCancelAppointmentByBarber,
   useCompleteAppointment,
 } from '@/hooks/useAppointments'
 
 export function BarberAppointmentList() {
   const { data: appointments, isLoading, isError } = useBarberAppointments()
-  const accept = useAcceptAppointment()
-  const reject = useRejectAppointment()
+  const cancel = useCancelAppointmentByBarber()
   const complete = useCompleteAppointment()
 
   if (isLoading) {
@@ -40,12 +38,9 @@ export function BarberAppointmentList() {
     )
   }
 
-  // Sort: Pending first, then by date
-  const sorted = [...appointments].sort((a, b) => {
-    if (a.status === 'Pending' && b.status !== 'Pending') return -1
-    if (a.status !== 'Pending' && b.status === 'Pending') return 1
-    return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
-  })
+  const sorted = [...appointments].sort(
+    (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+  )
 
   return (
     <div className="flex flex-col gap-3">
@@ -54,28 +49,8 @@ export function BarberAppointmentList() {
           key={appointment.id}
           appointment={appointment}
           actions={
-            <>
-              {appointment.status === 'Pending' && (
-                <>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    isLoading={accept.isPending && accept.variables === appointment.id}
-                    onClick={() => accept.mutate(appointment.id)}
-                  >
-                    Aceitar
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    isLoading={reject.isPending && reject.variables === appointment.id}
-                    onClick={() => reject.mutate(appointment.id)}
-                  >
-                    Recusar
-                  </Button>
-                </>
-              )}
-              {appointment.status === 'Accepted' && (
+            appointment.status === 'Accepted' ? (
+              <>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -84,8 +59,16 @@ export function BarberAppointmentList() {
                 >
                   Concluir
                 </Button>
-              )}
-            </>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  isLoading={cancel.isPending && cancel.variables === appointment.id}
+                  onClick={() => cancel.mutate(appointment.id)}
+                >
+                  Cancelar
+                </Button>
+              </>
+            ) : undefined
           }
         />
       ))}

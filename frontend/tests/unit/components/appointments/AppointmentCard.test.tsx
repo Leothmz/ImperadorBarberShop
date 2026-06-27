@@ -5,8 +5,8 @@ import type { Appointment } from '@/types/api.types'
 
 const mockAppointment: Appointment = {
   id: 'appt-1',
-  clientId: 'user-1',
   clientName: 'João Silva',
+  clientPhone: '+5511999990000',
   barberId: 'barber-1',
   barberName: 'Carlos Andrade',
   scheduledAt: '2024-06-15T14:30:00.000Z',
@@ -18,7 +18,6 @@ const mockAppointment: Appointment = {
     { id: 'service-1', name: 'Corte Clássico', durationMinutes: 30, price: 45.0 },
     { id: 'service-2', name: 'Barba', durationMinutes: 20, price: 35.0 },
   ],
-  hasReview: false,
 }
 
 describe('AppointmentCard', () => {
@@ -37,6 +36,11 @@ describe('AppointmentCard', () => {
   it('displays the client name', () => {
     render(<AppointmentCard appointment={mockAppointment} />)
     expect(screen.getByText(/João Silva/)).toBeInTheDocument()
+  })
+
+  it('displays the client phone', () => {
+    render(<AppointmentCard appointment={mockAppointment} />)
+    expect(screen.getByText(/\+5511999990000/)).toBeInTheDocument()
   })
 
   it('displays all service names', () => {
@@ -58,7 +62,7 @@ describe('AppointmentCard', () => {
 
   it('displays the status badge', () => {
     render(<AppointmentCard appointment={mockAppointment} />)
-    expect(screen.getByText('Aceito')).toBeInTheDocument()
+    expect(screen.getByText('Confirmado')).toBeInTheDocument()
   })
 
   it('renders action buttons when actions prop is provided', () => {

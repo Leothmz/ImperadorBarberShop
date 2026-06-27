@@ -15,19 +15,6 @@ public class AuthController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>Register a new client account.</summary>
-    [HttpPost("register/client")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
-    public async Task<IActionResult> RegisterClient(
-        [FromBody] RegisterClientCommand command,
-        CancellationToken cancellationToken)
-    {
-        var id = await _mediator.Send(command, cancellationToken);
-        return CreatedAtAction(nameof(RegisterClient), new { id }, new { id });
-    }
-
     /// <summary>Register a new barber account.</summary>
     [HttpPost("register/barber")]
     [ProducesResponseType(StatusCodes.Status201Created)]

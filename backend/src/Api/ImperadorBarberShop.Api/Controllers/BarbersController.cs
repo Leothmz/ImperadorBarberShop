@@ -39,12 +39,9 @@ public class BarbersController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Get available time slots for a barber on a given date for the selected services.</summary>
+    /// <summary>Get available time slots for a barber on a given date for the selected services. Public.</summary>
     [HttpGet("{id:guid}/slots")]
-    [Authorize(Policy = "RequireClientRole")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetSlots(
         Guid id,
         [FromQuery] DateOnly date,

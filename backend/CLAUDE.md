@@ -90,5 +90,4 @@ Required keys:
 
 | Policy | Required JWT claim |
 |--------|--------------------|
-| `RequireClientRole` | `role == "Client"` |
 | `RequireBarberRole` | `role == "Barber"` |

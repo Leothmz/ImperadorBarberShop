@@ -3,7 +3,7 @@ import { getStatusConfig, statusConfig } from '@/lib/utils/statusConfig'
 import type { AppointmentStatus } from '@/types/api.types'
 
 describe('statusConfig', () => {
-  const statuses: AppointmentStatus[] = ['Pending', 'Accepted', 'Rejected', 'Cancelled', 'Completed']
+  const statuses: AppointmentStatus[] = ['Accepted', 'Cancelled', 'Completed']
 
   it('has entries for all appointment statuses', () => {
     statuses.forEach((status) => {
@@ -20,16 +20,8 @@ describe('statusConfig', () => {
     })
   })
 
-  it('returns correct label for Pending', () => {
-    expect(statusConfig.Pending.label).toBe('Pendente')
-  })
-
   it('returns correct label for Accepted', () => {
-    expect(statusConfig.Accepted.label).toBe('Aceito')
-  })
-
-  it('returns correct label for Rejected', () => {
-    expect(statusConfig.Rejected.label).toBe('Recusado')
+    expect(statusConfig.Accepted.label).toBe('Confirmado')
   })
 
   it('returns correct label for Cancelled', () => {
@@ -43,12 +35,12 @@ describe('statusConfig', () => {
 
 describe('getStatusConfig', () => {
   it('returns the correct config for a given status', () => {
-    const config = getStatusConfig('Pending')
-    expect(config.label).toBe('Pendente')
+    const config = getStatusConfig('Accepted')
+    expect(config.label).toBe('Confirmado')
   })
 
   it('is equivalent to direct statusConfig lookup', () => {
-    const statuses: AppointmentStatus[] = ['Pending', 'Accepted', 'Rejected', 'Cancelled', 'Completed']
+    const statuses: AppointmentStatus[] = ['Accepted', 'Cancelled', 'Completed']
     statuses.forEach((status) => {
       expect(getStatusConfig(status)).toEqual(statusConfig[status])
     })

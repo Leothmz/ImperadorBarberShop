@@ -3,18 +3,18 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { StarRatingInput } from '@/components/ui/StarRating'
-import { reviewsApi } from '@/lib/api/reviews.api'
+import { useCreateReviewByToken } from '@/hooks/useAppointments'
 
 interface ReviewFormProps {
-  appointmentId: string
+  accessToken: string
   onSuccess: () => void
 }
 
-export function ReviewForm({ appointmentId, onSuccess }: ReviewFormProps) {
+export function ReviewForm({ accessToken, onSuccess }: ReviewFormProps) {
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const createReview = useCreateReviewByToken(accessToken)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -23,18 +23,14 @@ export function ReviewForm({ appointmentId, onSuccess }: ReviewFormProps) {
       return
     }
     setError(null)
-    setIsSubmitting(true)
     try {
-      await reviewsApi.create({
-        appointmentId,
+      await createReview.mutateAsync({
         rating,
         comment: comment.trim() || undefined,
       })
       onSuccess()
     } catch {
       setError('Erro ao enviar avaliação. Tente novamente.')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -51,10 +47,7 @@ export function ReviewForm({ appointmentId, onSuccess }: ReviewFormProps) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label
-          htmlFor="review-comment"
-          className="text-sm font-medium text-brand-white/80"
-        >
+        <label htmlFor="review-comment" className="text-sm font-medium text-brand-white/80">
           Comentário (opcional)
         </label>
         <textarea
@@ -73,7 +66,7 @@ export function ReviewForm({ appointmentId, onSuccess }: ReviewFormProps) {
         </p>
       )}
 
-      <Button type="submit" isLoading={isSubmitting} className="w-full">
+      <Button type="submit" isLoading={createReview.isPending} className="w-full">
         Enviar avaliação
       </Button>
     </form>

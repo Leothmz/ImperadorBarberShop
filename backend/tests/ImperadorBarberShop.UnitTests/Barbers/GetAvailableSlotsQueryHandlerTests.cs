@@ -14,8 +14,16 @@ public class GetAvailableSlotsQueryHandlerTests
     private readonly GetAvailableSlotsQueryHandler _handler;
 
     private readonly Guid _barberId = Guid.NewGuid();
-    private readonly DateOnly _monday = new DateOnly(2026, 4, 6); // A Monday
+    private readonly DateOnly _monday = NextMonday(); // Always a future Monday, so slots never get filtered as past
     private readonly BarberAvailability _mondayAvailability;
+
+    private static DateOnly NextMonday()
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var daysUntilMonday = ((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7;
+        daysUntilMonday = daysUntilMonday == 0 ? 7 : daysUntilMonday;
+        return today.AddDays(daysUntilMonday);
+    }
 
     public GetAvailableSlotsQueryHandlerTests()
     {
@@ -90,7 +98,7 @@ public class GetAvailableSlotsQueryHandlerTests
 
         var mondayDate = _monday;
         var existingAppt = Appointment.Create(
-            Guid.NewGuid(), _barberId,
+            "João", "+5511999990000", _barberId,
             mondayDate.ToDateTime(new TimeOnly(9, 0)),
             30, null, new[] { Guid.NewGuid() });
 
@@ -163,7 +171,7 @@ public class GetAvailableSlotsQueryHandlerTests
             .Returns(new List<Service> { service });
 
         var existingAppt = Appointment.Create(
-            Guid.NewGuid(), _barberId,
+            "João", "+5511999990000", _barberId,
             _monday.ToDateTime(new TimeOnly(10, 0)),
             30, null, new[] { Guid.NewGuid() });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())

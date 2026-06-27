@@ -23,7 +23,7 @@ export function AppointmentCard({ appointment, actions }: AppointmentCardProps) 
             {appointment.barberName}
           </p>
           <p className="text-sm text-brand-white/50">
-            Cliente: {appointment.clientName}
+            Cliente: {appointment.clientName} · {appointment.clientPhone}
           </p>
         </div>
         <Badge status={appointment.status} />

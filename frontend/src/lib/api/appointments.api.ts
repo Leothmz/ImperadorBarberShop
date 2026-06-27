@@ -1,29 +1,36 @@
 import apiClient from './client'
-import type { Appointment, CreateAppointmentPayload } from '@/types/api.types'
+import type {
+  Appointment,
+  AppointmentManage,
+  CreateAppointmentPayload,
+  CreateAppointmentResult,
+  CreateReviewByTokenPayload,
+  CreateReviewByTokenResult,
+} from '@/types/api.types'
 
 export const appointmentsApi = {
   create(payload: CreateAppointmentPayload) {
-    return apiClient.post<Appointment>('/appointments', payload)
+    return apiClient.post<CreateAppointmentResult>('/appointments', payload)
   },
 
-  getMine() {
-    return apiClient.get<Appointment[]>('/appointments/mine')
+  getByToken(token: string) {
+    return apiClient.get<AppointmentManage>(`/appointments/manage/${token}`)
   },
 
-  cancel(id: string) {
-    return apiClient.delete<void>(`/appointments/${id}`)
+  cancelByToken(token: string) {
+    return apiClient.post<void>(`/appointments/manage/${token}/cancel`)
+  },
+
+  reviewByToken(token: string, payload: CreateReviewByTokenPayload) {
+    return apiClient.post<CreateReviewByTokenResult>(`/appointments/manage/${token}/review`, payload)
   },
 
   getBarberAppointments() {
     return apiClient.get<Appointment[]>('/appointments/barber')
   },
 
-  accept(id: string) {
-    return apiClient.patch<Appointment>(`/appointments/${id}/accept`)
-  },
-
-  reject(id: string) {
-    return apiClient.patch<Appointment>(`/appointments/${id}/reject`)
+  cancelByBarber(id: string) {
+    return apiClient.patch<void>(`/appointments/${id}/cancel-by-barber`)
   },
 
   complete(id: string) {

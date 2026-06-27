@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('Aceitação de agendamentos pelo barbeiro', () => {
+test.describe('Gestão de agendamentos pelo barbeiro', () => {
   test.beforeEach(async ({ page }) => {
     await page.context().clearCookies()
     await page.evaluate(() => localStorage.clear())
@@ -20,13 +20,9 @@ test.describe('Aceitação de agendamentos pelo barbeiro', () => {
     await passwordFields.first().fill('senha123')
     await passwordFields.last().fill('senha123')
 
-    // Verify availability section is visible
     await expect(page.getByRole('group', { name: /Disponibilidade/i })).toBeVisible()
-
-    // Submit
     await page.getByRole('button', { name: /Criar conta de barbeiro/i }).click()
 
-    // Should redirect to barber dashboard
     await expect(page).toHaveURL(/\/barber\/dashboard/, { timeout: 10000 })
   })
 
@@ -40,57 +36,23 @@ test.describe('Aceitação de agendamentos pelo barbeiro', () => {
     await expect(page.getByRole('heading', { name: /Minha Agenda/i })).toBeVisible()
   })
 
-  test('barbeiro aceita um agendamento pendente se existir', async ({ page }) => {
-    // Login as barber
+  test('barbeiro cancela um agendamento confirmado, se existir', async ({ page }) => {
     await page.goto('/login')
     await page.getByLabel('E-mail').fill('barber@test.com')
     await page.getByLabel('Senha').fill('senha123')
     await page.getByRole('button', { name: /Entrar/i }).click()
     await expect(page).toHaveURL(/\/barber\/dashboard/, { timeout: 10000 })
 
-    // Look for pending appointments
-    const acceptButton = page.getByRole('button', { name: /Aceitar/i }).first()
+    const cancelButton = page.getByRole('button', { name: /Cancelar/i }).first()
+    const hasAppointment = await cancelButton.isVisible({ timeout: 5000 }).catch(() => false)
 
-    // Graceful: if there is a pending appointment, accept it; otherwise skip
-    const hasPending = await acceptButton.isVisible({ timeout: 5000 }).catch(() => false)
-
-    if (hasPending) {
-      await acceptButton.click()
-      // The button should disappear or change after accepting
-      await expect(
-        page.getByRole('button', { name: /Aceitar/i }).first()
-      ).not.toBeVisible({ timeout: 5000 }).catch(() => {
-        // Optimistic update may have changed it — this is acceptable
-      })
-    } else {
-      // No pending appointments — test passes gracefully
-      test.info().annotations.push({
-        type: 'info',
-        description: 'Nenhum agendamento pendente encontrado. Teste ignorado.',
-      })
-    }
-  })
-
-  test('barbeiro recusa um agendamento pendente se existir', async ({ page }) => {
-    // Login as barber
-    await page.goto('/login')
-    await page.getByLabel('E-mail').fill('barber@test.com')
-    await page.getByLabel('Senha').fill('senha123')
-    await page.getByRole('button', { name: /Entrar/i }).click()
-    await expect(page).toHaveURL(/\/barber\/dashboard/, { timeout: 10000 })
-
-    // Look for reject button
-    const rejectButton = page.getByRole('button', { name: /Recusar/i }).first()
-    const hasRejectButton = await rejectButton.isVisible({ timeout: 5000 }).catch(() => false)
-
-    if (hasRejectButton) {
-      await rejectButton.click()
-      // Verify status changes
+    if (hasAppointment) {
+      await cancelButton.click()
       await page.waitForTimeout(1000)
     } else {
       test.info().annotations.push({
         type: 'info',
-        description: 'Nenhum agendamento para recusar. Teste ignorado.',
+        description: 'Nenhum agendamento confirmado encontrado. Teste ignorado.',
       })
     }
   })

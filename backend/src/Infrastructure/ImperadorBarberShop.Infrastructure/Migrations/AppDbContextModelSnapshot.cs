@@ -28,11 +28,23 @@ namespace ImperadorBarberShop.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AccessToken")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<Guid>("BarberId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ClientId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("ClientName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ClientPhone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -55,7 +67,8 @@ namespace ImperadorBarberShop.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("AccessToken")
+                        .IsUnique();
 
                     b.HasIndex("BarberId", "ScheduledAt")
                         .IsUnique();
@@ -162,9 +175,6 @@ namespace ImperadorBarberShop.Infrastructure.Migrations
                     b.Property<Guid>("BarberId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ClientId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Comment")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -216,16 +226,25 @@ namespace ImperadorBarberShop.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("a1000000-0000-0000-0000-000000000001"),
-                            Description = "Corte moderno e estiloso",
+                            Description = "Haircut",
                             DurationMinutes = 30,
                             IsActive = true,
-                            Name = "Corte de Cabelo",
+                            Name = "Corte",
                             Price = 35.00m
                         },
                         new
                         {
                             Id = new Guid("a1000000-0000-0000-0000-000000000002"),
-                            Description = "Aparar e modelar a barba",
+                            Description = "Fade",
+                            DurationMinutes = 40,
+                            IsActive = true,
+                            Name = "Fade / Disfarçado",
+                            Price = 45.00m
+                        },
+                        new
+                        {
+                            Id = new Guid("a1000000-0000-0000-0000-000000000003"),
+                            Description = "Beard",
                             DurationMinutes = 20,
                             IsActive = true,
                             Name = "Barba",
@@ -233,38 +252,29 @@ namespace ImperadorBarberShop.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("a1000000-0000-0000-0000-000000000003"),
-                            Description = "Corte de cabelo e barba completo",
-                            DurationMinutes = 50,
-                            IsActive = true,
-                            Name = "Corte + Barba",
-                            Price = 55.00m
-                        },
-                        new
-                        {
                             Id = new Guid("a1000000-0000-0000-0000-000000000004"),
-                            Description = "Corte para crianças até 12 anos",
-                            DurationMinutes = 25,
+                            Description = "Eyebrows",
+                            DurationMinutes = 15,
                             IsActive = true,
-                            Name = "Corte Infantil",
-                            Price = 28.00m
+                            Name = "Sobrancelha",
+                            Price = 15.00m
                         },
                         new
                         {
                             Id = new Guid("a1000000-0000-0000-0000-000000000005"),
-                            Description = "Modelagem de sobrancelha masculina",
-                            DurationMinutes = 15,
+                            Description = "Hydration",
+                            DurationMinutes = 20,
                             IsActive = true,
-                            Name = "Sobrancelha",
-                            Price = 18.00m
+                            Name = "Hidratação",
+                            Price = 30.00m
                         },
                         new
                         {
                             Id = new Guid("a1000000-0000-0000-0000-000000000006"),
-                            Description = "Barba completa com navalha quente",
+                            Description = "Pigmentation",
                             DurationMinutes = 30,
                             IsActive = true,
-                            Name = "Navalhada",
+                            Name = "Pigmentação",
                             Price = 40.00m
                         });
                 });
@@ -311,15 +321,7 @@ namespace ImperadorBarberShop.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("ImperadorBarberShop.Domain.Entities.User", "Client")
-                        .WithMany()
-                        .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Barber");
-
-                    b.Navigation("Client");
                 });
 
             modelBuilder.Entity("ImperadorBarberShop.Domain.Entities.AppointmentService", b =>

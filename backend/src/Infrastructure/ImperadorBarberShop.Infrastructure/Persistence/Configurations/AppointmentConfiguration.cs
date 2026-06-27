@@ -10,6 +10,9 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
     {
         builder.HasKey(a => a.Id);
 
+        builder.Property(a => a.ClientName).IsRequired().HasMaxLength(100);
+        builder.Property(a => a.ClientPhone).IsRequired().HasMaxLength(20);
+        builder.Property(a => a.AccessToken).IsRequired().HasMaxLength(64);
         builder.Property(a => a.ScheduledAt).IsRequired();
         builder.Property(a => a.TotalDurationMinutes).IsRequired();
         builder.Property(a => a.Status).IsRequired();
@@ -17,13 +20,8 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.Property(a => a.CreatedAt).IsRequired();
         builder.Property(a => a.UpdatedAt).IsRequired();
 
-        builder.HasIndex(a => new { a.BarberId, a.ScheduledAt })
-            .IsUnique();
-
-        builder.HasOne(a => a.Client)
-            .WithMany()
-            .HasForeignKey(a => a.ClientId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(a => new { a.BarberId, a.ScheduledAt }).IsUnique();
+        builder.HasIndex(a => a.AccessToken).IsUnique();
 
         builder.HasMany(a => a.AppointmentServices)
             .WithOne()

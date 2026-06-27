@@ -7,20 +7,10 @@ export interface StatusConfig {
 }
 
 export const statusConfig: Record<AppointmentStatus, StatusConfig> = {
-  Pending: {
-    label: 'Pendente',
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-400/20',
-  },
   Accepted: {
-    label: 'Aceito',
+    label: 'Confirmado',
     color: 'text-green-400',
     bgColor: 'bg-green-400/20',
-  },
-  Rejected: {
-    label: 'Recusado',
-    color: 'text-red-400',
-    bgColor: 'bg-red-400/20',
   },
   Cancelled: {
     label: 'Cancelado',

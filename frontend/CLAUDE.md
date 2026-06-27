@@ -24,19 +24,19 @@ Fonts: Montserrat (headings), Inter (body)
 ## Route Structure
 ```
 /                         Landing page (public)
-/login                    Login form
-/register/client          Client registration
+/agendar                  Public 4-step booking wizard (no account needed)
+/agendamento/[token]      Public appointment management (cancel / leave a review)
+/login                    Barber login
 /register/barber          Barber registration + availability picker
-/client/dashboard         Client appointments (Próximos / Histórico tabs)
-/client/book              4-step booking wizard
 /barber/dashboard         Barber appointment management
 ```
 
 ## Auth Strategy
+- Authentication exists for **barbers only** — clients never create an account.
 - **Access token**: in-memory only (React context via AuthProvider)
 - **Refresh token**: localStorage key `imperador_refresh_token`
 - **userId**: localStorage key `imperador_user_id`
-- **Route protection**: Next.js middleware reads `imperador_access_role` cookie
+- **Route protection**: Next.js middleware reads `imperador_access_role` cookie, protects `/barber/*` only
 - **Cookie**: set by AuthProvider after login, deleted on logout
 - **Auto-refresh**: Axios 401 interceptor calls `/auth/refresh`, retries original request once
 - **Session restore**: AuthProvider on mount reads localStorage, calls refresh endpoint

@@ -1,5 +1,4 @@
 import { Suspense } from 'react'
-import Link from 'next/link'
 import { LoginForm } from '@/components/auth/LoginForm'
 import type { Metadata } from 'next'
 import { LoginPageContent } from './LoginPageContent'
@@ -26,16 +25,6 @@ export default function LoginPage() {
 
         <div className="rounded-xl border border-brand-white/10 bg-brand-black-soft p-8">
           <LoginForm />
-
-          <p className="mt-6 text-center text-sm text-brand-white/50">
-            Não tem uma conta?{' '}
-            <Link
-              href="/register/client"
-              className="text-brand-gold hover:text-brand-gold-light transition-colors"
-            >
-              Cadastre-se
-            </Link>
-          </p>
         </div>
       </div>
     </div>

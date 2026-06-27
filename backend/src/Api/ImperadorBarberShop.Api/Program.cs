@@ -1,11 +1,13 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Threading.RateLimiting;
 using ImperadorBarberShop.Api.Middleware;
 using ImperadorBarberShop.Application;
 using ImperadorBarberShop.Infrastructure;
 using ImperadorBarberShop.Infrastructure.Persistence;
 using ImperadorBarberShop.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -74,7 +76,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("RequireClientRole", policy => policy.RequireClaim("role", "Client"));
     options.AddPolicy("RequireBarberRole", policy => policy.RequireClaim("role", "Barber"));
 });
 
@@ -86,6 +87,27 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(frontendUrl)
               .AllowAnyHeader()
               .AllowAnyMethod());
+});
+
+// Anti-spam: cap public appointment creation per client IP. A second,
+// phone-number-based check lives in CreateAppointmentCommandHandler since the
+// rate limiter's partition key cannot see the deserialized request body.
+builder.Services.AddRateLimiter(options =>
+{
+    // Default RejectionStatusCode for AddFixedWindowLimiter is 503 — override to the
+    // semantically correct 429 so clients (and tests) can distinguish "rate limited"
+    // from "server unavailable".
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("appointment-creation", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window = TimeSpan.FromHours(1),
+                PermitLimit = 5,
+                QueueLimit = 0
+            }));
 });
 
 var app = builder.Build();
@@ -106,6 +128,7 @@ app.UseHttpsRedirection();
 app.UseCors("FrontendPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 
 app.Run();

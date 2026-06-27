@@ -4,20 +4,13 @@ import type {
   Barber,
   Service,
   Appointment,
+  AppointmentManage,
   Review,
 } from '@/types/api.types'
 
 const BASE_URL = 'http://localhost:5000/api/v1'
 
 // ─── Mock data fixtures ──────────────────────────────────────────────────────
-
-export const mockLoginResult: LoginResult = {
-  accessToken: 'mock-access-token',
-  refreshToken: 'mock-refresh-token',
-  role: 'Client',
-  userId: 'user-1',
-  barberId: null,
-}
 
 export const mockBarberLoginResult: LoginResult = {
   accessToken: 'mock-barber-access-token',
@@ -93,14 +86,26 @@ export const mockServices: Service[] = [
   },
 ]
 
-export const mockAppointments: Appointment[] = [
+export const mockManagedAppointment: AppointmentManage = {
+  id: 'appt-1',
+  clientName: 'João Silva',
+  barberName: 'Carlos Andrade',
+  scheduledAt: new Date(Date.now() + 86400000 * 2).toISOString(),
+  totalDurationMinutes: 30,
+  status: 'Accepted',
+  services: [
+    { id: 'service-1', name: 'Corte Clássico', durationMinutes: 30, price: 45.0 },
+  ],
+}
+
+export const mockBarberAppointments: Appointment[] = [
   {
-    id: 'appt-1',
-    clientId: 'user-1',
-    clientName: 'João Silva',
+    id: 'appt-accepted-1',
+    clientName: 'Pedro Costa',
+    clientPhone: '+5511999990000',
     barberId: 'barber-1',
     barberName: 'Carlos Andrade',
-    scheduledAt: new Date(Date.now() + 86400000 * 2).toISOString(), // 2 days from now
+    scheduledAt: new Date(Date.now() + 86400000).toISOString(),
     totalDurationMinutes: 30,
     status: 'Accepted',
     notes: null,
@@ -108,47 +113,11 @@ export const mockAppointments: Appointment[] = [
     services: [
       { id: 'service-1', name: 'Corte Clássico', durationMinutes: 30, price: 45.0 },
     ],
-    hasReview: false,
   },
   {
-    id: 'appt-2',
-    clientId: 'user-1',
-    clientName: 'João Silva',
-    barberId: 'barber-2',
-    barberName: 'Rafael Lima',
-    scheduledAt: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 days ago
-    totalDurationMinutes: 50,
-    status: 'Completed',
-    notes: 'Deixar lateral bem curta',
-    createdAt: new Date().toISOString(),
-    services: [
-      { id: 'service-3', name: 'Corte + Barba', durationMinutes: 50, price: 70.0 },
-    ],
-    hasReview: false,
-  },
-]
-
-export const mockBarberAppointments: Appointment[] = [
-  {
-    id: 'appt-pending-1',
-    clientId: 'user-2',
-    clientName: 'Pedro Costa',
-    barberId: 'barber-1',
-    barberName: 'Carlos Andrade',
-    scheduledAt: new Date(Date.now() + 86400000).toISOString(),
-    totalDurationMinutes: 30,
-    status: 'Pending',
-    notes: null,
-    createdAt: new Date().toISOString(),
-    services: [
-      { id: 'service-1', name: 'Corte Clássico', durationMinutes: 30, price: 45.0 },
-    ],
-    hasReview: false,
-  },
-  {
-    id: 'appt-accepted-1',
-    clientId: 'user-3',
+    id: 'appt-accepted-2',
     clientName: 'Maria Santos',
+    clientPhone: '+5511999990001',
     barberId: 'barber-1',
     barberName: 'Carlos Andrade',
     scheduledAt: new Date(Date.now() + 86400000 * 3).toISOString(),
@@ -159,7 +128,6 @@ export const mockBarberAppointments: Appointment[] = [
     services: [
       { id: 'service-3', name: 'Corte + Barba', durationMinutes: 50, price: 70.0 },
     ],
-    hasReview: false,
   },
 ]
 
@@ -195,16 +163,8 @@ export const mockReviews: Review[] = [
 
 export const handlers = [
   // Auth
-  http.post(`${BASE_URL}/auth/login`, async ({ request }) => {
-    const body = await request.json() as { email: string; password: string }
-    if (body.email === 'barber@test.com') {
-      return HttpResponse.json(mockBarberLoginResult)
-    }
-    return HttpResponse.json(mockLoginResult)
-  }),
-
-  http.post(`${BASE_URL}/auth/register/client`, async () => {
-    return HttpResponse.json(mockLoginResult, { status: 201 })
+  http.post(`${BASE_URL}/auth/login`, async () => {
+    return HttpResponse.json(mockBarberLoginResult)
   }),
 
   http.post(`${BASE_URL}/auth/register/barber`, async () => {
@@ -212,7 +172,7 @@ export const handlers = [
   }),
 
   http.post(`${BASE_URL}/auth/refresh`, async () => {
-    return HttpResponse.json(mockLoginResult)
+    return HttpResponse.json(mockBarberLoginResult)
   }),
 
   // Services
@@ -246,66 +206,32 @@ export const handlers = [
 
   // Appointments
   http.post(`${BASE_URL}/appointments`, async () => {
-    const newAppointment: Appointment = {
-      id: `appt-new-${Date.now()}`,
-      clientId: 'user-1',
-      clientName: 'João Silva',
-      barberId: 'barber-1',
-      barberName: 'Carlos Andrade',
-      scheduledAt: new Date(Date.now() + 86400000).toISOString(),
-      totalDurationMinutes: 30,
-      status: 'Pending',
-      notes: null,
-      createdAt: new Date().toISOString(),
-      services: [
-        { id: 'service-1', name: 'Corte Clássico', durationMinutes: 30, price: 45.0 },
-      ],
-      hasReview: false,
-    }
-    return HttpResponse.json(newAppointment, { status: 201 })
+    return HttpResponse.json({ id: 'appt-new-1', accessToken: 'mock-access-token-1' }, { status: 201 })
   }),
 
-  http.get(`${BASE_URL}/appointments/mine`, () => {
-    return HttpResponse.json(mockAppointments)
+  http.get(`${BASE_URL}/appointments/manage/:token`, () => {
+    return HttpResponse.json(mockManagedAppointment)
   }),
 
-  http.delete(`${BASE_URL}/appointments/:id`, () => {
+  http.post(`${BASE_URL}/appointments/manage/:token/cancel`, () => {
     return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.post(`${BASE_URL}/appointments/manage/:token/review`, async () => {
+    return HttpResponse.json({ id: 'review-new-1' }, { status: 201 })
   }),
 
   http.get(`${BASE_URL}/appointments/barber`, () => {
     return HttpResponse.json(mockBarberAppointments)
   }),
 
-  http.patch(`${BASE_URL}/appointments/:id/accept`, ({ params }) => {
-    const appt = mockBarberAppointments.find((a) => a.id === params.id)
-    if (!appt) return new HttpResponse(null, { status: 404 })
-    return HttpResponse.json({ ...appt, status: 'Accepted' })
-  }),
-
-  http.patch(`${BASE_URL}/appointments/:id/reject`, ({ params }) => {
-    const appt = mockBarberAppointments.find((a) => a.id === params.id)
-    if (!appt) return new HttpResponse(null, { status: 404 })
-    return HttpResponse.json({ ...appt, status: 'Rejected' })
+  http.patch(`${BASE_URL}/appointments/:id/cancel-by-barber`, () => {
+    return new HttpResponse(null, { status: 204 })
   }),
 
   http.patch(`${BASE_URL}/appointments/:id/complete`, ({ params }) => {
     const appt = mockBarberAppointments.find((a) => a.id === params.id)
     if (!appt) return new HttpResponse(null, { status: 404 })
     return HttpResponse.json({ ...appt, status: 'Completed' })
-  }),
-
-  // Reviews
-  http.post(`${BASE_URL}/reviews`, async () => {
-    return HttpResponse.json(
-      {
-        id: `review-new-${Date.now()}`,
-        clientName: 'João Silva',
-        rating: 5,
-        comment: 'Ótimo serviço!',
-        createdAt: new Date().toISOString(),
-      },
-      { status: 201 }
-    )
   }),
 ]

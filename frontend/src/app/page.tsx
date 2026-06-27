@@ -47,14 +47,9 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row mt-2">
-            <Link href="/client/book">
+            <Link href="/agendar">
               <Button size="lg" className="min-w-[200px]">
                 Agendar agora
-              </Button>
-            </Link>
-            <Link href="/register/client">
-              <Button variant="secondary" size="lg" className="min-w-[200px]">
-                Criar conta
               </Button>
             </Link>
           </div>
@@ -125,11 +120,11 @@ export default function LandingPage() {
             Pronto para uma nova experiência?
           </h2>
           <p className="text-brand-white/60 mb-8 text-lg">
-            Cadastre-se gratuitamente e agende seu primeiro corte hoje mesmo.
+            Agende seu primeiro corte hoje mesmo, sem cadastro.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row justify-center">
-            <Link href="/register/client">
-              <Button size="lg">Criar conta de cliente</Button>
+            <Link href="/agendar">
+              <Button size="lg">Agendar agora</Button>
             </Link>
             <Link href="/register/barber">
               <Button variant="secondary" size="lg">

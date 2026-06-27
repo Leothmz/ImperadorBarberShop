@@ -18,10 +18,14 @@ public class MappingProfile : Profile
         CreateMap<BarberAvailability, BarberAvailabilityDto>();
 
         CreateMap<Appointment, AppointmentDto>()
-            .ForMember(d => d.ClientName, o => o.MapFrom(s => s.Client.Name))
             .ForMember(d => d.BarberName, o => o.MapFrom(s => s.Barber.User.Name))
             .ForMember(d => d.Services, o => o.MapFrom(s => s.AppointmentServices.Select(a => a.Service)));
 
-        CreateMap<Review, ReviewDto>();
+        CreateMap<Appointment, AppointmentManageDto>()
+            .ForMember(d => d.BarberName, o => o.MapFrom(s => s.Barber.User.Name))
+            .ForMember(d => d.Services, o => o.MapFrom(s => s.AppointmentServices.Select(a => a.Service)));
+
+        CreateMap<Review, ReviewDto>()
+            .ForMember(d => d.ClientName, o => o.MapFrom(s => s.Appointment.ClientName));
     }
 }
