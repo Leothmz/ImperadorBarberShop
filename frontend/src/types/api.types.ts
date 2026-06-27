@@ -1,5 +1,5 @@
-export type UserRole = 'Client' | 'Barber'
-export type AppointmentStatus = 'Pending' | 'Accepted' | 'Rejected' | 'Cancelled' | 'Completed'
+export type UserRole = 'Barber'
+export type AppointmentStatus = 'Accepted' | 'Cancelled' | 'Completed'
 
 export interface Service {
   id: string
@@ -43,8 +43,8 @@ export interface ServiceRef {
 
 export interface Appointment {
   id: string
-  clientId: string
   clientName: string
+  clientPhone: string
   barberId: string
   barberName: string
   scheduledAt: string // ISO datetime
@@ -53,9 +53,16 @@ export interface Appointment {
   notes: string | null
   createdAt: string
   services: ServiceRef[]
-  // Indicates whether the client already submitted a review for this appointment.
-  // Used to suppress the "Avaliar" button and prevent duplicate-review errors (422).
-  hasReview: boolean
+}
+
+export interface AppointmentManage {
+  id: string
+  clientName: string
+  barberName: string
+  scheduledAt: string
+  totalDurationMinutes: number
+  status: AppointmentStatus
+  services: ServiceRef[]
 }
 
 export interface Review {
@@ -80,12 +87,6 @@ export interface LoginPayload {
   password: string
 }
 
-export interface RegisterClientPayload {
-  name: string
-  email: string
-  password: string
-}
-
 export interface RegisterBarberPayload {
   name: string
   email: string
@@ -94,14 +95,20 @@ export interface RegisterBarberPayload {
 }
 
 export interface CreateAppointmentPayload {
+  clientName: string
+  clientPhone: string
   barberId: string
   scheduledAt: string
   serviceIds: string[]
   notes?: string
 }
 
-export interface CreateReviewPayload {
-  appointmentId: string
+export interface CreateAppointmentResult {
+  id: string
+  accessToken: string
+}
+
+export interface CreateReviewByTokenPayload {
   rating: number
   comment?: string
 }

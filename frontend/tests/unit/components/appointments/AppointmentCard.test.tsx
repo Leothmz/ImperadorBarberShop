@@ -58,7 +58,7 @@ describe('AppointmentCard', () => {
 
   it('displays the status badge', () => {
     render(<AppointmentCard appointment={mockAppointment} />)
-    expect(screen.getByText('Aceito')).toBeInTheDocument()
+    expect(screen.getByText('Confirmado')).toBeInTheDocument()
   })
 
   it('renders action buttons when actions prop is provided', () => {
