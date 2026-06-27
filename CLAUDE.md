@@ -1,6 +1,6 @@
 # O Imperador Barber Shop
 
-Barbershop scheduling platform. Clients book appointments; barbers manage their agenda, accept/reject bookings.
+Barbershop scheduling platform. Clients book appointments anonymously (no account); barbers manage their agenda.
 
 ## Monorepo Structure
 
@@ -48,30 +48,34 @@ Fonts: **Montserrat** (headings), **Inter** (body).
 
 | Entity | Key Fields |
 |--------|-----------|
-| `User` | Id (Guid), Name, Email, PasswordHash, Role (Client\|Barber), CreatedAt |
+| `User` | Id (Guid), Name, Email, PasswordHash, Role (Barber), CreatedAt — clients are not `User`s; they identify themselves per-booking via name+phone |
 | `Barber` | Id (Guid), UserId → User, Availability[], AverageRating (decimal) |
 | `BarberAvailability` | Id, BarberId, DayOfWeek (0=Sun…6=Sat), StartTime (TimeOnly), EndTime (TimeOnly) |
 | `Service` | Id, Name, Description, DurationMinutes (int), Price (decimal), IsActive |
-| `Appointment` | Id, ClientId → User, BarberId → Barber, ScheduledAt (DateTime), TotalDurationMinutes, Status, Notes? |
+| `Appointment` | Id, ClientName, ClientPhone, AccessToken (unique, opaque — powers the public manage/cancel/review link), BarberId → Barber, ScheduledAt (DateTime), TotalDurationMinutes, Status, Notes? |
 | `AppointmentService` | AppointmentId, ServiceId (join table, M:N) |
-| `Review` | Id, AppointmentId, ClientId, BarberId, Rating (1–5 int), Comment (string?), CreatedAt |
+| `Review` | Id, AppointmentId, BarberId, Rating (1–5 int), Comment (string?), CreatedAt |
 | `RefreshToken` | Id, UserId, TokenHash (BCrypt hashed), ExpiresAt, IsRevoked |
 
 ### Enums
 
 ```csharp
-public enum UserRole        { Client = 0, Barber = 1 }
-public enum AppointmentStatus { Pending = 0, Accepted = 1, Rejected = 2, Cancelled = 3, Completed = 4 }
+public enum UserRole          { Barber = 1 }
+public enum AppointmentStatus { Accepted = 0, Cancelled = 1, Completed = 2 }
 ```
 
 ### Business Rules
 
 - **Total duration** of an appointment = **sum** of `DurationMinutes` of all selected services.
-- A client can only submit a `Review` for an appointment where `Status == Completed`.
-- A client can cancel an appointment if it is `Pending` or `Accepted` AND `ScheduledAt > UtcNow + 2 hours`.
+- Clients book **without an account** — name + WhatsApp phone + barber + service(s) + slot only. Appointments are created already `Accepted` (no manual barber approval step).
+- Each appointment gets a unique `AccessToken` at creation, used for the public "manage appointment" link (cancel, and later — once `Completed` — leave a review). This is the only way a client identifies their own appointment.
+- A client can submit a `Review` (via the access-token link) for an appointment where `Status == Completed`.
+- A client can cancel an appointment (via the access-token link) if it is `Accepted` AND `ScheduledAt > UtcNow + 2 hours`.
+- A barber can cancel a confirmed appointment directly (e.g. emergencies) via `PATCH /appointments/{id}/cancel-by-barber`.
 - A barber cannot have two `Accepted` appointments that overlap in time.
 - `BarberAvailability` constraint: unique per `(BarberId, DayOfWeek)`; `StartTime < EndTime`.
 - Unique DB constraint on `(BarberId, ScheduledAt)` prevents double-booking race conditions.
+- Anti-spam on appointment creation: rate-limited per IP (5/hour, HTTP layer) and per `ClientPhone` (3/hour, application layer).
 
 ---
 
@@ -91,16 +95,15 @@ public enum AppointmentStatus { Pending = 0, Accepted = 1, Rejected = 2, Cancell
 ## API Contract
 
 **Base URL (local):** `http://localhost:5000/api/v1`  
-**Auth:** `Authorization: Bearer <access_token>` (JWT)  
-**Roles in JWT claim `role`:** `Client` | `Barber`
+**Auth:** `Authorization: Bearer <access_token>` (JWT, barber only)  
+**Roles in JWT claim `role`:** `Barber` only
 
 ### Auth (public)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/auth/register/client` | Register new client |
 | POST | `/auth/register/barber` | Register new barber (payload includes availability) |
-| POST | `/auth/login` | Login → returns `{ accessToken, refreshToken, role, userId }` |
+| POST | `/auth/login` | Login (barber only) → returns `{ accessToken, refreshToken, role, userId, barberId }` |
 | POST | `/auth/refresh` | Exchange refresh token → new token pair |
 
 ### Services (public)
@@ -116,27 +119,26 @@ public enum AppointmentStatus { Pending = 0, Accepted = 1, Rejected = 2, Cancell
 | GET | `/barbers` | Public | List all barbers (id, name, avatarUrl, averageRating) |
 | GET | `/barbers/{id}` | Public | Barber profile + availability + averageRating |
 | GET | `/barbers/{id}/reviews` | Public | Paginated reviews for a barber |
-| GET | `/barbers/{id}/slots?date=YYYY-MM-DD&serviceIds=id1,id2` | Client | Available booking slots |
+| GET | `/barbers/{id}/slots?date=YYYY-MM-DD&serviceIds=id1,id2` | Public | Available booking slots |
 | PUT | `/barbers/me/availability` | Barber | Update own availability windows |
 
 ### Appointments
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/appointments` | Client | Create appointment (triggers email to barber) |
-| GET | `/appointments/mine` | Client | Client's own appointments |
-| DELETE | `/appointments/{id}` | Client | Cancel (>2h before, Pending or Accepted only) |
+| POST | `/appointments` | Public (rate-limited) | Create appointment — `clientName, clientPhone, barberId, scheduledAt, serviceIds, notes?`. Auto-confirmed (`Accepted`). Returns `{ id, accessToken }`. Triggers email to barber. |
+| GET | `/appointments/manage/{token}` | Public | Appointment status/details for the public manage page |
+| POST | `/appointments/manage/{token}/cancel` | Public | Client cancels via their access token (>2h before, `Accepted` only) |
+| POST | `/appointments/manage/{token}/review` | Public | Client submits a review via their access token (only if `Completed`) |
 | GET | `/appointments/barber` | Barber | All appointments for logged-in barber |
-| PATCH | `/appointments/{id}/accept` | Barber | Accept → triggers email to client |
-| PATCH | `/appointments/{id}/reject` | Barber | Reject → triggers email to client |
-| PATCH | `/appointments/{id}/complete` | Barber | Mark as Completed → unlocks client review |
+| PATCH | `/appointments/{id}/cancel-by-barber` | Barber | Barber-initiated cancel (e.g. emergencies) |
+| PATCH | `/appointments/{id}/complete` | Barber | Mark as Completed → unlocks the client's review link |
 
 ### Reviews
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/reviews` | Client | Submit review (only for Completed appointments) |
-| GET | `/barbers/{id}/reviews` | Public | List reviews |
+| GET | `/barbers/{id}/reviews` | Public | List reviews — submission happens via `/appointments/manage/{token}/review` above |
 
 ---
 
@@ -145,8 +147,6 @@ public enum AppointmentStatus { Pending = 0, Accepted = 1, Rejected = 2, Cancell
 | Event | Recipients | Subject |
 |-------|-----------|---------|
 | Appointment created | Barber | "Novo agendamento de {clientName}" |
-| Appointment accepted | Client | "Seu agendamento foi aceito!" |
-| Appointment rejected | Client | "Seu agendamento foi recusado" |
 
 ---
 
