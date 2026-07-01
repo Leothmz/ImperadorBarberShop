@@ -1,6 +1,6 @@
 namespace ImperadorBarberShop.Application.DTOs;
 
-public record BarberDto
+public record AdminBarberDto
 {
     public Guid Id { get; init; }
     public Guid UserId { get; init; }
@@ -10,11 +10,4 @@ public record BarberDto
     public decimal AverageRating { get; init; }
     public bool IsActive { get; init; }
     public List<BarberAvailabilityDto> Availability { get; init; } = [];
-}
-
-public record BarberAvailabilityDto
-{
-    public DayOfWeek DayOfWeek { get; init; }
-    public TimeOnly StartTime { get; init; }
-    public TimeOnly EndTime { get; init; }
 }

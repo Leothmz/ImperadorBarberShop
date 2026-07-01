@@ -111,9 +111,12 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
         using var scope = Services.CreateScope();
         var jwtService = scope.ServiceProvider.GetRequiredService<ImperadorBarberShop.Application.Interfaces.IJwtService>();
 
-        var user = role == "Barber"
-            ? ImperadorBarberShop.Domain.Entities.User.CreateBarber("Test Barber", $"barber-{userId}@test.com", "hash")
-            : ImperadorBarberShop.Domain.Entities.User.CreateClient("Test Client", $"client-{userId}@test.com", "hash");
+        var user = role switch
+        {
+            "Barber" => ImperadorBarberShop.Domain.Entities.User.CreateBarber("Test Barber", $"barber-{userId}@test.com", "hash"),
+            "Admin" => ImperadorBarberShop.Domain.Entities.User.CreateAdmin("Test Admin", $"admin-{userId}@test.com", "hash"),
+            _ => ImperadorBarberShop.Domain.Entities.User.CreateClient("Test Client", $"client-{userId}@test.com", "hash")
+        };
 
         var token = jwtService.GenerateAccessToken(user, barberId);
         var client = CreateClient();
