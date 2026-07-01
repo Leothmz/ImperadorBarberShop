@@ -36,7 +36,8 @@ public class ServicesController : ControllerBase
         string? photoUrl = null;
         if (request.Photo is not null)
         {
-            ValidateImage(request.Photo);
+            var validationError = GetImageValidationError(request.Photo);
+            if (validationError is not null) return BadRequest(new { error = validationError });
             photoUrl = await _imageService.UploadAsync(
                 request.Photo.OpenReadStream(), request.Photo.FileName, request.Photo.ContentType, ct);
         }
@@ -52,7 +53,8 @@ public class ServicesController : ControllerBase
         string? photoUrl = null;
         if (request.Photo is not null)
         {
-            ValidateImage(request.Photo);
+            var validationError = GetImageValidationError(request.Photo);
+            if (validationError is not null) return BadRequest(new { error = validationError });
             photoUrl = await _imageService.UploadAsync(
                 request.Photo.OpenReadStream(), request.Photo.FileName, request.Photo.ContentType, ct);
         }
@@ -93,10 +95,11 @@ public class ServicesController : ControllerBase
         return NoContent();
     }
 
-    private static void ValidateImage(IFormFile file)
+    private static string? GetImageValidationError(IFormFile file)
     {
-        if (file.Length > 5 * 1024 * 1024) throw new ArgumentException("Image must be smaller than 5 MB.");
-        if (file.ContentType is not ("image/jpeg" or "image/png")) throw new ArgumentException("Only JPEG and PNG images are accepted.");
+        if (file.Length > 5 * 1024 * 1024) return "Image must be smaller than 5 MB.";
+        if (file.ContentType is not ("image/jpeg" or "image/png")) return "Only JPEG and PNG images are accepted.";
+        return null;
     }
 }
 
