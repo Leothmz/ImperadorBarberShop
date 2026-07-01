@@ -14,6 +14,9 @@ public class BarberConfiguration : IEntityTypeConfiguration<Barber>
             .HasColumnType("decimal(3,2)")
             .IsRequired();
 
+        builder.Property(b => b.IsActive).IsRequired().HasDefaultValue(true);
+        builder.Property(b => b.PhotoUrl).HasMaxLength(500);
+
         builder.HasMany(b => b.Availability)
             .WithOne()
             .HasForeignKey(a => a.BarberId)

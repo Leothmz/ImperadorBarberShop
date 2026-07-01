@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IServiceAddonRepository, ServiceAddonRepository>();
 
         // Services
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));

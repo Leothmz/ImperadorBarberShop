@@ -17,6 +17,7 @@ public class AppDbContext : DbContext, IUnitOfWork
     public DbSet<AppointmentService> AppointmentServices => Set<AppointmentService>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<ServiceAddon> ServiceAddons => Set<ServiceAddon>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

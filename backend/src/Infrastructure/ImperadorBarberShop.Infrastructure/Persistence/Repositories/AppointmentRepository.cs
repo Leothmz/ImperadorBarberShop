@@ -60,4 +60,15 @@ public class AppointmentRepository : IAppointmentRepository
         _context.Appointments.Update(appointment);
         return Task.CompletedTask;
     }
+
+    public async Task<List<Appointment>> GetCompletedByDateRangeAsync(
+        DateTime from, DateTime to, CancellationToken cancellationToken = default)
+        => await _context.Appointments
+            .Include(a => a.Barber).ThenInclude(b => b.User)
+            .Include(a => a.AppointmentServices).ThenInclude(s => s.Service)
+            .Where(a => a.Status == AppointmentStatus.Completed
+                && a.ScheduledAt >= from
+                && a.ScheduledAt <= to)
+            .OrderBy(a => a.ScheduledAt)
+            .ToListAsync(cancellationToken);
 }

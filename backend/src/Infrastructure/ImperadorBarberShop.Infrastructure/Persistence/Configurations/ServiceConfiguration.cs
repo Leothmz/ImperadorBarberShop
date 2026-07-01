@@ -34,6 +34,8 @@ public class ServiceConfiguration : IEntityTypeConfiguration<Service>
 
         builder.Property(s => s.IsActive).IsRequired();
 
+        builder.Property(s => s.PhotoUrl).HasMaxLength(500);
+
         // Seed data: 6 services — must match the catalog defined in root CLAUDE.md
         builder.HasData(
             Service.CreateWithId(CorteId,       "Corte",             "Haircut",       30, 35.00m),
