@@ -79,6 +79,11 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
                 options.UseNpgsql(_postgres.GetConnectionString()));
 
             // Replace real Cloudinary with a no-op fake for integration tests
+            var imageDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IImageService));
+            if (imageDescriptor is not null)
+                services.Remove(imageDescriptor);
+
             services.AddScoped<IImageService, FakeImageService>();
 
             // Apply migrations
