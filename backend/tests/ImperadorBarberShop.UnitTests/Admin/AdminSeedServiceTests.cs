@@ -62,4 +62,15 @@ public class AdminSeedServiceTests
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*ADMIN__EMAIL*");
     }
+
+    [Fact]
+    public async Task SeedAsync_MissingPassword_Throws()
+    {
+        _userRepo.GetAdminAsync(Arg.Any<CancellationToken>()).Returns((User?)null);
+
+        var act = () => BuildService(password: null).SeedAsync(CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*ADMIN__PASSWORD*");
+    }
 }
