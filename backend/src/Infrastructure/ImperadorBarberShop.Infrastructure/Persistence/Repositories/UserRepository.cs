@@ -1,4 +1,5 @@
 using ImperadorBarberShop.Domain.Entities;
+using ImperadorBarberShop.Domain.Enums;
 using ImperadorBarberShop.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,10 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         => await _context.Users
             .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+
+    public async Task<User?> GetAdminAsync(CancellationToken cancellationToken = default)
+        => await _context.Users
+            .FirstOrDefaultAsync(u => u.Role == UserRole.Admin, cancellationToken);
 
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
         => await _context.Users.AddAsync(user, cancellationToken);

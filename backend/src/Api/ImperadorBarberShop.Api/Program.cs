@@ -5,6 +5,7 @@ using ImperadorBarberShop.Api.Middleware;
 using ImperadorBarberShop.Application;
 using ImperadorBarberShop.Infrastructure;
 using ImperadorBarberShop.Infrastructure.Persistence;
+using ImperadorBarberShop.Infrastructure.Services;
 using ImperadorBarberShop.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
@@ -77,6 +78,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireBarberRole", policy => policy.RequireClaim("role", "Barber"));
+    options.AddPolicy("RequireAdminRole", policy => policy.RequireClaim("role", "Admin"));
 });
 
 // CORS — allow only configured frontend URL
@@ -112,13 +114,17 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
-// Auto-migrate database on startup in Development
-if (app.Environment.IsDevelopment())
+// Auto-migrate and seed on startup (all environments)
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
+    var seeder = scope.ServiceProvider.GetRequiredService<AdminSeedService>();
+    await seeder.SeedAsync();
+}
 
+if (app.Environment.IsDevelopment())
+{
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "O Imperador API v1"));
 }

@@ -1,5 +1,7 @@
+using ImperadorBarberShop.Application.Commands.Auth;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Infrastructure.Persistence;
+using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -85,6 +87,17 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.Migrate();
         });
+    }
+
+    /// <summary>
+    /// Seeds a barber directly via MediatR (bypasses HTTP — use in tests that need a barber
+    /// but the POST /auth/register/barber endpoint no longer exists).
+    /// </summary>
+    public async Task SeedBarberAsync(string name, string email, string password = "Password123!")
+    {
+        using var scope = Services.CreateScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        await mediator.Send(new RegisterBarberCommand(name, email, password, []));
     }
 
     public HttpClient CreateAuthenticatedClient(string role, Guid userId, Guid? barberId = null)

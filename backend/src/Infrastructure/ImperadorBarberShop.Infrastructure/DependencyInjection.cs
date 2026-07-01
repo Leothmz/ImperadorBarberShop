@@ -41,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddScoped<IImageService, CloudinaryImageService>();
+        services.AddScoped<AdminSeedService>();
 
         return services;
     }
