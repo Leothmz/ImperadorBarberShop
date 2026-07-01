@@ -1,3 +1,4 @@
+using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -41,7 +42,9 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
         ["Email__Username"] = "test",
         ["Email__Password"] = "test",
         ["Email__FromAddress"] = "noreply@test.com",
-        ["Email__FromName"] = "Test"
+        ["Email__FromName"] = "Test",
+        ["Admin__Email"] = "admin@test.com",
+        ["Admin__Password"] = "AdminTest123!"
     };
 
     public async Task InitializeAsync()
@@ -73,6 +76,9 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(_postgres.GetConnectionString()));
 
+            // Replace real Cloudinary with a no-op fake for integration tests
+            services.AddScoped<IImageService, FakeImageService>();
+
             // Apply migrations
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
@@ -97,4 +103,10 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         return client;
     }
+}
+
+public class FakeImageService : IImageService
+{
+    public Task<string> UploadAsync(Stream stream, string fileName, string contentType, CancellationToken ct = default)
+        => Task.FromResult($"https://fake-cloudinary.com/{Guid.NewGuid()}/{fileName}");
 }

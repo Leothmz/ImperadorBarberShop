@@ -20,7 +20,7 @@ public class GetBarbersQueryHandler : IRequestHandler<GetBarbersQuery, List<Barb
 
     public async Task<List<BarberDto>> Handle(GetBarbersQuery request, CancellationToken cancellationToken)
     {
-        var barbers = await _barberRepository.GetAllAsync(cancellationToken);
+        var barbers = await _barberRepository.GetAllActiveAsync(cancellationToken);
         return _mapper.Map<List<BarberDto>>(barbers);
     }
 }
