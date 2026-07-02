@@ -89,13 +89,15 @@ describe('WhatsAppPage — Notificações tab', () => {
     expect(screen.getByPlaceholderText('+5511999990000')).toBeInTheDocument()
   })
 
-  it('renders email and whatsapp channel checkboxes', async () => {
+  it('renders channel radio group with three options', async () => {
     render(<WhatsAppPage />, { wrapper: createWrapper() })
     const tab = screen.getByRole('button', { name: 'Notificações' })
     tab.click()
-    expect(await screen.findByText('E-mail')).toBeInTheDocument()
-    // Two checkboxes: one for email, one for whatsapp
-    const checkboxes = await screen.findAllByRole('checkbox')
-    expect(checkboxes).toHaveLength(2)
+    expect(await screen.findByText('Apenas Email')).toBeInTheDocument()
+    expect(screen.getByText('Apenas WhatsApp')).toBeInTheDocument()
+    expect(screen.getByText('Email e WhatsApp')).toBeInTheDocument()
+    // Three radio buttons: email, whatsapp, email+whatsapp
+    const radios = await screen.findAllByRole('radio')
+    expect(radios).toHaveLength(3)
   })
 })

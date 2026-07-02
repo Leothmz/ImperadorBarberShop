@@ -10,11 +10,12 @@ export function useWhatsAppStatus(refetchInterval?: number) {
   })
 }
 
-export function useWhatsAppQr() {
+export function useWhatsAppQr(enabled = true) {
   return useQuery({
     queryKey: ['admin', 'whatsapp', 'qr'],
     queryFn: whatsappApi.getQr,
-    refetchInterval: 5_000,
+    refetchInterval: enabled ? 5_000 : false,
+    enabled,
   })
 }
 
