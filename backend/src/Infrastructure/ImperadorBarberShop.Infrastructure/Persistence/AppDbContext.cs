@@ -18,6 +18,7 @@ public class AppDbContext : DbContext, IUnitOfWork
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<ServiceAddon> ServiceAddons => Set<ServiceAddon>();
+    public DbSet<AppSettings> AppSettings => Set<AppSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

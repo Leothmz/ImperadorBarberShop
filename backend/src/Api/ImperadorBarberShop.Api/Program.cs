@@ -5,6 +5,7 @@ using ImperadorBarberShop.Api.Middleware;
 using ImperadorBarberShop.Application;
 using ImperadorBarberShop.Infrastructure;
 using ImperadorBarberShop.Infrastructure.Persistence;
+using ImperadorBarberShop.Domain.Interfaces;
 using ImperadorBarberShop.Infrastructure.Services;
 using ImperadorBarberShop.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -121,6 +122,35 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
     var seeder = scope.ServiceProvider.GetRequiredService<AdminSeedService>();
     await seeder.SeedAsync();
+}
+
+// Bootstrap AppSettings defaults and Evolution API config from env vars on first run
+using (var settingsScope = app.Services.CreateScope())
+{
+    var settingsRepo = settingsScope.ServiceProvider.GetRequiredService<IAppSettingsRepository>();
+    var existing = await settingsRepo.GetAllAsync();
+
+    var defaults = new Dictionary<string, string>
+    {
+        ["notifications:channels"] = "email,whatsapp",
+        ["notifications:reminderMinutesBefore"] = "60",
+    };
+    foreach (var (key, val) in defaults)
+        if (!existing.ContainsKey(key))
+            await settingsRepo.SetAsync(key, val);
+
+    var envMappings = new Dictionary<string, string>
+    {
+        ["whatsapp:evolutionApiUrl"]  = "WHATSAPP__EVOLUTIONAPIURL",
+        ["whatsapp:evolutionApiKey"]  = "WHATSAPP__EVOLUTIONAPIKEY",
+        ["whatsapp:instanceName"]     = "WHATSAPP__INSTANCENAME",
+    };
+    foreach (var (key, envVar) in envMappings)
+    {
+        var envVal = Environment.GetEnvironmentVariable(envVar);
+        if (!string.IsNullOrEmpty(envVal) && !existing.ContainsKey(key))
+            await settingsRepo.SetAsync(key, envVal);
+    }
 }
 
 if (app.Environment.IsDevelopment())

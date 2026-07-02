@@ -31,6 +31,8 @@ public static class DependencyInjection
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IServiceAddonRepository, ServiceAddonRepository>();
+        services.AddScoped<IAppSettingsRepository, AppSettingsRepository>();
+        services.AddHttpClient();
 
         // Services
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));

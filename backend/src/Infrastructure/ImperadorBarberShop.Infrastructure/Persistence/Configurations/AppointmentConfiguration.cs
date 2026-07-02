@@ -19,6 +19,7 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.Property(a => a.Notes).HasMaxLength(500);
         builder.Property(a => a.CreatedAt).IsRequired();
         builder.Property(a => a.UpdatedAt).IsRequired();
+        builder.Property(a => a.ReminderSentAt);
 
         builder.HasIndex(a => new { a.BarberId, a.ScheduledAt }).IsUnique();
         builder.HasIndex(a => a.AccessToken).IsUnique();
