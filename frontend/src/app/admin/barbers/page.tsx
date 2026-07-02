@@ -11,6 +11,7 @@ import {
   useDeactivateBarber,
   useActivateBarber,
 } from '@/hooks/useAdminBarbers'
+import AdminBlocksSection from './AdminBlocksSection'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -342,6 +343,11 @@ export default function BarbersPage() {
                       Ativar
                     </Button>
                   )}
+                </td>
+              </tr>
+              <tr key={`${barber.id}-blocks`} className="border-b border-brand-white/5">
+                <td colSpan={5} className="px-4 pb-4">
+                  <AdminBlocksSection barberId={barber.id} />
                 </td>
               </tr>
             ))}
