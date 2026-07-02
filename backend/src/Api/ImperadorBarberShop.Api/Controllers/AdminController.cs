@@ -1,9 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using ImperadorBarberShop.Application.Commands.Admin;
 using ImperadorBarberShop.Application.Commands.Auth;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Application.Queries.Admin;
+using ImperadorBarberShop.Application.Queries.Financial;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -72,6 +74,30 @@ public class AdminController : ControllerBase
         var userId = Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         await _mediator.Send(new ChangeAdminPasswordCommand(userId, request.CurrentPassword, request.NewPassword), ct);
         return NoContent();
+    }
+
+    [HttpGet("financial/summary")]
+    public async Task<IActionResult> GetSummary(
+        [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetFinancialSummaryQuery(from, to), ct));
+
+    [HttpGet("financial/by-barber")]
+    public async Task<IActionResult> GetByBarber(
+        [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetFinancialByBarberQuery(from, to), ct));
+
+    [HttpGet("financial/by-service")]
+    public async Task<IActionResult> GetByService(
+        [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetFinancialByServiceQuery(from, to), ct));
+
+    [HttpGet("financial/export")]
+    public async Task<IActionResult> ExportCsv(
+        [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken ct)
+    {
+        var csv = await _mediator.Send(new ExportFinancialCsvQuery(from, to), ct);
+        var bytes = Encoding.UTF8.GetBytes(csv);
+        return File(bytes, "text/csv", $"relatorio-{from:yyyy-MM-dd}-{to:yyyy-MM-dd}.csv");
     }
 
     private static string? GetImageValidationError(IFormFile file)
