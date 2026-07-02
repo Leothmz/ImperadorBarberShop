@@ -15,7 +15,14 @@ public class GetWhatsAppQrQueryHandler : IRequestHandler<GetWhatsAppQrQuery, Wha
 
     public async Task<WhatsAppQrDto> Handle(GetWhatsAppQrQuery request, CancellationToken ct)
     {
-        var qr = await _whatsApp.GetQrCodeAsync(ct);
-        return new WhatsAppQrDto(qr.QrCode);
+        try
+        {
+            var qr = await _whatsApp.GetQrCodeAsync(ct);
+            return new WhatsAppQrDto(qr.QrCode);
+        }
+        catch
+        {
+            return new WhatsAppQrDto(string.Empty);
+        }
     }
 }

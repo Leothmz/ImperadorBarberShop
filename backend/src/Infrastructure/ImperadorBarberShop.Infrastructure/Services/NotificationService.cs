@@ -155,7 +155,7 @@ public class NotificationService : INotificationService
 
         if (channels.Contains("whatsapp"))
         {
-            var msg = $"Olá {appointment.ClientName}! Lembrete: você tem um agendamento amanhã às {scheduledAt}. " +
+            var msg = $"Olá {appointment.ClientName}! Lembrete: você tem um agendamento às {scheduledAt}. " +
                       $"Serviços: {serviceNames}";
             try
             {

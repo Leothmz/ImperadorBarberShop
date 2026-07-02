@@ -53,7 +53,7 @@ public class ReminderBackgroundServiceTests
 
         var appt = BuildAcceptedAppointment();
         _appointments
-            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(new List<Appointment> { appt });
 
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
@@ -75,7 +75,7 @@ public class ReminderBackgroundServiceTests
             .Returns("60");
 
         _appointments
-            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(new List<Appointment>());
 
         // Act
@@ -94,10 +94,14 @@ public class ReminderBackgroundServiceTests
             .Returns((string?)null);
 
         var now = DateTime.UtcNow;
-        DateTime? capturedWindowEnd = null;
+        DateTime? capturedWindowStart = null;
+        DateTime? capturedWindowEnd   = null;
 
         _appointments
-            .GetPendingRemindersAsync(Arg.Do<DateTime>(d => capturedWindowEnd = d), Arg.Any<CancellationToken>())
+            .GetPendingRemindersAsync(
+                Arg.Do<DateTime>(d => capturedWindowStart = d),
+                Arg.Do<DateTime>(d => capturedWindowEnd   = d),
+                Arg.Any<CancellationToken>())
             .Returns(new List<Appointment>());
 
         // Act
@@ -106,6 +110,10 @@ public class ReminderBackgroundServiceTests
         // Assert: window end should be approximately UtcNow + 60 minutes
         capturedWindowEnd.Should().NotBeNull();
         capturedWindowEnd!.Value.Should().BeCloseTo(now.AddMinutes(60), TimeSpan.FromSeconds(5));
+
+        // Assert: window start should be approximately windowEnd - 10 minutes
+        capturedWindowStart.Should().NotBeNull();
+        capturedWindowStart!.Value.Should().BeCloseTo(now.AddMinutes(50), TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -119,7 +127,7 @@ public class ReminderBackgroundServiceTests
         var appt2 = BuildAcceptedAppointment();
 
         _appointments
-            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(new List<Appointment> { appt1, appt2 });
 
         // First appointment throws; second should still be processed

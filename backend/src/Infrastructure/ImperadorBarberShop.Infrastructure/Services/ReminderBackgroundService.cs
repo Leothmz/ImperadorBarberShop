@@ -34,11 +34,12 @@ public class ReminderBackgroundService : BackgroundService
         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
         var unitOfWork          = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-        var minutesStr = await settingsRepo.GetAsync("notifications:reminderMinutesBefore", ct) ?? "60";
-        var minutes    = int.TryParse(minutesStr, out var m) ? m : 60;
-        var windowEnd  = DateTime.UtcNow.AddMinutes(minutes);
+        var minutesStr  = await settingsRepo.GetAsync("notifications:reminderMinutesBefore", ct) ?? "60";
+        var minutes     = int.TryParse(minutesStr, out var m) ? m : 60;
+        var windowEnd   = DateTime.UtcNow.AddMinutes(minutes);
+        var windowStart = windowEnd.AddMinutes(-10);
 
-        var appointments = await appointmentRepo.GetPendingRemindersAsync(windowEnd, ct);
+        var appointments = await appointmentRepo.GetPendingRemindersAsync(windowStart, windowEnd, ct);
 
         foreach (var appointment in appointments)
         {
