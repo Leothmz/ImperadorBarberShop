@@ -33,9 +33,13 @@ export default function AgendarPage() {
   const createAppointment = useCreateAppointment()
 
   function toggleService(service: Service) {
-    setSelectedServiceIds((prev) =>
-      prev.includes(service.id) ? prev.filter((id) => id !== service.id) : [...prev, service.id]
-    )
+    setSelectedServiceIds(prev => {
+      if (prev.includes(service.id)) {
+        const addonIds = new Set((service.addons ?? []).map(a => a.id))
+        return prev.filter(id => id !== service.id && !addonIds.has(id))
+      }
+      return [...prev, service.id]
+    })
   }
 
   function toggleAddon(addonId: string) {
@@ -81,6 +85,13 @@ export default function AgendarPage() {
   }
 
   const selectedServices = allServices?.filter((s) => selectedServiceIds.includes(s.id)) ?? []
+
+  const selectedAddons = (allServices ?? [])
+    .flatMap(s => s.addons ?? [])
+    .filter(a => selectedServiceIds.includes(a.id))
+    .map(a => ({ ...a, isActive: true, addons: [] } as Service))
+
+  const selectedServicesForDisplay = [...selectedServices, ...selectedAddons]
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
@@ -190,7 +201,7 @@ export default function AgendarPage() {
         {step === 4 && selectedBarber && selectedDate && selectedSlot && (
           <BookingConfirmation
             barber={selectedBarber}
-            services={selectedServices}
+            services={selectedServicesForDisplay}
             selectedDate={selectedDate}
             selectedSlot={selectedSlot}
             notes={notes}
