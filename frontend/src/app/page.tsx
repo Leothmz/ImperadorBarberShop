@@ -30,7 +30,7 @@ export default function LandingPage() {
         <div className="relative z-10 flex flex-col items-center gap-6 max-w-3xl">
           {/* Logo */}
           <Image
-            src="/logo.svg"
+            src="/logo.png"
             alt="O Imperador Barber Shop"
             width={160}
             height={160}

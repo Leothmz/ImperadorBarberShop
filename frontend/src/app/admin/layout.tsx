@@ -8,7 +8,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside className="w-64 bg-brand-black-soft border-r border-brand-white/10 flex flex-col p-6 gap-6">
         <div className="flex flex-col items-center gap-3">
-          <Image src="/logo.svg" alt="O Imperador" width={80} height={80} />
+          <Image src="/logo.png" alt="O Imperador" width={80} height={80} />
           <span className="font-montserrat text-sm font-semibold text-brand-gold uppercase tracking-widest">
             Administrador
           </span>
