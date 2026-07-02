@@ -12,4 +12,5 @@ public interface IAppointmentRepository
     Task AddAsync(Appointment appointment, CancellationToken cancellationToken = default);
     Task UpdateAsync(Appointment appointment, CancellationToken cancellationToken = default);
     Task<List<Appointment>> GetCompletedByDateRangeAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default);
+    Task<List<Appointment>> GetPendingRemindersAsync(DateTime windowEnd, CancellationToken ct = default);
 }

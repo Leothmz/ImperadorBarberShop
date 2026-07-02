@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<IImageService, CloudinaryImageService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<AdminSeedService>();
+        services.AddHostedService<ReminderBackgroundService>();
 
         return services;
     }

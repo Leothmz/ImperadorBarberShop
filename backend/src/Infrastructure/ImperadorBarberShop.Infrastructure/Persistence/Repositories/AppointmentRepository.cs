@@ -71,4 +71,14 @@ public class AppointmentRepository : IAppointmentRepository
                 && a.ScheduledAt <= to)
             .OrderBy(a => a.ScheduledAt)
             .ToListAsync(cancellationToken);
+
+    public async Task<List<Appointment>> GetPendingRemindersAsync(DateTime windowEnd, CancellationToken ct = default)
+        => await _context.Appointments
+            .Include(a => a.Barber).ThenInclude(b => b.User)
+            .Include(a => a.AppointmentServices).ThenInclude(s => s.Service)
+            .Where(a => a.Status == AppointmentStatus.Accepted
+                && a.ReminderSentAt == null
+                && a.ScheduledAt > DateTime.UtcNow
+                && a.ScheduledAt <= windowEnd)
+            .ToListAsync(ct);
 }
