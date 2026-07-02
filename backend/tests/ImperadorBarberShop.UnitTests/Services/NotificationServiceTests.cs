@@ -85,6 +85,18 @@ public class NotificationServiceTests
     }
 
     [Fact]
+    public async Task Created_MissingChannelKey_DefaultsToEmail()
+    {
+        _settings.GetAsync("notifications:channels", Arg.Any<CancellationToken>()).Returns((string?)null);
+        var (appt, barber, services) = Build();
+        await _svc.SendAppointmentCreatedAsync(appt, barber, services, CancellationToken.None);
+        await _email.Received(1).SendAppointmentCreatedAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
+        await _wa.DidNotReceiveWithAnyArgs().SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Cancelled_WhatsApp_SendsCancelMessageToClient()
     {
         SetChannels("whatsapp");
