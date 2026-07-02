@@ -1,4 +1,5 @@
 using FluentValidation;
+using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
 using MediatR;
@@ -19,14 +20,17 @@ public class CompleteAppointmentCommandValidator : AbstractValidator<CompleteApp
 public class CompleteAppointmentCommandHandler : IRequestHandler<CompleteAppointmentCommand>
 {
     private readonly IAppointmentRepository _appointmentRepository;
+    private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CompleteAppointmentCommandHandler(
         IAppointmentRepository appointmentRepository,
+        INotificationService notificationService,
         IUnitOfWork unitOfWork)
     {
         _appointmentRepository = appointmentRepository;
-        _unitOfWork = unitOfWork;
+        _notificationService   = notificationService;
+        _unitOfWork            = unitOfWork;
     }
 
     public async Task Handle(CompleteAppointmentCommand request, CancellationToken cancellationToken)
@@ -41,5 +45,11 @@ public class CompleteAppointmentCommandHandler : IRequestHandler<CompleteAppoint
         appointment.Complete();
         await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _notificationService.SendAppointmentCompletedAsync(appointment, cancellationToken);
+        }
+        catch { /* best-effort */ }
     }
 }

@@ -1,4 +1,5 @@
 using FluentValidation;
+using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
 using MediatR;
@@ -19,14 +20,17 @@ public class CancelAppointmentByBarberCommandValidator : AbstractValidator<Cance
 public class CancelAppointmentByBarberCommandHandler : IRequestHandler<CancelAppointmentByBarberCommand>
 {
     private readonly IAppointmentRepository _appointmentRepository;
+    private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CancelAppointmentByBarberCommandHandler(
         IAppointmentRepository appointmentRepository,
+        INotificationService notificationService,
         IUnitOfWork unitOfWork)
     {
         _appointmentRepository = appointmentRepository;
-        _unitOfWork = unitOfWork;
+        _notificationService   = notificationService;
+        _unitOfWork            = unitOfWork;
     }
 
     public async Task Handle(CancelAppointmentByBarberCommand request, CancellationToken cancellationToken)
@@ -41,5 +45,11 @@ public class CancelAppointmentByBarberCommandHandler : IRequestHandler<CancelApp
         appointment.Cancel();
         await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _notificationService.SendAppointmentCancelledAsync(appointment, cancellationToken);
+        }
+        catch { /* best-effort */ }
     }
 }

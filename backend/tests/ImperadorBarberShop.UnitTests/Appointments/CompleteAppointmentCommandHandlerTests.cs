@@ -1,5 +1,6 @@
 using FluentAssertions;
 using ImperadorBarberShop.Application.Commands.Appointments;
+using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Entities;
 using ImperadorBarberShop.Domain.Enums;
 using ImperadorBarberShop.Domain.Exceptions;
@@ -11,12 +12,13 @@ namespace ImperadorBarberShop.UnitTests.Appointments;
 public class CompleteAppointmentCommandHandlerTests
 {
     private readonly IAppointmentRepository _appointmentRepository = Substitute.For<IAppointmentRepository>();
+    private readonly INotificationService _notificationService = Substitute.For<INotificationService>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CompleteAppointmentCommandHandler _handler;
 
     public CompleteAppointmentCommandHandlerTests()
     {
-        _handler = new CompleteAppointmentCommandHandler(_appointmentRepository, _unitOfWork);
+        _handler = new CompleteAppointmentCommandHandler(_appointmentRepository, _notificationService, _unitOfWork);
     }
 
     [Fact]

@@ -12,14 +12,14 @@ public class CreateAppointmentCommandHandlerTests
     private readonly IBarberRepository _barberRepository = Substitute.For<IBarberRepository>();
     private readonly IServiceRepository _serviceRepository = Substitute.For<IServiceRepository>();
     private readonly IAppointmentRepository _appointmentRepository = Substitute.For<IAppointmentRepository>();
-    private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+    private readonly INotificationService _notificationService = Substitute.For<INotificationService>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CreateAppointmentCommandHandler _handler;
 
     public CreateAppointmentCommandHandlerTests()
     {
         _handler = new CreateAppointmentCommandHandler(
-            _barberRepository, _serviceRepository, _appointmentRepository, _emailService, _unitOfWork);
+            _barberRepository, _serviceRepository, _appointmentRepository, _notificationService, _unitOfWork);
     }
 
     private void SetupHappyPath(Guid barberId, Service service)

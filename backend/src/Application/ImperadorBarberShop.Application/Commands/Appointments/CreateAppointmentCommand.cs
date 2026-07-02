@@ -37,21 +37,21 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
     private readonly IBarberRepository _barberRepository;
     private readonly IServiceRepository _serviceRepository;
     private readonly IAppointmentRepository _appointmentRepository;
-    private readonly IEmailService _emailService;
+    private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateAppointmentCommandHandler(
         IBarberRepository barberRepository,
         IServiceRepository serviceRepository,
         IAppointmentRepository appointmentRepository,
-        IEmailService emailService,
+        INotificationService notificationService,
         IUnitOfWork unitOfWork)
     {
-        _barberRepository = barberRepository;
-        _serviceRepository = serviceRepository;
+        _barberRepository      = barberRepository;
+        _serviceRepository     = serviceRepository;
         _appointmentRepository = appointmentRepository;
-        _emailService = emailService;
-        _unitOfWork = unitOfWork;
+        _notificationService   = notificationService;
+        _unitOfWork            = unitOfWork;
     }
 
     public async Task<CreateAppointmentResult> Handle(CreateAppointmentCommand request, CancellationToken cancellationToken)
@@ -98,24 +98,13 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         await _appointmentRepository.AddAsync(appointment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Send notification to barber (best-effort — email failure must not roll back the appointment)
-        if (barber.User is not null)
+        // Send notification to barber (best-effort — failure must not roll back the appointment)
+        try
         {
-            try
-            {
-                await _emailService.SendAppointmentCreatedAsync(
-                    barber.User.Email,
-                    barber.User.Name,
-                    request.ClientName,
-                    request.ClientPhone,
-                    request.ScheduledAt,
-                    cancellationToken);
-            }
-            catch
-            {
-                // Notification failure is non-critical; appointment is already persisted
-            }
+            await _notificationService.SendAppointmentCreatedAsync(
+                appointment, barber, services, cancellationToken);
         }
+        catch { /* best-effort */ }
 
         return new CreateAppointmentResult(appointment.Id, appointment.AccessToken);
     }
