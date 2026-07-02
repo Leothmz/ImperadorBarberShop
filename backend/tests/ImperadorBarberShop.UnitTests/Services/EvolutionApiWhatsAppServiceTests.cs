@@ -64,6 +64,16 @@ public class EvolutionApiWhatsAppServiceTests
         var result = await _svc.GetQrCodeAsync(CancellationToken.None);
         result.QrCode.Should().Be("data:image/png;base64,abc");
     }
+
+    [Fact]
+    public async Task DisconnectAsync_SendsDeleteToCorrectEndpoint()
+    {
+        _fakeHandler.SetResponse(HttpStatusCode.OK, "{}");
+        await _svc.DisconnectAsync(CancellationToken.None);
+        _fakeHandler.LastRequest!.RequestUri!.ToString()
+            .Should().Contain("/instance/logout/imperador");
+        _fakeHandler.LastRequest.Method.Should().Be(HttpMethod.Delete);
+    }
 }
 
 public class FakeHttpMessageHandler : HttpMessageHandler

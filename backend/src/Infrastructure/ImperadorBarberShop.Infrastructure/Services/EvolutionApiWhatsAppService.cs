@@ -22,7 +22,8 @@ public class EvolutionApiWhatsAppService : IWhatsAppService
         var req = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/message/sendText/{instance}");
         req.Headers.Add("apikey", apiKey);
         req.Content = JsonContent.Create(new { number = phone, text = message });
-        (await _http.SendAsync(req, ct)).EnsureSuccessStatusCode();
+        using var response = await _http.SendAsync(req, ct);
+        response.EnsureSuccessStatusCode();
     }
 
     public async Task<WhatsAppStatus> GetStatusAsync(CancellationToken ct = default)
@@ -30,7 +31,7 @@ public class EvolutionApiWhatsAppService : IWhatsAppService
         var (baseUrl, apiKey, instance) = await GetConfigAsync(ct);
         var req = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/instance/connectionState/{instance}");
         req.Headers.Add("apikey", apiKey);
-        var resp = await _http.SendAsync(req, ct);
+        using var resp = await _http.SendAsync(req, ct);
         resp.EnsureSuccessStatusCode();
 
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
@@ -52,7 +53,7 @@ public class EvolutionApiWhatsAppService : IWhatsAppService
         var (baseUrl, apiKey, instance) = await GetConfigAsync(ct);
         var req = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/instance/connect/{instance}");
         req.Headers.Add("apikey", apiKey);
-        var resp = await _http.SendAsync(req, ct);
+        using var resp = await _http.SendAsync(req, ct);
         resp.EnsureSuccessStatusCode();
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
         return new WhatsAppQr(doc.RootElement.GetProperty("base64").GetString()!);
@@ -63,7 +64,8 @@ public class EvolutionApiWhatsAppService : IWhatsAppService
         var (baseUrl, apiKey, instance) = await GetConfigAsync(ct);
         var req = new HttpRequestMessage(HttpMethod.Delete, $"{baseUrl}/instance/logout/{instance}");
         req.Headers.Add("apikey", apiKey);
-        (await _http.SendAsync(req, ct)).EnsureSuccessStatusCode();
+        using var response = await _http.SendAsync(req, ct);
+        response.EnsureSuccessStatusCode();
     }
 
     private async Task<(string baseUrl, string apiKey, string instance)> GetConfigAsync(CancellationToken ct)
