@@ -19,6 +19,7 @@ public class AppDbContext : DbContext, IUnitOfWork
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<ServiceAddon> ServiceAddons => Set<ServiceAddon>();
     public DbSet<AppSettings> AppSettings => Set<AppSettings>();
+    public DbSet<BarberBlock> BarberBlocks => Set<BarberBlock>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
