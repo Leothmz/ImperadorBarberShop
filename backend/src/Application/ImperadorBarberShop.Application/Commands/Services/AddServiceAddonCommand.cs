@@ -27,6 +27,12 @@ public class AddServiceAddonCommandHandler : IRequestHandler<AddServiceAddonComm
         if (request.ParentServiceId == request.AddonServiceId)
             throw new ArgumentException("A service cannot be its own add-on.");
 
+        _ = await _serviceRepository.GetByIdAsync(request.ParentServiceId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Service {request.ParentServiceId} not found.");
+
+        _ = await _serviceRepository.GetByIdAsync(request.AddonServiceId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Service {request.AddonServiceId} not found.");
+
         var existing = await _addonRepository.GetAsync(
             request.ParentServiceId, request.AddonServiceId, cancellationToken);
         if (existing is not null)
