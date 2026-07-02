@@ -33,6 +33,12 @@ public static class DependencyInjection
         services.AddScoped<IServiceAddonRepository, ServiceAddonRepository>();
         services.AddScoped<IAppSettingsRepository, AppSettingsRepository>();
         services.AddHttpClient();
+        services.AddScoped<IWhatsAppService>(sp =>
+        {
+            var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient("evolution");
+            var repo = sp.GetRequiredService<IAppSettingsRepository>();
+            return new EvolutionApiWhatsAppService(http, repo);
+        });
 
         // Services
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
