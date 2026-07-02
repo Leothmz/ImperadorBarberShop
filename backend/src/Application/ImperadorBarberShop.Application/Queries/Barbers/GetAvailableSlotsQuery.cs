@@ -52,8 +52,8 @@ public class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailableSlotsQu
         var occupiedBlocks = activeAppointments
             .Select(a => (Start: a.ScheduledAt, End: a.ScheduledAt.AddMinutes(a.TotalDurationMinutes)))
             .Concat(blocks.Select(b => (
-                Start: request.Date.ToDateTime(TimeOnly.FromDateTime(b.StartsAt)),
-                End: request.Date.ToDateTime(TimeOnly.FromDateTime(b.EndsAt)))))
+                Start: request.Date.ToDateTime(TimeOnly.FromDateTime(b.StartsAt), DateTimeKind.Utc),
+                End: request.Date.ToDateTime(TimeOnly.FromDateTime(b.EndsAt), DateTimeKind.Utc))))
             .ToList();
 
         var slots = new List<TimeOnly>();
