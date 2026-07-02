@@ -2,7 +2,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using ImperadorBarberShop.Application.Commands.Auth;
 using ImperadorBarberShop.Application.Commands.Barbers;
+using ImperadorBarberShop.Application.Commands.Blocks;
 using ImperadorBarberShop.Application.Queries.Barbers;
+using ImperadorBarberShop.Application.Queries.Blocks;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -77,8 +79,58 @@ public class BarbersController : ControllerBase
         await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
+
+    /// <summary>Get all blocks for the authenticated barber.</summary>
+    [HttpGet("me/blocks")]
+    [Authorize(Policy = "RequireBarberRole")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMyBlocks(CancellationToken ct)
+    {
+        var barberId = Guid.Parse(User.FindFirstValue("barberId")!);
+        var result = await _mediator.Send(new GetBarberBlocksQuery(barberId), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Create a new block for the authenticated barber.</summary>
+    [HttpPost("me/blocks")]
+    [Authorize(Policy = "RequireBarberRole")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> CreateBlock([FromBody] CreateBarberBlockBody body, CancellationToken ct)
+    {
+        var barberId = Guid.Parse(User.FindFirstValue("barberId")!);
+        var id = await _mediator.Send(new CreateBarberBlockCommand(
+            barberId, body.StartsAt, body.EndsAt, body.Description,
+            body.IsRecurring, body.RecurrenceDays, body.RecurrenceEndsAt), ct);
+        return CreatedAtAction(nameof(GetMyBlocks), new { }, new { id });
+    }
+
+    /// <summary>Delete a block owned by the authenticated barber.</summary>
+    [HttpDelete("me/blocks/{id:guid}")]
+    [Authorize(Policy = "RequireBarberRole")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteBlock(Guid id, CancellationToken ct)
+    {
+        var barberId = Guid.Parse(User.FindFirstValue("barberId")!);
+        await _mediator.Send(new DeleteBarberBlockCommand(id, barberId), ct);
+        return NoContent();
+    }
 }
 
 /// <summary>Wrapper DTO for PUT /barbers/me/availability.</summary>
 /// <param name="Availability">List of availability windows to replace the barber's current schedule.</param>
 public record UpdateAvailabilityRequest(List<AvailabilitySlotInput> Availability);
+
+/// <summary>Request body for POST /barbers/me/blocks.</summary>
+public record CreateBarberBlockBody(
+    DateTime StartsAt,
+    DateTime EndsAt,
+    string? Description,
+    bool IsRecurring,
+    int? RecurrenceDays,
+    DateTime? RecurrenceEndsAt);
