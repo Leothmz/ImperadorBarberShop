@@ -86,6 +86,11 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
 
             services.AddScoped<IImageService, FakeImageService>();
 
+            // Replace real WhatsApp service with a no-op fake for integration tests
+            var waDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IWhatsAppService));
+            if (waDescriptor is not null) services.Remove(waDescriptor);
+            services.AddScoped<IWhatsAppService, FakeWhatsAppService>();
+
             // Apply migrations
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
@@ -130,4 +135,14 @@ public class FakeImageService : IImageService
 {
     public Task<string> UploadAsync(Stream stream, string fileName, string contentType, CancellationToken ct = default)
         => Task.FromResult($"https://fake-cloudinary.com/{Guid.NewGuid()}/{fileName}");
+}
+
+public class FakeWhatsAppService : IWhatsAppService
+{
+    public Task SendAsync(string phone, string message, CancellationToken ct = default) => Task.CompletedTask;
+    public Task<WhatsAppStatus> GetStatusAsync(CancellationToken ct = default)
+        => Task.FromResult(new WhatsAppStatus(WhatsAppConnectionStatus.Disconnected, null));
+    public Task<WhatsAppQr> GetQrCodeAsync(CancellationToken ct = default)
+        => Task.FromResult(new WhatsAppQr("data:image/png;base64,fake"));
+    public Task DisconnectAsync(CancellationToken ct = default) => Task.CompletedTask;
 }

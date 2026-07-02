@@ -105,6 +105,36 @@ public class AdminController : ControllerBase
         return File(bytes, "text/csv", $"relatorio-{from:yyyy-MM-dd}-{to:yyyy-MM-dd}.csv");
     }
 
+    // WhatsApp
+    [HttpGet("whatsapp/status")]
+    public async Task<IActionResult> GetWhatsAppStatus(CancellationToken ct)
+        => Ok(await _mediator.Send(new GetWhatsAppStatusQuery(), ct));
+
+    [HttpGet("whatsapp/qr")]
+    public async Task<IActionResult> GetWhatsAppQr(CancellationToken ct)
+        => Ok(await _mediator.Send(new GetWhatsAppQrQuery(), ct));
+
+    [HttpPost("whatsapp/disconnect")]
+    public async Task<IActionResult> DisconnectWhatsApp(CancellationToken ct)
+    {
+        await _mediator.Send(new DisconnectWhatsAppCommand(), ct);
+        return NoContent();
+    }
+
+    // Notification settings
+    [HttpGet("notifications/settings")]
+    public async Task<IActionResult> GetNotificationSettings(CancellationToken ct)
+        => Ok(await _mediator.Send(new GetNotificationSettingsQuery(), ct));
+
+    [HttpPut("notifications/settings")]
+    public async Task<IActionResult> UpdateNotificationSettings(
+        [FromBody] UpdateNotificationSettingsRequest request, CancellationToken ct)
+    {
+        await _mediator.Send(new UpdateNotificationSettingsCommand(
+            request.Channels, request.ReminderMinutesBefore, request.NotificationPhone), ct);
+        return NoContent();
+    }
+
     private static string? GetImageValidationError(IFormFile file)
     {
         if (file.Length > 5 * 1024 * 1024) return "Image must be smaller than 5 MB.";
@@ -121,3 +151,8 @@ public record CreateBarberRequest(
     List<AvailabilitySlotInput>? Availability);
 
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
+public record UpdateNotificationSettingsRequest(
+    List<string> Channels,
+    int ReminderMinutesBefore,
+    string? NotificationPhone);
