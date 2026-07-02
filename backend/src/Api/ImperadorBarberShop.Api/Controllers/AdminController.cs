@@ -6,6 +6,7 @@ using ImperadorBarberShop.Application.Commands.Auth;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Application.Queries.Admin;
 using ImperadorBarberShop.Application.Queries.Financial;
+using ImperadorBarberShop.Application.Queries.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -85,6 +86,10 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> GetByBarber(
         [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken ct)
         => Ok(await _mediator.Send(new GetFinancialByBarberQuery(from, to), ct));
+
+    [HttpGet("services")]
+    public async Task<IActionResult> GetAllServices(CancellationToken ct)
+        => Ok(await _mediator.Send(new GetServicesQuery(IncludeInactive: true), ct));
 
     [HttpGet("financial/by-service")]
     public async Task<IActionResult> GetByService(

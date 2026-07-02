@@ -5,7 +5,7 @@ using MediatR;
 
 namespace ImperadorBarberShop.Application.Queries.Services;
 
-public record GetServicesQuery : IRequest<List<ServiceDto>>;
+public record GetServicesQuery(bool IncludeInactive = false) : IRequest<List<ServiceDto>>;
 
 public class GetServicesQueryHandler : IRequestHandler<GetServicesQuery, List<ServiceDto>>
 {
@@ -25,7 +25,9 @@ public class GetServicesQueryHandler : IRequestHandler<GetServicesQuery, List<Se
 
     public async Task<List<ServiceDto>> Handle(GetServicesQuery request, CancellationToken cancellationToken)
     {
-        var services = await _serviceRepository.GetAllActiveAsync(cancellationToken);
+        var services = request.IncludeInactive
+            ? await _serviceRepository.GetAllAsync(cancellationToken)
+            : await _serviceRepository.GetAllActiveAsync(cancellationToken);
         var serviceIds = services.Select(s => s.Id).ToList();
         var allAddons = await _addonRepository.GetByParentIdsAsync(serviceIds, cancellationToken);
         var addonsByParent = allAddons

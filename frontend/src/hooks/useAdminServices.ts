@@ -4,9 +4,8 @@ import type { CreateServicePayload, UpdateServicePayload } from '@/types/api.typ
 import apiClient from '@/lib/api/client'
 import type { Service } from '@/types/api.types'
 
-// Fetches ALL services (including inactive) for admin use
 function getAllServices() {
-  return apiClient.get<Service[]>('/services', { params: { includeInactive: true } }).then((r) => r.data)
+  return apiClient.get<Service[]>('/admin/services').then((r) => r.data)
 }
 
 export function useAdminAllServices() {
