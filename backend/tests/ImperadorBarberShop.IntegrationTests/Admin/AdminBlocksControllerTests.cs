@@ -103,7 +103,7 @@ public class AdminBlocksControllerTests : IClassFixture<WebAppFixture>
         var barberId = await SeedBarberAndGetId();
         var client = CreateAdminClient();
 
-        await client.PostAsJsonAsync(
+        var createResponse = await client.PostAsJsonAsync(
             $"/api/v1/admin/barbers/{barberId}/blocks",
             new
             {
@@ -114,6 +114,7 @@ public class AdminBlocksControllerTests : IClassFixture<WebAppFixture>
                 recurrenceDays = (int?)null,
                 recurrenceEndsAt = (DateTime?)null
             });
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var listResponse = await client.GetAsync($"/api/v1/admin/barbers/{barberId}/blocks");
         listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
