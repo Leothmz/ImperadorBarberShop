@@ -20,5 +20,10 @@ public class BarberBlockConfiguration : IEntityTypeConfiguration<BarberBlock>
         builder.Property(b => b.CreatedAt).IsRequired();
 
         builder.HasIndex(b => b.BarberId);
+
+        builder.HasOne<Barber>()
+            .WithMany()
+            .HasForeignKey(b => b.BarberId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
