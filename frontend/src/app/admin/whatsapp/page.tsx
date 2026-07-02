@@ -43,10 +43,14 @@ export default function WhatsAppPage() {
 }
 
 function ConnectionTab() {
-  const { data: status, isLoading } = useWhatsAppStatus()
-  const isQrRequired = status?.status === 'qr_required'
+  const [isQrRequired, setIsQrRequired] = useState(false)
+  const { data: status, isLoading } = useWhatsAppStatus(isQrRequired ? 5000 : undefined)
   const { data: qr } = useWhatsAppQr(isQrRequired)
   const disconnect = useDisconnectWhatsApp()
+
+  useEffect(() => {
+    setIsQrRequired(status?.status === 'qr_required')
+  }, [status?.status])
 
   if (isLoading) return <p className="text-brand-white/50">Verificando conexão...</p>
 
