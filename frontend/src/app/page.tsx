@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
 
 export default function LandingPage() {
@@ -27,6 +28,16 @@ export default function LandingPage() {
         />
 
         <div className="relative z-10 flex flex-col items-center gap-6 max-w-3xl">
+          {/* Logo */}
+          <Image
+            src="/logo.svg"
+            alt="O Imperador Barber Shop"
+            width={160}
+            height={160}
+            className="mb-2"
+            priority
+          />
+
           {/* Badge */}
           <span className="inline-flex items-center gap-2 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-brand-gold">
             ✦ Excelência em cada corte
@@ -50,6 +61,11 @@ export default function LandingPage() {
             <Link href="/agendar">
               <Button size="lg" className="min-w-[200px]">
                 Agendar agora
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button variant="secondary" size="lg" className="min-w-[200px]">
+                Área do Barbeiro
               </Button>
             </Link>
           </div>
@@ -126,9 +142,9 @@ export default function LandingPage() {
             <Link href="/agendar">
               <Button size="lg">Agendar agora</Button>
             </Link>
-            <Link href="/register/barber">
+            <Link href="/login">
               <Button variant="secondary" size="lg">
-                Sou barbeiro
+                Área do Barbeiro
               </Button>
             </Link>
           </div>

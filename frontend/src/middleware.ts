@@ -6,8 +6,16 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const role = request.cookies.get(ROLE_COOKIE)?.value
 
+  if (pathname.startsWith('/admin')) {
+    if (role !== 'Admin') {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+  }
+
   if (pathname.startsWith('/barber')) {
-    if (!role || role !== 'Barber') {
+    if (role !== 'Barber') {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
@@ -18,5 +26,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/barber/:path*'],
+  matcher: ['/barber/:path*', '/admin/:path*'],
 }

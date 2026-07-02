@@ -1,4 +1,4 @@
-export type UserRole = 'Barber'
+export type UserRole = 'Barber' | 'Admin'
 export type AppointmentStatus = 'Accepted' | 'Cancelled' | 'Completed'
 
 export interface Service {
@@ -8,6 +8,17 @@ export interface Service {
   durationMinutes: number
   price: number
   isActive: boolean
+  photoUrl: string | null
+  addons: ServiceAddon[]
+}
+
+export interface ServiceAddon {
+  id: string
+  name: string
+  description: string
+  durationMinutes: number
+  price: number
+  photoUrl: string | null
 }
 
 export type DayOfWeekString =
@@ -31,7 +42,14 @@ export interface Barber {
   name: string
   email: string
   averageRating: number
+  photoUrl: string | null
+  isActive: boolean
   availability: BarberAvailability[]
+}
+
+// Admin barber (includes isActive)
+export interface AdminBarber extends Barber {
+  email: string
 }
 
 export interface ServiceRef {
@@ -71,6 +89,29 @@ export interface Review {
   rating: number
   comment: string | null
   createdAt: string
+}
+
+// Financial types
+export interface FinancialSummary {
+  totalRevenue: number
+  totalAppointments: number
+  averageTicket: number
+  from: string
+  to: string
+}
+
+export interface FinancialByBarberItem {
+  barberId: string
+  barberName: string
+  appointments: number
+  revenue: number
+}
+
+export interface FinancialByServiceItem {
+  serviceId: string
+  serviceName: string
+  count: number
+  revenue: number
 }
 
 export interface LoginResult {
@@ -114,5 +155,26 @@ export interface CreateReviewByTokenPayload {
 }
 
 export interface CreateReviewByTokenResult {
+  id: string
+}
+
+// Admin request types
+export interface CreateBarberPayload {
+  name: string
+  email: string
+  password: string
+  availability: BarberAvailability[]
+  photo?: File
+}
+
+export interface CreateServicePayload {
+  name: string
+  description: string
+  price: number
+  durationMinutes: number
+  photo?: File
+}
+
+export interface UpdateServicePayload extends CreateServicePayload {
   id: string
 }
