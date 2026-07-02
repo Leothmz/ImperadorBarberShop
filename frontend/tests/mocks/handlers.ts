@@ -59,6 +59,10 @@ export const mockServices: Service[] = [
     durationMinutes: 30,
     price: 45.0,
     isActive: true,
+    photoUrl: null,
+    addons: [
+      { id: 'addon-barba', name: 'Barba', description: '', durationMinutes: 20, price: 25.0, photoUrl: null },
+    ],
   },
   {
     id: 'service-2',
@@ -67,6 +71,8 @@ export const mockServices: Service[] = [
     durationMinutes: 20,
     price: 35.0,
     isActive: true,
+    photoUrl: null,
+    addons: [],
   },
   {
     id: 'service-3',
@@ -75,6 +81,8 @@ export const mockServices: Service[] = [
     durationMinutes: 50,
     price: 70.0,
     isActive: true,
+    photoUrl: null,
+    addons: [],
   },
   {
     id: 'service-4',
@@ -83,6 +91,8 @@ export const mockServices: Service[] = [
     durationMinutes: 40,
     price: 55.0,
     isActive: false,
+    photoUrl: null,
+    addons: [],
   },
 ]
 

@@ -38,6 +38,12 @@ export default function AgendarPage() {
     )
   }
 
+  function toggleAddon(addonId: string) {
+    setSelectedServiceIds((prev) =>
+      prev.includes(addonId) ? prev.filter((id) => id !== addonId) : [...prev, addonId]
+    )
+  }
+
   function canAdvance(): boolean {
     if (step === 1) return !!selectedBarber
     if (step === 2) return selectedServiceIds.length > 0
@@ -158,7 +164,13 @@ export default function AgendarPage() {
           />
         )}
 
-        {step === 2 && <ServicePicker selectedServiceIds={selectedServiceIds} onToggle={toggleService} />}
+        {step === 2 && (
+          <ServicePicker
+            selectedServiceIds={selectedServiceIds}
+            onToggle={toggleService}
+            onToggleAddon={toggleAddon}
+          />
+        )}
 
         {step === 3 && selectedBarber && (
           <SlotPicker
