@@ -1,11 +1,14 @@
-import type { Metadata } from 'next'
-import { BarberAppointmentList } from '@/components/appointments/BarberAppointmentList'
+'use client'
 
-export const metadata: Metadata = {
-  title: 'Minha Agenda | O Imperador Barber Shop',
-}
+import { useState } from 'react'
+import { BarberAppointmentList } from '@/components/appointments/BarberAppointmentList'
+import BlocksTab from './BlocksTab'
+
+type Tab = 'agenda' | 'bloqueios'
 
 export default function BarberDashboardPage() {
+  const [activeTab, setActiveTab] = useState<Tab>('agenda')
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
       <div className="mb-8">
@@ -17,7 +20,32 @@ export default function BarberDashboardPage() {
         </p>
       </div>
 
-      <BarberAppointmentList />
+      {/* Tab Navigation */}
+      <div className="mb-6 flex gap-1 border-b border-brand-white/10">
+        <button
+          onClick={() => setActiveTab('agenda')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'agenda'
+              ? 'border-b-2 border-brand-gold text-brand-gold'
+              : 'text-brand-white/50 hover:text-brand-white'
+          }`}
+        >
+          Agendamentos
+        </button>
+        <button
+          onClick={() => setActiveTab('bloqueios')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'bloqueios'
+              ? 'border-b-2 border-brand-gold text-brand-gold'
+              : 'text-brand-white/50 hover:text-brand-white'
+          }`}
+        >
+          Bloqueios
+        </button>
+      </div>
+
+      {activeTab === 'agenda' && <BarberAppointmentList />}
+      {activeTab === 'bloqueios' && <BlocksTab />}
     </div>
   )
 }
