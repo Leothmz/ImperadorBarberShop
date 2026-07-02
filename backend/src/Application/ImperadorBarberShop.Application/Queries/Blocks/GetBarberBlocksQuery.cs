@@ -24,7 +24,9 @@ public class GetBarberBlocksQueryHandler : IRequestHandler<GetBarberBlocksQuery,
     public async Task<List<BarberBlockDto>> Handle(GetBarberBlocksQuery request, CancellationToken cancellationToken)
     {
         var blocks = await _repo.GetByBarberIdAsync(request.BarberId, cancellationToken);
-        return blocks.Select(b => new BarberBlockDto(
+        var now = DateTime.UtcNow;
+        var activeBlocks = blocks.Where(b => b.IsRecurring || b.EndsAt >= now).ToList();
+        return activeBlocks.Select(b => new BarberBlockDto(
             b.Id, b.StartsAt, b.EndsAt, b.Description,
             b.IsRecurring, b.RecurrenceDays, b.RecurrenceEndsAt, b.CreatedAt))
             .ToList();

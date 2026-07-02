@@ -67,9 +67,13 @@ export default function BlocksTab() {
         ? new Date(data.recurrenceEndsAt).toISOString()
         : null,
     }
-    await createBlock.mutateAsync(payload)
-    reset()
-    setOpen(false)
+    try {
+      await createBlock.mutateAsync(payload)
+      reset()
+      setOpen(false)
+    } catch {
+      // error displayed via createBlock.isError
+    }
   }
 
   const formatDate = (iso: string) =>

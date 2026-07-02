@@ -31,7 +31,7 @@ public class BarberBlockRepository : IBarberBlockRepository
     public async Task<List<BarberBlock>> GetActiveOnDateAsync(Guid barberId, DateOnly date, CancellationToken ct = default)
     {
         var dayBit = 1 << (int)date.DayOfWeek;
-        var dateAsDateTime = date.ToDateTime(TimeOnly.MinValue);
+        var dateAsDateTime = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var nextDay = dateAsDateTime.AddDays(1);
 
         return await _context.BarberBlocks

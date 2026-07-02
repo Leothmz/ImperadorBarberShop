@@ -62,7 +62,7 @@ public class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailableSlotsQu
 
         while (current <= windowEnd)
         {
-            var slotStart = request.Date.ToDateTime(current);
+            var slotStart = request.Date.ToDateTime(current, DateTimeKind.Utc);
             var slotEnd = slotStart.AddMinutes(totalDuration);
 
             var hasOverlap = occupiedBlocks.Any(block =>
