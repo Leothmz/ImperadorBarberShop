@@ -11,6 +11,7 @@ public class GetAvailableSlotsQueryHandlerTests
     private readonly IBarberAvailabilityRepository _availabilityRepository = Substitute.For<IBarberAvailabilityRepository>();
     private readonly IAppointmentRepository _appointmentRepository = Substitute.For<IAppointmentRepository>();
     private readonly IServiceRepository _serviceRepository = Substitute.For<IServiceRepository>();
+    private readonly IBarberBlockRepository _blockRepository = Substitute.For<IBarberBlockRepository>();
     private readonly GetAvailableSlotsQueryHandler _handler;
 
     private readonly Guid _barberId = Guid.NewGuid();
@@ -28,7 +29,7 @@ public class GetAvailableSlotsQueryHandlerTests
     public GetAvailableSlotsQueryHandlerTests()
     {
         _handler = new GetAvailableSlotsQueryHandler(
-            _availabilityRepository, _appointmentRepository, _serviceRepository);
+            _availabilityRepository, _appointmentRepository, _serviceRepository, _blockRepository);
 
         // 09:00 - 18:00 on Monday
         _mondayAvailability = BarberAvailability.Create(
@@ -74,6 +75,8 @@ public class GetAvailableSlotsQueryHandlerTests
             .Returns(new List<Service> { service });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
             .Returns(new List<Appointment>());
+        _blockRepository.GetActiveOnDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
+            .Returns(new List<BarberBlock>());
 
         var query = new GetAvailableSlotsQuery(_barberId, _monday, new List<Guid> { Guid.NewGuid() });
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -104,6 +107,8 @@ public class GetAvailableSlotsQueryHandlerTests
 
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(_barberId, mondayDate, Arg.Any<CancellationToken>())
             .Returns(new List<Appointment> { existingAppt });
+        _blockRepository.GetActiveOnDateAsync(_barberId, mondayDate, Arg.Any<CancellationToken>())
+            .Returns(new List<BarberBlock>());
 
         var query = new GetAvailableSlotsQuery(_barberId, mondayDate, new List<Guid> { Guid.NewGuid() });
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -125,6 +130,8 @@ public class GetAvailableSlotsQueryHandlerTests
             .Returns(new List<Service> { service });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
             .Returns(new List<Appointment>());
+        _blockRepository.GetActiveOnDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
+            .Returns(new List<BarberBlock>());
 
         var query = new GetAvailableSlotsQuery(_barberId, _monday, new List<Guid> { Guid.NewGuid() });
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -150,6 +157,8 @@ public class GetAvailableSlotsQueryHandlerTests
             .Returns(new List<Service> { s1, s2 });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
             .Returns(new List<Appointment>());
+        _blockRepository.GetActiveOnDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
+            .Returns(new List<BarberBlock>());
 
         var query = new GetAvailableSlotsQuery(_barberId, _monday, new List<Guid> { Guid.NewGuid(), Guid.NewGuid() });
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -176,6 +185,8 @@ public class GetAvailableSlotsQueryHandlerTests
             30, null, new[] { Guid.NewGuid() });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
             .Returns(new List<Appointment> { existingAppt });
+        _blockRepository.GetActiveOnDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
+            .Returns(new List<BarberBlock>());
 
         var query = new GetAvailableSlotsQuery(_barberId, _monday, new List<Guid> { Guid.NewGuid() });
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -200,11 +211,48 @@ public class GetAvailableSlotsQueryHandlerTests
             .Returns(new List<Service> { service });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
             .Returns(new List<Appointment>());
+        _blockRepository.GetActiveOnDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
+            .Returns(new List<BarberBlock>());
 
         var query = new GetAvailableSlotsQuery(_barberId, _monday, new List<Guid> { Guid.NewGuid() });
         var result = await _handler.Handle(query, CancellationToken.None);
 
         result.Should().Contain(new TimeOnly(9, 30)); // last valid slot
         result.Should().NotContain(new TimeOnly(9, 45)); // would end at 10:15 > 10:00
+    }
+
+    [Fact]
+    public async Task Handle_SlotOverlapsBlock_ExcludesSlot()
+    {
+        var barberId = Guid.NewGuid();
+        var date = new DateOnly(2026, 8, 7); // a Friday
+        var serviceId = Guid.NewGuid();
+
+        _availabilityRepository.GetByBarberIdAndDayAsync(barberId, DayOfWeek.Friday, Arg.Any<CancellationToken>())
+            .Returns(BarberAvailability.Create(barberId, DayOfWeek.Friday,
+                new TimeOnly(9, 0), new TimeOnly(17, 0)));
+
+        _serviceRepository.GetByIdsAsync(Arg.Any<List<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<Service> { Service.Create("Corte", "desc", 30, 35m) });
+
+        _appointmentRepository.GetActiveByBarberIdAndDateAsync(barberId, date, Arg.Any<CancellationToken>())
+            .Returns(new List<Appointment>());
+
+        // Block from 09:00 to 10:00 — should exclude 09:00 and 09:15 slots
+        var block = BarberBlock.Create(barberId,
+            date.ToDateTime(new TimeOnly(9, 0)),
+            date.ToDateTime(new TimeOnly(10, 0)),
+            null, false, null, null);
+
+        _blockRepository.GetActiveOnDateAsync(barberId, date, Arg.Any<CancellationToken>())
+            .Returns(new List<BarberBlock> { block });
+
+        var result = await _handler.Handle(
+            new GetAvailableSlotsQuery(barberId, date, new List<Guid> { serviceId }),
+            CancellationToken.None);
+
+        result.Should().NotContain(new TimeOnly(9, 0));
+        result.Should().NotContain(new TimeOnly(9, 15));
+        result.Should().Contain(new TimeOnly(10, 0));
     }
 }

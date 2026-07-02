@@ -13,45 +13,49 @@ public class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailableSlotsQu
     private readonly IBarberAvailabilityRepository _availabilityRepository;
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IServiceRepository _serviceRepository;
+    private readonly IBarberBlockRepository _blockRepository;
 
     public GetAvailableSlotsQueryHandler(
         IBarberAvailabilityRepository availabilityRepository,
         IAppointmentRepository appointmentRepository,
-        IServiceRepository serviceRepository)
+        IServiceRepository serviceRepository,
+        IBarberBlockRepository blockRepository)
     {
         _availabilityRepository = availabilityRepository;
         _appointmentRepository = appointmentRepository;
         _serviceRepository = serviceRepository;
+        _blockRepository = blockRepository;
     }
 
     public async Task<List<TimeOnly>> Handle(GetAvailableSlotsQuery request, CancellationToken cancellationToken)
     {
-        // Step 1: Load barber availability for the requested day
         var dayOfWeek = request.Date.DayOfWeek;
         var availability = await _availabilityRepository.GetByBarberIdAndDayAsync(
             request.BarberId, dayOfWeek, cancellationToken);
 
-        // Step 2: If no availability defined for this day, return empty
         if (availability is null)
             return new List<TimeOnly>();
 
-        // Step 3: Calculate total duration of requested services
         var services = await _serviceRepository.GetByIdsAsync(request.ServiceIds, cancellationToken);
         if (services.Count == 0)
             return new List<TimeOnly>();
 
         var totalDuration = services.Sum(s => s.DurationMinutes);
 
-        // Step 4: Load non-cancelled/rejected appointments for barber on that date
         var activeAppointments = await _appointmentRepository.GetActiveByBarberIdAndDateAsync(
             request.BarberId, request.Date, cancellationToken);
 
-        // Step 5: Build occupied blocks
+        var blocks = await _blockRepository.GetActiveOnDateAsync(
+            request.BarberId, request.Date, cancellationToken);
+
+        // Build all occupied intervals (appointments + blocks)
         var occupiedBlocks = activeAppointments
             .Select(a => (Start: a.ScheduledAt, End: a.ScheduledAt.AddMinutes(a.TotalDurationMinutes)))
+            .Concat(blocks.Select(b => (
+                Start: request.Date.ToDateTime(TimeOnly.FromDateTime(b.StartsAt)),
+                End: request.Date.ToDateTime(TimeOnly.FromDateTime(b.EndsAt)))))
             .ToList();
 
-        // Step 6: Walk availability in 15-minute increments and collect free slots
         var slots = new List<TimeOnly>();
         var current = availability.StartTime;
         var windowEnd = availability.EndTime.AddMinutes(-totalDuration);
