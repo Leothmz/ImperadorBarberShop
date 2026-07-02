@@ -178,3 +178,27 @@ export interface CreateServicePayload {
 export interface UpdateServicePayload extends CreateServicePayload {
   id: string
 }
+
+// WhatsApp / Notifications
+export type WhatsAppConnectionStatus = 'connected' | 'disconnected' | 'qr_required'
+
+export interface WhatsAppStatus {
+  status: WhatsAppConnectionStatus
+  phoneNumber?: string | null
+}
+
+export interface WhatsAppQr {
+  qrCode: string
+}
+
+export interface NotificationSettings {
+  channels: string[]
+  reminderMinutesBefore: number
+  notificationPhone?: string | null
+}
+
+export interface UpdateNotificationSettingsPayload {
+  channels: string[]
+  reminderMinutesBefore: number
+  notificationPhone?: string | null
+}
