@@ -31,6 +31,13 @@ public class BarberRepository : IBarberRepository
             .Include(b => b.Availability)
             .ToListAsync(cancellationToken);
 
+    public async Task<List<Barber>> GetAllActiveAsync(CancellationToken cancellationToken = default)
+        => await _context.Barbers
+            .Include(b => b.User)
+            .Include(b => b.Availability)
+            .Where(b => b.IsActive)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(Barber barber, CancellationToken cancellationToken = default)
         => await _context.Barbers.AddAsync(barber, cancellationToken);
 

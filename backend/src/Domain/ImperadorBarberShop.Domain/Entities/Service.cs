@@ -8,6 +8,7 @@ public class Service
     public int DurationMinutes { get; private set; }
     public decimal Price { get; private set; }
     public bool IsActive { get; private set; }
+    public string? PhotoUrl { get; private set; }
 
     // EF Core constructor
     private Service() { }
@@ -41,4 +42,14 @@ public class Service
 
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;
+
+    public void Update(string name, string description, int durationMinutes, decimal price)
+    {
+        Name = name;
+        Description = description;
+        DurationMinutes = durationMinutes;
+        Price = price;
+    }
+
+    public void UpdatePhoto(string photoUrl) => PhotoUrl = photoUrl;
 }

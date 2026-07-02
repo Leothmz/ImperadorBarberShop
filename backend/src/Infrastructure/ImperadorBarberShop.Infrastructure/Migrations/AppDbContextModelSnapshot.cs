@@ -100,6 +100,15 @@ namespace ImperadorBarberShop.Infrastructure.Migrations
                     b.Property<decimal>("AverageRating")
                         .HasColumnType("decimal(3,2)");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("PhotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
@@ -215,6 +224,10 @@ namespace ImperadorBarberShop.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("PhotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(10,2)");
 
@@ -276,6 +289,24 @@ namespace ImperadorBarberShop.Infrastructure.Migrations
                             IsActive = true,
                             Name = "Pigmentação",
                             Price = 40.00m
+                        });
+                });
+
+            modelBuilder.Entity("ImperadorBarberShop.Domain.Entities.ServiceAddon", b =>
+                {
+                    b.Property<Guid>("ParentServiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AddonServiceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("ParentServiceId", "AddonServiceId");
+
+                    b.HasIndex("AddonServiceId");
+
+                    b.ToTable("ServiceAddons", t =>
+                        {
+                            t.HasCheckConstraint("CK_ServiceAddons_NoCycles", "\"ParentServiceId\" <> \"AddonServiceId\"");
                         });
                 });
 
@@ -381,6 +412,23 @@ namespace ImperadorBarberShop.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Appointment");
+                });
+
+            modelBuilder.Entity("ImperadorBarberShop.Domain.Entities.ServiceAddon", b =>
+                {
+                    b.HasOne("ImperadorBarberShop.Domain.Entities.Service", "AddonService")
+                        .WithMany()
+                        .HasForeignKey("AddonServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ImperadorBarberShop.Domain.Entities.Service", null)
+                        .WithMany()
+                        .HasForeignKey("ParentServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AddonService");
                 });
 
             modelBuilder.Entity("ImperadorBarberShop.Domain.Entities.Appointment", b =>

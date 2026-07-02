@@ -14,6 +14,12 @@ public class MappingProfile : Profile
             .ForMember(d => d.Name, o => o.MapFrom(s => s.User.Name))
             .ForMember(d => d.Email, o => o.MapFrom(s => s.User.Email))
             .ForMember(d => d.Availability, o => o.MapFrom(s => s.Availability));
+        // PhotoUrl and IsActive map automatically by name convention
+
+        CreateMap<Barber, AdminBarberDto>()
+            .ForMember(d => d.Name, o => o.MapFrom(s => s.User.Name))
+            .ForMember(d => d.Email, o => o.MapFrom(s => s.User.Email))
+            .ForMember(d => d.Availability, o => o.MapFrom(s => s.Availability));
 
         CreateMap<BarberAvailability, BarberAvailabilityDto>();
 

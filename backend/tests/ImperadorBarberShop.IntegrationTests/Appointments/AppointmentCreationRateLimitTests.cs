@@ -19,24 +19,20 @@ namespace ImperadorBarberShop.IntegrationTests.Appointments;
 /// </summary>
 public class AppointmentCreationRateLimitTests : IClassFixture<WebAppFixture>
 {
+    private readonly WebAppFixture _fixture;
     private readonly HttpClient _client;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
     public AppointmentCreationRateLimitTests(WebAppFixture fixture)
     {
+        _fixture = fixture;
         _client = fixture.CreateClient();
     }
 
     private async Task<Guid> RegisterBarber()
     {
         var email = $"barber-ratelimit-{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/v1/auth/register/barber", new
-        {
-            name = "Barber",
-            email,
-            password = "Password123!",
-            availability = new[] { new { dayOfWeek = (int)DateTime.UtcNow.AddDays(5).DayOfWeek, startTime = "08:00:00", endTime = "20:00:00" } }
-        });
+        await _fixture.SeedBarberAsync("Barber", email);
         var loginResp = await _client.PostAsJsonAsync("/api/v1/auth/login",
             new { email, password = "Password123!" });
         var body = await loginResp.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);

@@ -36,15 +36,9 @@ public class BarbersControllerTests : IClassFixture<WebAppFixture>
     [Fact]
     public async Task GetReviews_ValidBarberId_Returns200()
     {
-        // Register a barber first
+        // Seed a barber directly (POST /auth/register/barber no longer exists)
         var email = $"rev-barber-{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/v1/auth/register/barber", new
-        {
-            name = "Review Barber",
-            email,
-            password = "Password123!",
-            availability = Array.Empty<object>()
-        });
+        await _fixture.SeedBarberAsync("Review Barber", email);
         var loginResp = await _client.PostAsJsonAsync("/api/v1/auth/login",
             new { email, password = "Password123!" });
         var body = await loginResp.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
@@ -67,15 +61,9 @@ public class BarbersControllerTests : IClassFixture<WebAppFixture>
     [Fact]
     public async Task UpdateAvailability_AsBarber_Returns204()
     {
-        // Register barber and get token
+        // Seed barber and get token (POST /auth/register/barber no longer exists)
         var email = $"avail-barber-{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/v1/auth/register/barber", new
-        {
-            name = "Avail Barber",
-            email,
-            password = "Password123!",
-            availability = Array.Empty<object>()
-        });
+        await _fixture.SeedBarberAsync("Avail Barber", email);
         var loginResp = await _client.PostAsJsonAsync("/api/v1/auth/login",
             new { email, password = "Password123!" });
         var body = await loginResp.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);

@@ -1,4 +1,7 @@
+using ImperadorBarberShop.Application.Commands.Auth;
+using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Infrastructure.Persistence;
+using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +44,9 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
         ["Email__Username"] = "test",
         ["Email__Password"] = "test",
         ["Email__FromAddress"] = "noreply@test.com",
-        ["Email__FromName"] = "Test"
+        ["Email__FromName"] = "Test",
+        ["Admin__Email"] = "admin@test.com",
+        ["Admin__Password"] = "AdminTest123!"
     };
 
     public async Task InitializeAsync()
@@ -73,6 +78,14 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(_postgres.GetConnectionString()));
 
+            // Replace real Cloudinary with a no-op fake for integration tests
+            var imageDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IImageService));
+            if (imageDescriptor is not null)
+                services.Remove(imageDescriptor);
+
+            services.AddScoped<IImageService, FakeImageService>();
+
             // Apply migrations
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
@@ -81,15 +94,29 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
         });
     }
 
+    /// <summary>
+    /// Seeds a barber directly via MediatR (bypasses HTTP — use in tests that need a barber
+    /// but the POST /auth/register/barber endpoint no longer exists).
+    /// </summary>
+    public async Task SeedBarberAsync(string name, string email, string password = "Password123!")
+    {
+        using var scope = Services.CreateScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        await mediator.Send(new RegisterBarberCommand(name, email, password, []));
+    }
+
     public HttpClient CreateAuthenticatedClient(string role, Guid userId, Guid? barberId = null)
     {
         // For integration tests, we generate a real JWT token
         using var scope = Services.CreateScope();
         var jwtService = scope.ServiceProvider.GetRequiredService<ImperadorBarberShop.Application.Interfaces.IJwtService>();
 
-        var user = role == "Barber"
-            ? ImperadorBarberShop.Domain.Entities.User.CreateBarber("Test Barber", $"barber-{userId}@test.com", "hash")
-            : ImperadorBarberShop.Domain.Entities.User.CreateClient("Test Client", $"client-{userId}@test.com", "hash");
+        var user = role switch
+        {
+            "Barber" => ImperadorBarberShop.Domain.Entities.User.CreateBarber("Test Barber", $"barber-{userId}@test.com", "hash"),
+            "Admin" => ImperadorBarberShop.Domain.Entities.User.CreateAdmin("Test Admin", $"admin-{userId}@test.com", "hash"),
+            _ => ImperadorBarberShop.Domain.Entities.User.CreateClient("Test Client", $"client-{userId}@test.com", "hash")
+        };
 
         var token = jwtService.GenerateAccessToken(user, barberId);
         var client = CreateClient();
@@ -97,4 +124,10 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         return client;
     }
+}
+
+public class FakeImageService : IImageService
+{
+    public Task<string> UploadAsync(Stream stream, string fileName, string contentType, CancellationToken ct = default)
+        => Task.FromResult($"https://fake-cloudinary.com/{Guid.NewGuid()}/{fileName}");
 }

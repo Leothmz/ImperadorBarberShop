@@ -9,6 +9,8 @@ public class Barber
     public Guid UserId { get; private set; }
     public User User { get; private set; } = null!;
     public decimal AverageRating { get; private set; }
+    public bool IsActive { get; private set; }
+    public string? PhotoUrl { get; private set; }
     public IReadOnlyCollection<BarberAvailability> Availability => _availability.AsReadOnly();
     public IReadOnlyCollection<Appointment> Appointments => _appointments.AsReadOnly();
 
@@ -21,7 +23,8 @@ public class Barber
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            AverageRating = 0m
+            AverageRating = 0m,
+            IsActive = true
         };
     }
 
@@ -29,4 +32,8 @@ public class Barber
     {
         AverageRating = newAverage;
     }
+
+    public void Deactivate() => IsActive = false;
+    public void Activate() => IsActive = true;
+    public void UpdatePhoto(string photoUrl) => PhotoUrl = photoUrl;
 }

@@ -40,4 +40,19 @@ public class User
             CreatedAt = DateTime.UtcNow
         };
     }
+
+    public static User CreateAdmin(string name, string email, string passwordHash)
+    {
+        return new User
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            Email = email,
+            PasswordHash = passwordHash,
+            Role = UserRole.Admin,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
+
+    public void UpdatePasswordHash(string newHash) => PasswordHash = newHash;
 }

@@ -32,13 +32,7 @@ public class AppointmentsEdgeCaseTests : IClassFixture<WebAppFixture>
     private async Task<(string Token, Guid BarberId)> RegisterBarber()
     {
         var email = $"barber-appt-edge-{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/v1/auth/register/barber", new
-        {
-            name = "Barber",
-            email,
-            password = "Password123!",
-            availability = new[] { new { dayOfWeek = (int)DateTime.UtcNow.AddDays(3).DayOfWeek, startTime = "08:00:00", endTime = "20:00:00" } }
-        });
+        await _fixture.SeedBarberAsync("Barber", email);
         var loginResp = await _client.PostAsJsonAsync("/api/v1/auth/login",
             new { email, password = "Password123!" });
         var body = await loginResp.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);

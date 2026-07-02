@@ -30,14 +30,18 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IServiceAddonRepository, ServiceAddonRepository>();
 
         // Services
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
+        services.Configure<CloudinarySettings>(configuration.GetSection(CloudinarySettings.SectionName));
 
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IEmailService, SmtpEmailService>();
+        services.AddScoped<IImageService, CloudinaryImageService>();
+        services.AddScoped<AdminSeedService>();
 
         return services;
     }

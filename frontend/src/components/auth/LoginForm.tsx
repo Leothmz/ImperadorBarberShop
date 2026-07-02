@@ -35,7 +35,11 @@ export function LoginForm() {
     try {
       const res = await authApi.login(data)
       login(res.data)
-      router.push('/barber/dashboard')
+      if (res.data.role === 'Admin') {
+        router.push('/admin/dashboard')
+      } else {
+        router.push('/barber/dashboard')
+      }
     } catch {
       setServerError('E-mail ou senha incorretos. Tente novamente.')
     }

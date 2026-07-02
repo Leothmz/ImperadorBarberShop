@@ -8,10 +8,12 @@ namespace ImperadorBarberShop.IntegrationTests.Auth;
 public class AuthControllerTests : IClassFixture<WebAppFixture>
 {
     private readonly HttpClient _client;
+    private readonly WebAppFixture _fixture;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
     public AuthControllerTests(WebAppFixture fixture)
     {
+        _fixture = fixture;
         _client = fixture.CreateClient();
     }
 
@@ -26,7 +28,7 @@ public class AuthControllerTests : IClassFixture<WebAppFixture>
     }
 
     [Fact]
-    public async Task RegisterBarber_ValidPayload_Returns201()
+    public async Task RegisterBarber_Returns404_RouteNoLongerExists()
     {
         var payload = new
         {
@@ -41,15 +43,14 @@ public class AuthControllerTests : IClassFixture<WebAppFixture>
 
         var response = await _client.PostAsJsonAsync("/api/v1/auth/register/barber", payload);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
     public async Task Login_ValidCredentials_Returns200WithTokens()
     {
         var email = $"login-{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/v1/auth/register/barber",
-            new { name = "Test Barber", email, password = "Password123!", availability = Array.Empty<object>() });
+        await _fixture.SeedBarberAsync("Test Barber", email);
 
         var response = await _client.PostAsJsonAsync("/api/v1/auth/login",
             new { email, password = "Password123!" });
@@ -65,8 +66,7 @@ public class AuthControllerTests : IClassFixture<WebAppFixture>
     public async Task Login_WrongPassword_Returns401()
     {
         var email = $"wrong-{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/v1/auth/register/barber",
-            new { name = "Test", email, password = "Password123!", availability = Array.Empty<object>() });
+        await _fixture.SeedBarberAsync("Test", email);
 
         var response = await _client.PostAsJsonAsync("/api/v1/auth/login",
             new { email, password = "WrongPassword!" });

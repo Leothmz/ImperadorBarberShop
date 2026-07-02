@@ -8,4 +8,6 @@ public record ServiceDto
     public int DurationMinutes { get; init; }
     public decimal Price { get; init; }
     public bool IsActive { get; init; }
+    public string? PhotoUrl { get; init; }
+    public List<ServiceDto> Addons { get; init; } = [];
 }
