@@ -132,7 +132,7 @@ using (var settingsScope = app.Services.CreateScope())
 
     var defaults = new Dictionary<string, string>
     {
-        ["notifications:channels"] = "email,whatsapp",
+        ["notifications:channels"] = "email",
         ["notifications:reminderMinutesBefore"] = "60",
     };
     foreach (var (key, val) in defaults)
@@ -141,6 +141,7 @@ using (var settingsScope = app.Services.CreateScope())
 
     var envMappings = new Dictionary<string, string>
     {
+        ["notifications:channels"]     = "NOTIFICATIONS__CHANNELS",
         ["whatsapp:evolutionApiUrl"]  = "WHATSAPP__EVOLUTIONAPIURL",
         ["whatsapp:evolutionApiKey"]  = "WHATSAPP__EVOLUTIONAPIKEY",
         ["whatsapp:instanceName"]     = "WHATSAPP__INSTANCENAME",
