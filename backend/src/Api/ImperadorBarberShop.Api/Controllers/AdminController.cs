@@ -3,8 +3,10 @@ using System.Security.Claims;
 using System.Text;
 using ImperadorBarberShop.Application.Commands.Admin;
 using ImperadorBarberShop.Application.Commands.Auth;
+using ImperadorBarberShop.Application.Commands.Blocks;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Application.Queries.Admin;
+using ImperadorBarberShop.Application.Queries.Blocks;
 using ImperadorBarberShop.Application.Queries.Financial;
 using ImperadorBarberShop.Application.Queries.Services;
 using MediatR;
@@ -135,6 +137,30 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    // Barber blocks
+    [HttpGet("barbers/{barberId:guid}/blocks")]
+    public async Task<IActionResult> GetBarberBlocks(Guid barberId, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetBarberBlocksQuery(barberId), ct));
+
+    [HttpPost("barbers/{barberId:guid}/blocks")]
+    public async Task<IActionResult> CreateBarberBlock(
+        Guid barberId,
+        [FromBody] AdminCreateBarberBlockBody body,
+        CancellationToken ct)
+    {
+        var id = await _mediator.Send(new CreateBarberBlockCommand(
+            barberId, body.StartsAt, body.EndsAt, body.Description,
+            body.IsRecurring, body.RecurrenceDays, body.RecurrenceEndsAt), ct);
+        return CreatedAtAction(nameof(GetBarberBlocks), new { barberId }, new { id });
+    }
+
+    [HttpDelete("barbers/{barberId:guid}/blocks/{id:guid}")]
+    public async Task<IActionResult> DeleteBarberBlock(Guid barberId, Guid id, CancellationToken ct)
+    {
+        await _mediator.Send(new DeleteBarberBlockCommand(id, barberId), ct);
+        return NoContent();
+    }
+
     private static string? GetImageValidationError(IFormFile file)
     {
         if (file.Length > 5 * 1024 * 1024) return "Image must be smaller than 5 MB.";
@@ -156,3 +182,12 @@ public record UpdateNotificationSettingsRequest(
     List<string> Channels,
     int ReminderMinutesBefore,
     string? NotificationPhone);
+
+/// <summary>Request body for POST /admin/barbers/{barberId}/blocks.</summary>
+public record AdminCreateBarberBlockBody(
+    DateTime StartsAt,
+    DateTime EndsAt,
+    string? Description,
+    bool IsRecurring,
+    int? RecurrenceDays,
+    DateTime? RecurrenceEndsAt);
