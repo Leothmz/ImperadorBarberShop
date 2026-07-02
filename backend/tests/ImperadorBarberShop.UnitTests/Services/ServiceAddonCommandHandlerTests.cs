@@ -26,6 +26,10 @@ public class ServiceAddonCommandHandlerTests
     {
         var parentId = Guid.NewGuid();
         var addonId = Guid.NewGuid();
+        var parentService = Service.Create("Parent", "desc", 30, 35m);
+        var addonService = Service.Create("Addon", "desc", 20, 25m);
+        _serviceRepo.GetByIdAsync(parentId, Arg.Any<CancellationToken>()).Returns(parentService);
+        _serviceRepo.GetByIdAsync(addonId, Arg.Any<CancellationToken>()).Returns(addonService);
         var existingAddon = ServiceAddon.Create(parentId, addonId);
         _addonRepo.GetAsync(parentId, addonId, Arg.Any<CancellationToken>()).Returns(existingAddon);
 
