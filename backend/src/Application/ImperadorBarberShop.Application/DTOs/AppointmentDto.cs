@@ -12,6 +12,8 @@ public record AppointmentDto
     public DateTime ScheduledAt { get; init; }
     public int TotalDurationMinutes { get; init; }
     public AppointmentStatus Status { get; init; }
+    public PaymentMethod? PaymentMethod { get; init; }
+    public DateTime? PaidAt { get; init; }
     public string? Notes { get; init; }
     public DateTime CreatedAt { get; init; }
     public List<ServiceDto> Services { get; init; } = [];

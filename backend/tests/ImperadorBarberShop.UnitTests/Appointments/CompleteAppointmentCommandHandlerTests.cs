@@ -69,4 +69,18 @@ public class CompleteAppointmentCommandHandlerTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
+
+    [Fact]
+    public async Task Handle_WithPaymentMethod_SetsPaymentOnCompletion()
+    {
+        var barberId = Guid.NewGuid();
+        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, [Guid.NewGuid()]);
+        _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
+        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
+
+        await _handler.Handle(new CompleteAppointmentCommand(appointment.Id, barberId, PaymentMethod.Pix), CancellationToken.None);
+
+        appointment.Status.Should().Be(AppointmentStatus.Completed);
+        appointment.PaymentMethod.Should().Be(PaymentMethod.Pix);
+    }
 }

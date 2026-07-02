@@ -1,12 +1,13 @@
 using FluentValidation;
 using ImperadorBarberShop.Application.Interfaces;
+using ImperadorBarberShop.Domain.Enums;
 using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
 using MediatR;
 
 namespace ImperadorBarberShop.Application.Commands.Appointments;
 
-public record CompleteAppointmentCommand(Guid AppointmentId, Guid BarberId) : IRequest;
+public record CompleteAppointmentCommand(Guid AppointmentId, Guid BarberId, PaymentMethod? PaymentMethod = null) : IRequest;
 
 public class CompleteAppointmentCommandValidator : AbstractValidator<CompleteAppointmentCommand>
 {
@@ -42,7 +43,7 @@ public class CompleteAppointmentCommandHandler : IRequestHandler<CompleteAppoint
         if (appointment.BarberId != request.BarberId)
             throw new ForbiddenException("You are not authorized to complete this appointment.");
 
-        appointment.Complete();
+        appointment.Complete(request.PaymentMethod);
         await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

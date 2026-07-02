@@ -20,6 +20,8 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.Property(a => a.CreatedAt).IsRequired();
         builder.Property(a => a.UpdatedAt).IsRequired();
         builder.Property(a => a.ReminderSentAt);
+        builder.Property(a => a.PaymentMethod);
+        builder.Property(a => a.PaidAt);
 
         builder.HasIndex(a => new { a.BarberId, a.ScheduledAt }).IsUnique();
         builder.HasIndex(a => a.AccessToken).IsUnique();

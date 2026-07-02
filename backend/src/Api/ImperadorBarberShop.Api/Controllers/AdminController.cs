@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ImperadorBarberShop.Application.Commands.Admin;
+using ImperadorBarberShop.Application.Commands.Appointments;
 using ImperadorBarberShop.Application.Commands.Auth;
 using ImperadorBarberShop.Application.Commands.Blocks;
 using ImperadorBarberShop.Application.Interfaces;
@@ -9,6 +10,7 @@ using ImperadorBarberShop.Application.Queries.Admin;
 using ImperadorBarberShop.Application.Queries.Blocks;
 using ImperadorBarberShop.Application.Queries.Financial;
 using ImperadorBarberShop.Application.Queries.Services;
+using ImperadorBarberShop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -161,6 +163,19 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("appointments/{id:guid}/payment")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateAppointmentPayment(
+        Guid id,
+        [FromBody] AdminUpdatePaymentRequest request,
+        CancellationToken ct)
+    {
+        await _mediator.Send(new UpdatePaymentMethodCommand(id, request.PaymentMethod, null), ct);
+        return NoContent();
+    }
+
     private static string? GetImageValidationError(IFormFile file)
     {
         if (file.Length > 5 * 1024 * 1024) return "Image must be smaller than 5 MB.";
@@ -191,3 +206,5 @@ public record AdminCreateBarberBlockBody(
     bool IsRecurring,
     int? RecurrenceDays,
     DateTime? RecurrenceEndsAt);
+
+public record AdminUpdatePaymentRequest(PaymentMethod PaymentMethod);

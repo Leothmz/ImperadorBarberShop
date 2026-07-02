@@ -2,6 +2,7 @@ using System.Security.Claims;
 using ImperadorBarberShop.Application.Commands.Appointments;
 using ImperadorBarberShop.Application.Commands.Reviews;
 using ImperadorBarberShop.Application.Queries.Appointments;
+using ImperadorBarberShop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -107,16 +108,40 @@ public class AppointmentsController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Mark an accepted appointment as completed (barber only).</summary>
+    /// <summary>Mark an accepted appointment as completed (barber only). Optionally accepts payment method.</summary>
     [HttpPatch("{id:guid}/complete")]
     [Authorize(Policy = "RequireBarberRole")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
-    public async Task<IActionResult> Complete(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Complete(
+        Guid id,
+        [FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)]
+        CompleteAppointmentRequest? request,
+        CancellationToken cancellationToken)
     {
         var barberId = Guid.Parse(User.FindFirstValue("barberId")!);
-        await _mediator.Send(new CompleteAppointmentCommand(id, barberId), cancellationToken);
+        await _mediator.Send(new CompleteAppointmentCommand(id, barberId, request?.PaymentMethod), cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Update the payment method for a completed appointment (barber only).</summary>
+    [HttpPatch("{id:guid}/payment")]
+    [Authorize(Policy = "RequireBarberRole")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdatePayment(
+        Guid id,
+        [FromBody] UpdatePaymentMethodRequest request,
+        CancellationToken cancellationToken)
+    {
+        var barberId = Guid.Parse(User.FindFirstValue("barberId")!);
+        await _mediator.Send(new UpdatePaymentMethodCommand(id, request.PaymentMethod, barberId), cancellationToken);
         return NoContent();
     }
 }
+
+public record CompleteAppointmentRequest(PaymentMethod? PaymentMethod);
+public record UpdatePaymentMethodRequest(PaymentMethod PaymentMethod);
