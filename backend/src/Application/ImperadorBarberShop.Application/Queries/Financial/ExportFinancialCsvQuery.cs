@@ -40,7 +40,8 @@ public class ExportFinancialCsvQueryHandler : IRequestHandler<ExportFinancialCsv
     }
 
     private static string EscapeCsv(string value)
-        => value.Contains(',') ? $"\"{value.Replace("\"", "\"\"")}\"" : value;
+        => value.Contains(',') || value.Contains('"') || value.Contains('\n')
+            ? $"\"{value.Replace("\"", "\"\"")}\"" : value;
 
     // Masks all but last 4 digits: +5511999990000 → +55119999****
     private static string MaskPhone(string phone)
