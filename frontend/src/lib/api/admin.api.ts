@@ -54,8 +54,13 @@ export const adminApi = {
       .get<FinancialByServiceItem[]>('/admin/financial/by-service', { params: { from, to } })
       .then((r) => r.data),
 
-  exportCsvUrl: (from: string, to: string) =>
-    `/api/v1/admin/financial/export?from=${from}&to=${to}`,
+  exportCsv: (from: string, to: string) =>
+    apiClient
+      .get<Blob>('/admin/financial/export', {
+        params: { from, to },
+        responseType: 'blob',
+      })
+      .then((r) => r.data),
 }
 
 export const adminServicesApi = {

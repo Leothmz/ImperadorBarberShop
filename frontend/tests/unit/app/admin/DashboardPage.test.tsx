@@ -36,11 +36,10 @@ describe('DashboardPage', () => {
     expect(screen.getByText('5')).toBeInTheDocument()
   })
 
-  it('renders export CSV link pointing to financial export endpoint', () => {
+  it('renders export CSV button', () => {
     render(<DashboardPage />, { wrapper: createWrapper() })
-    const link = screen.getByRole('link', { name: /exportar csv/i })
-    expect(link).toBeInTheDocument()
-    expect(link.getAttribute('href')).toContain('/api/v1/admin/financial/export')
+    const btn = screen.getByRole('button', { name: /exportar csv/i })
+    expect(btn).toBeInTheDocument()
   })
 
   it('renders financial section headings', () => {

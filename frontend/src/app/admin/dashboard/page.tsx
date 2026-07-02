@@ -84,13 +84,22 @@ export default function DashboardPage() {
           onChange={(e) => setTo(e.target.value)}
           className="bg-brand-black-soft border border-brand-white/20 text-brand-white rounded-lg px-3 py-2 text-sm"
         />
-        <a
-          href={`${process.env.NEXT_PUBLIC_API_URL}${adminApi.exportCsvUrl(from, to)}`}
-          download
+        <button
+          onClick={async () => {
+            const blob = await adminApi.exportCsv(from, to)
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `relatorio-${from}-${to}.csv`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+          }}
           className="ml-auto px-4 py-2 rounded-lg bg-brand-gold text-brand-black text-sm font-semibold hover:bg-brand-gold-light transition-colors"
         >
           Exportar CSV
-        </a>
+        </button>
       </div>
 
       {/* Summary cards */}

@@ -32,7 +32,11 @@ public class GetServicesQueryHandler : IRequestHandler<GetServicesQuery, List<Se
         var allAddons = await _addonRepository.GetByParentIdsAsync(serviceIds, cancellationToken);
         var addonsByParent = allAddons
             .GroupBy(a => a.ParentServiceId)
-            .ToDictionary(g => g.Key, g => g.Select(a => a.AddonService).ToList());
+            .ToDictionary(
+                g => g.Key,
+                g => g.Where(a => a.AddonService.IsActive)
+                       .Select(a => a.AddonService)
+                       .ToList());
 
         return services.Select(s =>
         {
