@@ -19,6 +19,8 @@ public class Appointment
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public DateTime? ReminderSentAt { get; private set; }
+    public PaymentMethod? PaymentMethod { get; private set; }
+    public DateTime? PaidAt { get; private set; }
     public Barber Barber { get; private set; } = null!;
     public IReadOnlyCollection<AppointmentService> AppointmentServices => _appointmentServices.AsReadOnly();
 
@@ -64,11 +66,26 @@ public class Appointment
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void Complete()
+    public void Complete(PaymentMethod? paymentMethod = null)
     {
         if (Status != AppointmentStatus.Accepted)
             throw new InvalidOperationException($"Cannot complete appointment in status {Status}.");
         Status = AppointmentStatus.Completed;
+        if (paymentMethod.HasValue)
+        {
+            PaymentMethod = paymentMethod;
+            PaidAt = DateTime.UtcNow;
+        }
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetPaymentMethod(PaymentMethod paymentMethod)
+    {
+        if (Status != AppointmentStatus.Completed)
+            throw new InvalidOperationException("Cannot set payment method on a non-completed appointment.");
+        PaymentMethod = paymentMethod;
+        if (!PaidAt.HasValue)
+            PaidAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 

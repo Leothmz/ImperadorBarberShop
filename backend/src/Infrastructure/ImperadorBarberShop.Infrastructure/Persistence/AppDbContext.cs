@@ -20,6 +20,7 @@ public class AppDbContext : DbContext, IUnitOfWork
     public DbSet<ServiceAddon> ServiceAddons => Set<ServiceAddon>();
     public DbSet<AppSettings> AppSettings => Set<AppSettings>();
     public DbSet<BarberBlock> BarberBlocks => Set<BarberBlock>();
+    public DbSet<Expense> Expenses => Set<Expense>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

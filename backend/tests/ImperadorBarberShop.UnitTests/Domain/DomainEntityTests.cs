@@ -48,3 +48,44 @@ public class DomainEntityTests
         addon.Should().NotBeNull();
     }
 }
+
+public class AppointmentPaymentMethodTests
+{
+    [Fact]
+    public void Complete_WithPaymentMethod_SetsMethodAndPaidAt()
+    {
+        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Guid.NewGuid()]);
+        appt.Complete(PaymentMethod.Pix);
+        appt.Status.Should().Be(AppointmentStatus.Completed);
+        appt.PaymentMethod.Should().Be(PaymentMethod.Pix);
+        appt.PaidAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Complete_WithoutPaymentMethod_LeavesMethodNull()
+    {
+        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Guid.NewGuid()]);
+        appt.Complete();
+        appt.Status.Should().Be(AppointmentStatus.Completed);
+        appt.PaymentMethod.Should().BeNull();
+        appt.PaidAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetPaymentMethod_OnCompleted_SetsMethod()
+    {
+        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Guid.NewGuid()]);
+        appt.Complete();
+        appt.SetPaymentMethod(PaymentMethod.Dinheiro);
+        appt.PaymentMethod.Should().Be(PaymentMethod.Dinheiro);
+        appt.PaidAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void SetPaymentMethod_OnAccepted_ThrowsInvalidOperationException()
+    {
+        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Guid.NewGuid()]);
+        var act = () => appt.SetPaymentMethod(PaymentMethod.Pix);
+        act.Should().Throw<InvalidOperationException>();
+    }
+}
