@@ -109,8 +109,13 @@ export default function BlocksTab() {
               )}
             </div>
             <button
-              onClick={() => deleteBlock.mutate(block.id)}
-              className="text-red-400 hover:text-red-300 text-sm ml-4"
+              onClick={() => {
+                if (window.confirm('Excluir este bloqueio?')) {
+                  deleteBlock.mutate(block.id)
+                }
+              }}
+              disabled={deleteBlock.isPending}
+              className="text-brand-white/50 hover:text-brand-white text-sm ml-4 disabled:opacity-40"
             >
               Excluir
             </button>
@@ -171,6 +176,10 @@ export default function BlocksTab() {
           <Button type="submit" disabled={createBlock.isPending} className="w-full">
             {createBlock.isPending ? 'Salvando...' : 'Salvar'}
           </Button>
+
+          {createBlock.isError && (
+            <p className="text-red-400 text-sm">Erro ao salvar. Tente novamente.</p>
+          )}
         </form>
       </Modal>
     </div>
