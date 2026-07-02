@@ -32,6 +32,7 @@ export default function AdminBlocksSection({ barberId }: { barberId: string }) {
   const createBlock = useAdminCreateBarberBlock(barberId)
   const deleteBlock = useAdminDeleteBarberBlock(barberId)
   const [open, setOpen] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } =
     useForm<FormValues>({ resolver: zodResolver(blockSchema), defaultValues: { isRecurring: false, selectedDays: 0 } })
@@ -60,9 +61,15 @@ export default function AdminBlocksSection({ barberId }: { barberId: string }) {
   const formatDate = (iso: string) => new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
   const bitsToLabels = (bits: number) => DAYS.filter(d => (bits & d.bit) !== 0).map(d => d.label).join(', ')
 
-  const handleDelete = (blockId: string) => {
-    if (!window.confirm('Excluir este bloqueio?')) return
-    deleteBlock.mutate(blockId)
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Excluir este bloqueio?')) {
+      setDeletingId(id)
+      try {
+        await deleteBlock.mutateAsync(id)
+      } finally {
+        setDeletingId(null)
+      }
+    }
   }
 
   return (
@@ -87,8 +94,8 @@ export default function AdminBlocksSection({ barberId }: { barberId: string }) {
             </div>
             <button
               onClick={() => handleDelete(block.id)}
-              disabled={deleteBlock.isPending}
-              className="text-red-400 text-xs ml-2 disabled:opacity-50"
+              disabled={deletingId === block.id}
+              className="text-brand-white/50 hover:text-brand-white disabled:opacity-50 text-xs ml-2"
             >
               Excluir
             </button>
@@ -101,12 +108,12 @@ export default function AdminBlocksSection({ barberId }: { barberId: string }) {
           <div>
             <label className="block text-brand-white/70 text-sm mb-1">Início</label>
             <Input type="datetime-local" {...register('startsAt')} />
-            {errors.startsAt && <p className="text-red-400 text-xs">{errors.startsAt.message}</p>}
+            {errors.startsAt && <p className="text-brand-gold/70 text-xs">{errors.startsAt.message}</p>}
           </div>
           <div>
             <label className="block text-brand-white/70 text-sm mb-1">Fim</label>
             <Input type="datetime-local" {...register('endsAt')} />
-            {errors.endsAt && <p className="text-red-400 text-xs">{errors.endsAt.message}</p>}
+            {errors.endsAt && <p className="text-brand-gold/70 text-xs">{errors.endsAt.message}</p>}
           </div>
           <div>
             <label className="block text-brand-white/70 text-sm mb-1">Descrição</label>
@@ -127,12 +134,12 @@ export default function AdminBlocksSection({ barberId }: { barberId: string }) {
                   </button>
                 ))}
               </div>
-              {errors.selectedDays && <p className="text-red-400 text-xs">{errors.selectedDays.message}</p>}
+              {errors.selectedDays && <p className="text-brand-gold/70 text-xs">{errors.selectedDays.message}</p>}
               <Input type="date" {...register('recurrenceEndsAt')} placeholder="Repetir até (opcional)" />
             </>
           )}
           {createBlock.error && (
-            <p className="text-red-400 text-xs">
+            <p className="text-brand-gold/70 text-sm">
               {(createBlock.error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Erro ao salvar bloqueio.'}
             </p>
           )}
