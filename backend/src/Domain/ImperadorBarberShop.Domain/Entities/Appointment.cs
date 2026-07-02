@@ -18,6 +18,7 @@ public class Appointment
     public string? Notes { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
+    public DateTime? ReminderSentAt { get; private set; }
     public Barber Barber { get; private set; } = null!;
     public IReadOnlyCollection<AppointmentService> AppointmentServices => _appointmentServices.AsReadOnly();
 
@@ -68,6 +69,12 @@ public class Appointment
         if (Status != AppointmentStatus.Accepted)
             throw new InvalidOperationException($"Cannot complete appointment in status {Status}.");
         Status = AppointmentStatus.Completed;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void MarkReminderSent()
+    {
+        ReminderSentAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 
