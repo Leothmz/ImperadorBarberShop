@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import DashboardPage from '@/app/admin/dashboard/page'
 import { http, HttpResponse } from 'msw'
@@ -22,10 +22,18 @@ beforeEach(() => {
         averageTicket: 50,
         from: '2026-07-01',
         to: '2026-07-31',
+        totalExpenses: 100,
+        netRevenue: 150,
       })
     ),
     http.get('*/admin/financial/by-barber', () => HttpResponse.json([])),
-    http.get('*/admin/financial/by-service', () => HttpResponse.json([]))
+    http.get('*/admin/financial/by-service', () => HttpResponse.json([])),
+    http.get('*/admin/financial/timeline', () => HttpResponse.json([])),
+    http.get('*/admin/financial/expenses', () =>
+      HttpResponse.json([
+        { id: 'expense-1', amount: 100, description: 'Produto', date: '2026-07-01', createdAt: new Date().toISOString() },
+      ])
+    )
   )
 })
 
@@ -54,5 +62,38 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('button', { name: 'Hoje' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Esta semana' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Este mês' })).toBeInTheDocument()
+  })
+
+  it('renders summary cards including Despesas and Lucro Líquido', async () => {
+    render(<DashboardPage />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getAllByText('Despesas').length).toBeGreaterThanOrEqual(1)
+      expect(screen.getByText('Lucro Líquido')).toBeInTheDocument()
+      expect(screen.getByText('Receita Total')).toBeInTheDocument()
+    })
+  })
+
+  it('renders groupBy buttons for timeline', async () => {
+    render(<DashboardPage />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Dia' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Semana' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Mês' })).toBeInTheDocument()
+    })
+  })
+
+  it('renders expenses section with form', async () => {
+    render(<DashboardPage />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getAllByText('Despesas').length).toBeGreaterThanOrEqual(1)
+      expect(screen.getByRole('button', { name: /Adicionar/i })).toBeInTheDocument()
+    })
+  })
+
+  it('shows existing expenses from mock data', async () => {
+    render(<DashboardPage />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getByText('Produto')).toBeInTheDocument()
+    })
   })
 })
