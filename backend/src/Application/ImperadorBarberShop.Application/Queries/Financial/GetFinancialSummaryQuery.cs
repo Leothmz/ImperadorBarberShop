@@ -30,7 +30,7 @@ public class GetFinancialSummaryQueryHandler : IRequestHandler<GetFinancialSumma
         var total = appointments.Count;
         var revenue = appointments
             .SelectMany(a => a.AppointmentServices)
-            .Sum(s => s.Service.Price);
+            .Sum(s => s.Service?.Price ?? 0m);
         var average = total > 0 ? revenue / total : 0m;
         var netRevenue = revenue - totalExpenses;
 
