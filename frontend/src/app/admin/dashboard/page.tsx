@@ -43,7 +43,6 @@ const expenseSchema = z.object({
   date: z.string().min(1, 'Obrigatório'),
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ExpenseForm = { amount: number; description: string; date: string }
 
 function pct(current: number, previous: number) {
@@ -103,7 +102,6 @@ export default function DashboardPage() {
       label: 'Despesas',
       value: fmt(summary?.totalExpenses ?? 0),
       compare: pct(summary?.totalExpenses ?? 0, prevSummary?.totalExpenses ?? 0),
-      invertColor: true,
     },
     {
       label: 'Lucro Líquido',
