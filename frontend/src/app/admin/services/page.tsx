@@ -159,25 +159,36 @@ function AddonsModal({
 }) {
   const addAddon = useAddAddon()
   const removeAddon = useRemoveAddon()
+  const [error, setError] = useState<string | null>(null)
 
-  const currentAddonIds = new Set(service.addons.map((a) => a.id))
+  // Use fresh data from allServices so the UI reflects the latest state after invalidation
+  const currentService = allServices.find((s) => s.id === service.id) ?? service
+  const currentAddonIds = new Set(currentService.addons.map((a) => a.id))
   const candidates = allServices.filter(
     (s) => s.id !== service.id && s.isActive
   )
 
   async function toggle(addonId: string, isCurrentlyLinked: boolean) {
-    if (isCurrentlyLinked) {
-      await removeAddon.mutateAsync({ serviceId: service.id, addonId })
-    } else {
-      await addAddon.mutateAsync({ serviceId: service.id, addonId })
+    setError(null)
+    try {
+      if (isCurrentlyLinked) {
+        await removeAddon.mutateAsync({ serviceId: service.id, addonId })
+      } else {
+        await addAddon.mutateAsync({ serviceId: service.id, addonId })
+      }
+    } catch {
+      setError('Erro ao atualizar complemento. Tente novamente.')
     }
   }
 
   const isPending = addAddon.isPending || removeAddon.isPending
 
   return (
-    <Modal isOpen onClose={onClose} title={`Add-ons de "${service.name}"`}>
+    <Modal isOpen onClose={onClose} title={`Complementos de "${service.name}"`}>
       <div className="flex flex-col gap-3 max-h-80 overflow-y-auto">
+        {error && (
+          <p role="alert" className="text-sm text-red-400">{error}</p>
+        )}
         {candidates.length === 0 && (
           <p className="text-sm text-brand-white/50 text-center py-4">
             Nenhum outro serviço ativo disponível.
@@ -246,7 +257,7 @@ export default function ServicesPage() {
               <th className="px-4 py-3">Serviço</th>
               <th className="px-4 py-3">Preço</th>
               <th className="px-4 py-3">Duração</th>
-              <th className="px-4 py-3">Add-ons</th>
+              <th className="px-4 py-3">Complementos</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Ações</th>
             </tr>
@@ -292,7 +303,7 @@ export default function ServicesPage() {
                     onClick={() => setAddonsTarget(service)}
                     className="text-xs text-brand-gold hover:underline"
                   >
-                    {service.addons.length} add-on{service.addons.length !== 1 ? 's' : ''}
+                    {service.addons.length} complemento{service.addons.length !== 1 ? 's' : ''}
                   </button>
                 </td>
                 <td className="px-4 py-3">

@@ -30,7 +30,7 @@ export const adminApi = {
       form.append(`availability[${i}].endTime`, a.endTime)
     })
     if (payload.photo) form.append('photo', payload.photo)
-    return apiClient.post<{ id: string }>('/admin/barbers', form).then((r) => r.data)
+    return apiClient.post<{ id: string }>('/admin/barbers', form, { headers: { 'Content-Type': undefined } }).then((r) => r.data)
   },
 
   deactivateBarber: (id: string) =>
@@ -95,7 +95,7 @@ export const adminServicesApi = {
     form.append('price', String(payload.price))
     form.append('durationMinutes', String(payload.durationMinutes))
     if (payload.photo) form.append('photo', payload.photo)
-    return apiClient.post<{ id: string }>('/services', form).then((r) => r.data)
+    return apiClient.post<{ id: string }>('/services', form, { headers: { 'Content-Type': undefined } }).then((r) => r.data)
   },
 
   updateService: (payload: UpdateServicePayload) => {
@@ -105,7 +105,7 @@ export const adminServicesApi = {
     form.append('price', String(payload.price))
     form.append('durationMinutes', String(payload.durationMinutes))
     if (payload.photo) form.append('photo', payload.photo)
-    return apiClient.put(`/services/${payload.id}`, form)
+    return apiClient.put(`/services/${payload.id}`, form, { headers: { 'Content-Type': undefined } })
   },
 
   deactivateService: (id: string) => apiClient.patch(`/services/${id}/deactivate`),
