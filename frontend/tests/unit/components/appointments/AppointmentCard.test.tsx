@@ -18,6 +18,8 @@ const mockAppointment: Appointment = {
     { id: 'service-1', name: 'Corte Clássico', durationMinutes: 30, price: 45.0 },
     { id: 'service-2', name: 'Barba', durationMinutes: 20, price: 35.0 },
   ],
+  paymentMethod: null,
+  paidAt: null,
 }
 
 describe('AppointmentCard', () => {

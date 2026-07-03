@@ -1,5 +1,6 @@
 export type UserRole = 'Barber' | 'Admin'
 export type AppointmentStatus = 'Accepted' | 'Cancelled' | 'Completed'
+export type PaymentMethod = 'Dinheiro' | 'Cartão' | 'Pix'
 
 export interface Service {
   id: string
@@ -71,6 +72,8 @@ export interface Appointment {
   notes: string | null
   createdAt: string
   services: ServiceRef[]
+  paymentMethod: PaymentMethod | null
+  paidAt: string | null
 }
 
 export interface AppointmentManage {
@@ -98,6 +101,28 @@ export interface FinancialSummary {
   averageTicket: number
   from: string
   to: string
+  totalExpenses: number
+  netRevenue: number
+}
+
+export interface Expense {
+  id: string
+  amount: number
+  description: string
+  date: string        // "YYYY-MM-DD"
+  createdAt: string
+}
+
+export interface FinancialTimelineItem {
+  period: string      // "YYYY-MM-DD" (start of day/week/month)
+  revenue: number
+  appointments: number
+}
+
+export interface CreateExpensePayload {
+  amount: number
+  description: string
+  date: string        // "YYYY-MM-DD"
 }
 
 export interface FinancialByBarberItem {

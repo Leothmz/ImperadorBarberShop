@@ -6,6 +6,7 @@ import type {
   CreateAppointmentResult,
   CreateReviewByTokenPayload,
   CreateReviewByTokenResult,
+  PaymentMethod,
 } from '@/types/api.types'
 
 export const appointmentsApi = {
@@ -33,7 +34,12 @@ export const appointmentsApi = {
     return apiClient.patch<void>(`/appointments/${id}/cancel-by-barber`)
   },
 
-  complete(id: string) {
-    return apiClient.patch<Appointment>(`/appointments/${id}/complete`)
+  complete(id: string, paymentMethod?: PaymentMethod) {
+    return apiClient.patch<Appointment>(`/appointments/${id}/complete`,
+      paymentMethod ? { paymentMethod } : undefined)
+  },
+
+  updatePaymentMethod(id: string, paymentMethod: PaymentMethod) {
+    return apiClient.patch<void>(`/appointments/${id}/payment`, { paymentMethod })
   },
 }

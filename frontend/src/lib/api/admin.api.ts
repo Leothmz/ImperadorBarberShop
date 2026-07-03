@@ -1,12 +1,17 @@
 import apiClient from './client'
 import type {
   AdminBarber,
+  Appointment,
   FinancialSummary,
   FinancialByBarberItem,
   FinancialByServiceItem,
+  Expense,
+  FinancialTimelineItem,
+  CreateExpensePayload,
   CreateBarberPayload,
   CreateServicePayload,
   UpdateServicePayload,
+  PaymentMethod,
 } from '@/types/api.types'
 
 export const adminApi = {
@@ -61,6 +66,25 @@ export const adminApi = {
         responseType: 'blob',
       })
       .then((r) => r.data),
+
+  getBarberAppointments: (barberId: string) =>
+    apiClient.get<Appointment[]>(`/admin/barbers/${barberId}/appointments`).then((r) => r.data),
+
+  getExpenses: (from: string, to: string) =>
+    apiClient.get<Expense[]>('/admin/financial/expenses', { params: { from, to } }).then((r) => r.data),
+
+  createExpense: (payload: CreateExpensePayload) =>
+    apiClient.post<{ id: string }>('/admin/financial/expenses', payload).then((r) => r.data),
+
+  deleteExpense: (id: string) =>
+    apiClient.delete(`/admin/financial/expenses/${id}`),
+
+  getTimeline: (from: string, to: string, groupBy: 'day' | 'week' | 'month' = 'day') =>
+    apiClient.get<FinancialTimelineItem[]>('/admin/financial/timeline', { params: { from, to, groupBy } })
+      .then((r) => r.data),
+
+  updateAppointmentPayment: (id: string, paymentMethod: PaymentMethod) =>
+    apiClient.patch(`/admin/appointments/${id}/payment`, { paymentMethod }),
 }
 
 export const adminServicesApi = {

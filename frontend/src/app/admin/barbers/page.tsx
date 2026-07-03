@@ -281,6 +281,7 @@ export default function BarbersPage() {
           </thead>
           <tbody>
             {barbers?.map((barber) => (
+              <>
               <tr
                 key={barber.id}
                 className="border-b border-brand-white/5 hover:bg-brand-white/5 transition-colors"
@@ -350,6 +351,7 @@ export default function BarbersPage() {
                   <AdminBlocksSection barberId={barber.id} />
                 </td>
               </tr>
+              </>
             ))}
             {barbers?.length === 0 && (
               <tr>

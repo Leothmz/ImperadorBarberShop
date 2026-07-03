@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { appointmentsApi } from '@/lib/api/appointments.api'
-import type { CreateAppointmentPayload, CreateReviewByTokenPayload } from '@/types/api.types'
+import type { CreateAppointmentPayload, CreateReviewByTokenPayload, PaymentMethod } from '@/types/api.types'
 
 export function useCreateAppointment() {
   return useMutation({
@@ -70,8 +70,9 @@ export function useCancelAppointmentByBarber() {
 export function useCompleteAppointment() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => appointmentsApi.complete(id).then((r) => r.data),
-    onMutate: async (id) => {
+    mutationFn: ({ id, paymentMethod }: { id: string; paymentMethod?: PaymentMethod }) =>
+      appointmentsApi.complete(id, paymentMethod).then((r) => r.data),
+    onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: ['appointments', 'barber'] })
       const previous = queryClient.getQueryData(['appointments', 'barber'])
       queryClient.setQueryData(['appointments', 'barber'], (old: unknown) => {
@@ -80,9 +81,20 @@ export function useCompleteAppointment() {
       })
       return { previous }
     },
-    onError: (_err, _id, context) => {
+    onError: (_err, _vars, context) => {
       queryClient.setQueryData(['appointments', 'barber'], context?.previous)
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments', 'barber'] })
+    },
+  })
+}
+
+export function useUpdatePaymentMethod() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, paymentMethod }: { id: string; paymentMethod: PaymentMethod }) =>
+      appointmentsApi.updatePaymentMethod(id, paymentMethod),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments', 'barber'] })
     },

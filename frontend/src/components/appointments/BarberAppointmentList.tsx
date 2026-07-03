@@ -54,8 +54,8 @@ export function BarberAppointmentList() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  isLoading={complete.isPending && complete.variables === appointment.id}
-                  onClick={() => complete.mutate(appointment.id)}
+                  isLoading={complete.isPending && complete.variables?.id === appointment.id}
+                  onClick={() => complete.mutate({ id: appointment.id })}
                 >
                   Concluir
                 </Button>

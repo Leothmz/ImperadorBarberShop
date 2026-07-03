@@ -27,6 +27,8 @@ export const mockBarbers: Barber[] = [
     name: 'Carlos Andrade',
     email: 'carlos@imperador.com',
     averageRating: 4.8,
+    photoUrl: null,
+    isActive: true,
     availability: [
       { dayOfWeek: 'Monday', startTime: '09:00:00', endTime: '18:00:00' },
       { dayOfWeek: 'Tuesday', startTime: '09:00:00', endTime: '18:00:00' },
@@ -41,6 +43,8 @@ export const mockBarbers: Barber[] = [
     name: 'Rafael Lima',
     email: 'rafael@imperador.com',
     averageRating: 4.5,
+    photoUrl: null,
+    isActive: true,
     availability: [
       { dayOfWeek: 'Tuesday', startTime: '10:00:00', endTime: '19:00:00' },
       { dayOfWeek: 'Wednesday', startTime: '10:00:00', endTime: '19:00:00' },
@@ -123,6 +127,8 @@ export const mockBarberAppointments: Appointment[] = [
     services: [
       { id: 'service-1', name: 'Corte Clássico', durationMinutes: 30, price: 45.0 },
     ],
+    paymentMethod: null,
+    paidAt: null,
   },
   {
     id: 'appt-accepted-2',
@@ -138,6 +144,8 @@ export const mockBarberAppointments: Appointment[] = [
     services: [
       { id: 'service-3', name: 'Corte + Barba', durationMinutes: 50, price: 70.0 },
     ],
+    paymentMethod: null,
+    paidAt: null,
   },
 ]
 
@@ -243,5 +251,51 @@ export const handlers = [
     const appt = mockBarberAppointments.find((a) => a.id === params.id)
     if (!appt) return new HttpResponse(null, { status: 404 })
     return HttpResponse.json({ ...appt, status: 'Completed' })
+  }),
+
+  http.patch(`${BASE_URL}/appointments/:id/payment`, () => {
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  // Admin
+  http.get(`${BASE_URL}/admin/barbers/:barberId/appointments`, () => {
+    return HttpResponse.json(mockBarberAppointments)
+  }),
+
+  http.get(`${BASE_URL}/admin/financial/summary`, () => {
+    return HttpResponse.json({
+      totalRevenue: 1250,
+      totalAppointments: 15,
+      averageTicket: 83.33,
+      from: '2026-07-01',
+      to: '2026-07-31',
+      totalExpenses: 200,
+      netRevenue: 1050,
+    })
+  }),
+
+  http.get(`${BASE_URL}/admin/financial/expenses`, () => {
+    return HttpResponse.json([
+      { id: 'expense-1', amount: 100, description: 'Produto', date: '2026-07-01', createdAt: new Date().toISOString() },
+    ])
+  }),
+
+  http.post(`${BASE_URL}/admin/financial/expenses`, async () => {
+    return HttpResponse.json({ id: 'expense-new-1' }, { status: 201 })
+  }),
+
+  http.delete(`${BASE_URL}/admin/financial/expenses/:id`, () => {
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.get(`${BASE_URL}/admin/financial/timeline`, () => {
+    return HttpResponse.json([
+      { period: '2026-07-01', revenue: 150, appointments: 3 },
+      { period: '2026-07-02', revenue: 80, appointments: 2 },
+    ])
+  }),
+
+  http.patch(`${BASE_URL}/admin/appointments/:id/payment`, () => {
+    return new HttpResponse(null, { status: 204 })
   }),
 ]
