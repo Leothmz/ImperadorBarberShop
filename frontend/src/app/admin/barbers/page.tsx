@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -281,9 +281,8 @@ export default function BarbersPage() {
           </thead>
           <tbody>
             {barbers?.map((barber) => (
-              <>
+              <React.Fragment key={barber.id}>
               <tr
-                key={barber.id}
                 className="border-b border-brand-white/5 hover:bg-brand-white/5 transition-colors"
               >
                 <td className="px-4 py-3">
@@ -351,7 +350,7 @@ export default function BarbersPage() {
                   <AdminBlocksSection barberId={barber.id} />
                 </td>
               </tr>
-              </>
+              </React.Fragment>
             ))}
             {barbers?.length === 0 && (
               <tr>
