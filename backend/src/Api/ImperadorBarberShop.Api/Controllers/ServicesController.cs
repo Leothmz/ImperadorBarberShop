@@ -4,6 +4,7 @@ using ImperadorBarberShop.Application.Queries.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ImperadorBarberShop.Api.Controllers;
 
@@ -75,6 +76,19 @@ public class ServicesController : ControllerBase
     {
         await _mediator.Send(new ActivateServiceCommand(id), ct);
         return NoContent();
+    }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "RequireAdminRole")]
+    public async Task<IActionResult> DeleteService(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new DeleteServiceCommand(id), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
     }
 
     [HttpPost("{id:guid}/addons/{addonId:guid}")]

@@ -192,6 +192,15 @@ export interface CreateBarberPayload {
   photo?: File
 }
 
+export interface UpdateBarberPayload {
+  id: string
+  name: string
+  email: string
+  password?: string
+  availability: BarberAvailability[]
+  photo?: File
+}
+
 export interface CreateServicePayload {
   name: string
   description: string

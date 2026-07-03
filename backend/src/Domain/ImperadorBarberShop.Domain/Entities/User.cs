@@ -55,4 +55,5 @@ public class User
     }
 
     public void UpdatePasswordHash(string newHash) => PasswordHash = newHash;
+    public void UpdateProfile(string name, string email) { Name = name; Email = email; }
 }

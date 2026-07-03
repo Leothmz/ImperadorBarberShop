@@ -9,6 +9,7 @@ import type {
   FinancialTimelineItem,
   CreateExpensePayload,
   CreateBarberPayload,
+  UpdateBarberPayload,
   CreateServicePayload,
   UpdateServicePayload,
   PaymentMethod,
@@ -32,6 +33,23 @@ export const adminApi = {
     if (payload.photo) form.append('photo', payload.photo)
     return apiClient.post<{ id: string }>('/admin/barbers', form, { headers: { 'Content-Type': undefined } }).then((r) => r.data)
   },
+
+  updateBarber: (payload: UpdateBarberPayload) => {
+    const form = new FormData()
+    form.append('name', payload.name)
+    form.append('email', payload.email)
+    if (payload.password) form.append('password', payload.password)
+    payload.availability.forEach((a, i) => {
+      form.append(`availability[${i}].dayOfWeek`, a.dayOfWeek)
+      form.append(`availability[${i}].startTime`, a.startTime)
+      form.append(`availability[${i}].endTime`, a.endTime)
+    })
+    if (payload.photo) form.append('photo', payload.photo)
+    return apiClient.put(`/admin/barbers/${payload.id}`, form, { headers: { 'Content-Type': undefined } })
+  },
+
+  deleteBarber: (id: string) =>
+    apiClient.delete(`/admin/barbers/${id}`),
 
   deactivateBarber: (id: string) =>
     apiClient.patch(`/admin/barbers/${id}/deactivate`),
@@ -107,6 +125,9 @@ export const adminServicesApi = {
     if (payload.photo) form.append('photo', payload.photo)
     return apiClient.put(`/services/${payload.id}`, form, { headers: { 'Content-Type': undefined } })
   },
+
+  deleteService: (id: string) =>
+    apiClient.delete(`/services/${id}`),
 
   deactivateService: (id: string) => apiClient.patch(`/services/${id}/deactivate`),
   activateService: (id: string) => apiClient.patch(`/services/${id}/activate`),

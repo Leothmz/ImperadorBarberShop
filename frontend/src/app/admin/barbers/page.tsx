@@ -8,6 +8,8 @@ import Image from 'next/image'
 import {
   useAdminBarbers,
   useCreateBarber,
+  useUpdateBarber,
+  useDeleteBarber,
   useDeactivateBarber,
   useActivateBarber,
 } from '@/hooks/useAdminBarbers'
@@ -17,7 +19,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
-import type { DayOfWeekString } from '@/types/api.types'
+import type { AdminBarber, DayOfWeekString } from '@/types/api.types'
 
 const DAY_OF_WEEK_STRINGS: Record<number, DayOfWeekString> = {
   0: 'Sunday',
@@ -27,6 +29,16 @@ const DAY_OF_WEEK_STRINGS: Record<number, DayOfWeekString> = {
   4: 'Thursday',
   5: 'Friday',
   6: 'Saturday',
+}
+
+const DAY_OF_WEEK_NUMS: Record<DayOfWeekString, number> = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
 }
 
 const WEEKDAYS = [
@@ -64,7 +76,112 @@ const createBarberSchema = z
     path: ['availability'],
   })
 
+const editBarberSchema = z
+  .object({
+    name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+    email: z.string().email('E-mail inválido'),
+    password: z.string().optional(),
+    confirmPassword: z.string().optional(),
+    photo: z.instanceof(File).optional(),
+    availability: z.array(availabilitySchema),
+  })
+  .refine(
+    (data) => !data.password || !data.confirmPassword || data.password === data.confirmPassword,
+    { message: 'As senhas não coincidem', path: ['confirmPassword'] }
+  )
+  .refine(
+    (data) => !data.password || data.password.length >= 8,
+    { message: 'Senha deve ter pelo menos 8 caracteres', path: ['password'] }
+  )
+  .refine((data) => data.availability.some((a) => a.enabled), {
+    message: 'Selecione pelo menos um dia de disponibilidade',
+    path: ['availability'],
+  })
+
 type CreateBarberFormData = z.infer<typeof createBarberSchema>
+type EditBarberFormData = z.infer<typeof editBarberSchema>
+
+function AvailabilityPicker({
+  control,
+  register,
+  watch,
+  errors,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  control: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  register: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  watch: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  errors: any
+}) {
+  const { fields } = useFieldArray({ control, name: 'availability' })
+  const availabilityValues = watch('availability')
+
+  return (
+    <fieldset className="rounded-lg border border-brand-white/10 p-4">
+      <legend className="px-1 text-sm font-medium text-brand-white/80">
+        Disponibilidade semanal
+      </legend>
+      <div className="flex flex-col gap-3 mt-2">
+        {fields.map((field, index) => {
+          const day = WEEKDAYS[index]
+          const isEnabled = availabilityValues[index]?.enabled
+
+          return (
+            <div key={field.id} className="flex items-center gap-3 flex-wrap">
+              <Controller
+                control={control}
+                name={`availability.${index}.enabled`}
+                render={({ field: { value, onChange } }) => (
+                  <label className="flex items-center gap-2 w-24 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={value}
+                      onChange={onChange}
+                      className="h-4 w-4 rounded accent-brand-gold"
+                      aria-label={`Habilitar ${day.label}`}
+                    />
+                    <span className="text-sm text-brand-white/80">{day.label}</span>
+                  </label>
+                )}
+              />
+              <div
+                className={[
+                  'flex items-center gap-2 transition-opacity',
+                  isEnabled ? 'opacity-100' : 'opacity-30',
+                ].join(' ')}
+              >
+                <label className="text-xs text-brand-white/50">Início</label>
+                <input
+                  type="time"
+                  disabled={!isEnabled}
+                  className="rounded border border-brand-white/20 bg-brand-black-soft px-2 py-1 text-sm text-brand-white focus:border-brand-gold focus:outline-none"
+                  {...register(`availability.${index}.startTime`)}
+                />
+                <label className="text-xs text-brand-white/50">Fim</label>
+                <input
+                  type="time"
+                  disabled={!isEnabled}
+                  className="rounded border border-brand-white/20 bg-brand-black-soft px-2 py-1 text-sm text-brand-white focus:border-brand-gold focus:outline-none"
+                  {...register(`availability.${index}.endTime`)}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {errors.availability && (
+        <p role="alert" className="mt-2 text-xs text-red-400">
+          {Array.isArray(errors.availability)
+            ? 'Verifique os horários de disponibilidade'
+            : (errors.availability as { message?: string })?.message}
+        </p>
+      )}
+    </fieldset>
+  )
+}
 
 function CreateBarberForm({ onSuccess }: { onSuccess: () => void }) {
   const createBarber = useCreateBarber()
@@ -89,9 +206,6 @@ function CreateBarberForm({ onSuccess }: { onSuccess: () => void }) {
     },
   })
 
-  const { fields } = useFieldArray({ control, name: 'availability' })
-  const availabilityValues = watch('availability')
-
   async function onSubmit(data: CreateBarberFormData) {
     setServerError(null)
     const availability = data.availability
@@ -113,12 +227,13 @@ function CreateBarberForm({ onSuccess }: { onSuccess: () => void }) {
       onSuccess()
     } catch (err: unknown) {
       const axiosErr = err as {
-        response?: { data?: { detail?: string; errors?: Record<string, string[]> } }
+        response?: { data?: { detail?: string; error?: string; errors?: Record<string, string[]> } }
       }
       const res = axiosErr?.response?.data
       const message =
         (res?.errors ? Object.values(res.errors).flat().join(' ') : null) ??
         res?.detail ??
+        res?.error ??
         'Erro ao criar barbeiro. Verifique os dados e tente novamente.'
       setServerError(message)
     }
@@ -126,40 +241,12 @@ function CreateBarberForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
-      <Input
-        label="Nome completo"
-        type="text"
-        placeholder="Carlos Barbeiro"
-        error={errors.name?.message}
-        {...register('name')}
-      />
-      <Input
-        label="E-mail"
-        type="email"
-        placeholder="carlos@imperador.com"
-        error={errors.email?.message}
-        {...register('email')}
-      />
-      <Input
-        label="Senha"
-        type="password"
-        placeholder="••••••••"
-        error={errors.password?.message}
-        {...register('password')}
-      />
-      <Input
-        label="Confirmar senha"
-        type="password"
-        placeholder="••••••••"
-        error={errors.confirmPassword?.message}
-        {...register('confirmPassword')}
-      />
-
-      {/* Photo upload */}
+      <Input label="Nome completo" type="text" placeholder="Carlos Barbeiro" error={errors.name?.message} {...register('name')} />
+      <Input label="E-mail" type="email" placeholder="carlos@imperador.com" error={errors.email?.message} {...register('email')} />
+      <Input label="Senha" type="password" placeholder="••••••••" error={errors.password?.message} {...register('password')} />
+      <Input label="Confirmar senha" type="password" placeholder="••••••••" error={errors.confirmPassword?.message} {...register('confirmPassword')} />
       <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-brand-white/80">
-          Foto (opcional)
-        </label>
+        <label className="text-sm font-medium text-brand-white/80">Foto (opcional)</label>
         <input
           type="file"
           accept="image/*"
@@ -170,79 +257,143 @@ function CreateBarberForm({ onSuccess }: { onSuccess: () => void }) {
           }}
         />
       </div>
-
-      {/* Availability */}
-      <fieldset className="rounded-lg border border-brand-white/10 p-4">
-        <legend className="px-1 text-sm font-medium text-brand-white/80">
-          Disponibilidade semanal
-        </legend>
-        <div className="flex flex-col gap-3 mt-2">
-          {fields.map((field, index) => {
-            const day = WEEKDAYS[index]
-            const isEnabled = availabilityValues[index]?.enabled
-
-            return (
-              <div key={field.id} className="flex items-center gap-3 flex-wrap">
-                <Controller
-                  control={control}
-                  name={`availability.${index}.enabled`}
-                  render={({ field: { value, onChange } }) => (
-                    <label className="flex items-center gap-2 w-24 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={value}
-                        onChange={onChange}
-                        className="h-4 w-4 rounded accent-brand-gold"
-                        aria-label={`Habilitar ${day.label}`}
-                      />
-                      <span className="text-sm text-brand-white/80">{day.label}</span>
-                    </label>
-                  )}
-                />
-                <div
-                  className={[
-                    'flex items-center gap-2 transition-opacity',
-                    isEnabled ? 'opacity-100' : 'opacity-30',
-                  ].join(' ')}
-                >
-                  <label className="text-xs text-brand-white/50">Início</label>
-                  <input
-                    type="time"
-                    disabled={!isEnabled}
-                    className="rounded border border-brand-white/20 bg-brand-black-soft px-2 py-1 text-sm text-brand-white focus:border-brand-gold focus:outline-none"
-                    {...register(`availability.${index}.startTime`)}
-                  />
-                  <label className="text-xs text-brand-white/50">Fim</label>
-                  <input
-                    type="time"
-                    disabled={!isEnabled}
-                    className="rounded border border-brand-white/20 bg-brand-black-soft px-2 py-1 text-sm text-brand-white focus:border-brand-gold focus:outline-none"
-                    {...register(`availability.${index}.endTime`)}
-                  />
-                </div>
-              </div>
-            )
-          })}
-        </div>
-        {errors.availability && (
-          <p role="alert" className="mt-2 text-xs text-red-400">
-            {Array.isArray(errors.availability)
-              ? 'Verifique os horários de disponibilidade'
-              : (errors.availability as { message?: string })?.message}
-          </p>
-        )}
-      </fieldset>
-
-      {serverError && (
-        <p role="alert" className="text-sm text-red-400">
-          {serverError}
-        </p>
-      )}
-
-      <Button type="submit" isLoading={isSubmitting} className="mt-2 w-full">
-        Criar barbeiro
-      </Button>
+      <AvailabilityPicker control={control} register={register} watch={watch} errors={errors} />
+      {serverError && <p role="alert" className="text-sm text-red-400">{serverError}</p>}
+      <Button type="submit" isLoading={isSubmitting} className="mt-2 w-full">Criar barbeiro</Button>
     </form>
+  )
+}
+
+function EditBarberForm({ barber, onSuccess }: { barber: AdminBarber; onSuccess: () => void }) {
+  const updateBarber = useUpdateBarber()
+  const [serverError, setServerError] = useState<string | null>(null)
+
+  const defaultAvailability = WEEKDAYS.map((d) => {
+    const existing = barber.availability.find(
+      (a) => DAY_OF_WEEK_NUMS[a.dayOfWeek] === d.value
+    )
+    return {
+      dayOfWeek: d.value,
+      startTime: existing ? existing.startTime.slice(0, 5) : '09:00',
+      endTime: existing ? existing.endTime.slice(0, 5) : '18:00',
+      enabled: !!existing,
+    }
+  })
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<EditBarberFormData>({
+    resolver: zodResolver(editBarberSchema),
+    defaultValues: {
+      name: barber.name,
+      email: barber.email,
+      password: '',
+      confirmPassword: '',
+      availability: defaultAvailability,
+    },
+  })
+
+  async function onSubmit(data: EditBarberFormData) {
+    setServerError(null)
+    const availability = data.availability
+      .filter((a) => a.enabled)
+      .map((a) => ({
+        dayOfWeek: DAY_OF_WEEK_STRINGS[a.dayOfWeek],
+        startTime: `${a.startTime}:00`,
+        endTime: `${a.endTime}:00`,
+      }))
+
+    try {
+      await updateBarber.mutateAsync({
+        id: barber.id,
+        name: data.name,
+        email: data.email,
+        password: data.password || undefined,
+        availability,
+        photo: data.photo,
+      })
+      onSuccess()
+    } catch (err: unknown) {
+      const axiosErr = err as {
+        response?: { data?: { detail?: string; error?: string; errors?: Record<string, string[]> } }
+      }
+      const res = axiosErr?.response?.data
+      const message =
+        (res?.errors ? Object.values(res.errors).flat().join(' ') : null) ??
+        res?.detail ??
+        res?.error ??
+        'Erro ao atualizar barbeiro. Verifique os dados e tente novamente.'
+      setServerError(message)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
+      <Input label="Nome completo" type="text" error={errors.name?.message} {...register('name')} />
+      <Input label="E-mail" type="email" error={errors.email?.message} {...register('email')} />
+      <Input label="Nova senha (deixe em branco para manter)" type="password" placeholder="••••••••" error={errors.password?.message} {...register('password')} />
+      <Input label="Confirmar nova senha" type="password" placeholder="••••••••" error={errors.confirmPassword?.message} {...register('confirmPassword')} />
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium text-brand-white/80">Nova foto (opcional)</label>
+        <input
+          type="file"
+          accept="image/*"
+          className="text-sm text-brand-white/70 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-brand-gold/20 file:text-brand-gold file:text-sm hover:file:bg-brand-gold/30"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) setValue('photo', file)
+          }}
+        />
+      </div>
+      <AvailabilityPicker control={control} register={register} watch={watch} errors={errors} />
+      {serverError && <p role="alert" className="text-sm text-red-400">{serverError}</p>}
+      <Button type="submit" isLoading={isSubmitting} className="mt-2 w-full">Salvar alterações</Button>
+    </form>
+  )
+}
+
+function DeleteBarberConfirm({
+  barber,
+  onClose,
+}: {
+  barber: AdminBarber
+  onClose: () => void
+}) {
+  const deleteBarber = useDeleteBarber()
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleDelete() {
+    setError(null)
+    try {
+      await deleteBarber.mutateAsync(barber.id)
+      onClose()
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string } } }
+      setError(axiosErr?.response?.data?.error ?? 'Erro ao excluir barbeiro.')
+    }
+  }
+
+  return (
+    <Modal isOpen onClose={onClose} title="Excluir barbeiro">
+      <div className="flex flex-col gap-4">
+        <p className="text-brand-white/80">
+          Deseja excluir permanentemente o barbeiro <strong>{barber.name}</strong>?
+          Esta ação não pode ser desfeita.
+        </p>
+        {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
+        <div className="flex gap-3 justify-end">
+          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+          <Button variant="danger" onClick={handleDelete} isLoading={deleteBarber.isPending}>
+            Excluir
+          </Button>
+        </div>
+      </div>
+    </Modal>
   )
 }
 
@@ -250,7 +401,9 @@ export default function BarbersPage() {
   const { data: barbers, isLoading } = useAdminBarbers()
   const deactivate = useDeactivateBarber()
   const activate = useActivateBarber()
-  const [showModal, setShowModal] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editTarget, setEditTarget] = useState<AdminBarber | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AdminBarber | null>(null)
 
   if (isLoading) {
     return (
@@ -263,10 +416,8 @@ export default function BarbersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="font-montserrat text-2xl font-black text-brand-white">
-          Barbeiros
-        </h1>
-        <Button onClick={() => setShowModal(true)}>Adicionar Barbeiro</Button>
+        <h1 className="font-montserrat text-2xl font-black text-brand-white">Barbeiros</h1>
+        <Button onClick={() => setShowCreateModal(true)}>Adicionar Barbeiro</Button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-brand-white/10">
@@ -283,79 +434,81 @@ export default function BarbersPage() {
           <tbody>
             {barbers?.map((barber) => (
               <React.Fragment key={barber.id}>
-              <tr
-                className="border-b border-brand-white/5 hover:bg-brand-white/5 transition-colors"
-              >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    {barber.photoUrl ? (
-                      <Image
-                        src={barber.photoUrl}
-                        alt={barber.name}
-                        width={36}
-                        height={36}
-                        className="rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-9 w-9 rounded-full bg-brand-gold/20 flex items-center justify-center text-brand-gold font-bold text-sm">
-                        {barber.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <span className="font-medium text-brand-white">{barber.name}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-brand-white/60">{barber.email}</td>
-                <td className="px-4 py-3">
-                  <span className="text-brand-gold">
-                    {barber.averageRating > 0
-                      ? `${barber.averageRating.toFixed(1)} ★`
-                      : '—'}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={[
-                      'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                      barber.isActive
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-red-500/20 text-red-400',
-                    ].join(' ')}
-                  >
-                    {barber.isActive ? 'Ativo' : 'Inativo'}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  {barber.isActive ? (
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => deactivate.mutate(barber.id)}
-                      isLoading={deactivate.isPending && deactivate.variables === barber.id}
+                <tr className="border-b border-brand-white/5 hover:bg-brand-white/5 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      {barber.photoUrl ? (
+                        <Image
+                          src={barber.photoUrl}
+                          alt={barber.name}
+                          width={36}
+                          height={36}
+                          className="rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-9 w-9 rounded-full bg-brand-gold/20 flex items-center justify-center text-brand-gold font-bold text-sm">
+                          {barber.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="font-medium text-brand-white">{barber.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-brand-white/60">{barber.email}</td>
+                  <td className="px-4 py-3">
+                    <span className="text-brand-gold">
+                      {barber.averageRating > 0 ? `${barber.averageRating.toFixed(1)} ★` : '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={[
+                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                        barber.isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400',
+                      ].join(' ')}
                     >
-                      Desativar
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => activate.mutate(barber.id)}
-                      isLoading={activate.isPending && activate.variables === barber.id}
-                    >
-                      Ativar
-                    </Button>
-                  )}
-                </td>
-              </tr>
-              <tr key={`${barber.id}-blocks`} className="border-b border-brand-white/5">
-                <td colSpan={5} className="px-4 pb-4">
-                  <AdminBlocksSection barberId={barber.id} />
-                </td>
-              </tr>
-              <tr key={`${barber.id}-appointments`} className="border-b border-brand-white/5">
-                <td colSpan={5} className="px-4 pb-4">
-                  <AdminAppointmentsSection barberId={barber.id} />
-                </td>
-              </tr>
+                      {barber.isActive ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button variant="secondary" size="sm" onClick={() => setEditTarget(barber)}>
+                        Editar
+                      </Button>
+                      {barber.isActive ? (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => deactivate.mutate(barber.id)}
+                          isLoading={deactivate.isPending && deactivate.variables === barber.id}
+                        >
+                          Desativar
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => activate.mutate(barber.id)}
+                          isLoading={activate.isPending && activate.variables === barber.id}
+                        >
+                          Ativar
+                        </Button>
+                      )}
+                      <Button variant="danger" size="sm" onClick={() => setDeleteTarget(barber)}>
+                        Excluir
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+                <tr key={`${barber.id}-blocks`} className="border-b border-brand-white/5">
+                  <td colSpan={5} className="px-4 pb-4">
+                    <AdminBlocksSection barberId={barber.id} />
+                  </td>
+                </tr>
+                <tr key={`${barber.id}-appointments`} className="border-b border-brand-white/5">
+                  <td colSpan={5} className="px-4 pb-4">
+                    <AdminAppointmentsSection barberId={barber.id} />
+                  </td>
+                </tr>
               </React.Fragment>
             ))}
             {barbers?.length === 0 && (
@@ -369,13 +522,19 @@ export default function BarbersPage() {
         </table>
       </div>
 
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title="Adicionar Barbeiro"
-      >
-        <CreateBarberForm onSuccess={() => setShowModal(false)} />
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Adicionar Barbeiro">
+        <CreateBarberForm onSuccess={() => setShowCreateModal(false)} />
       </Modal>
+
+      {editTarget && (
+        <Modal isOpen onClose={() => setEditTarget(null)} title={`Editar "${editTarget.name}"`}>
+          <EditBarberForm barber={editTarget} onSuccess={() => setEditTarget(null)} />
+        </Modal>
+      )}
+
+      {deleteTarget && (
+        <DeleteBarberConfirm barber={deleteTarget} onClose={() => setDeleteTarget(null)} />
+      )}
     </div>
   )
 }

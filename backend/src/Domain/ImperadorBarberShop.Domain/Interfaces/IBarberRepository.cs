@@ -10,4 +10,5 @@ public interface IBarberRepository
     Task<List<Barber>> GetAllActiveAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Barber barber, CancellationToken cancellationToken = default);
     Task UpdateAsync(Barber barber, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }

@@ -28,6 +28,14 @@ export function useUpdateService() {
   })
 }
 
+export function useDeleteService() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => adminServicesApi.deleteService(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'services'] }),
+  })
+}
+
 export function useDeactivateService() {
   const qc = useQueryClient()
   return useMutation({

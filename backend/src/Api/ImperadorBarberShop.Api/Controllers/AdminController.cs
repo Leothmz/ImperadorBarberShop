@@ -59,6 +59,45 @@ public class AdminController : ControllerBase
         return CreatedAtAction(nameof(GetBarbers), new { id }, new { id });
     }
 
+    [HttpDelete("barbers/{id:guid}")]
+    public async Task<IActionResult> DeleteBarber(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new DeleteBarberByAdminCommand(id), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
+
+    [HttpPut("barbers/{id:guid}")]
+    public async Task<IActionResult> UpdateBarber(
+        Guid id,
+        [FromForm] UpdateBarberRequest request,
+        CancellationToken ct)
+    {
+        string? photoUrl = null;
+        if (request.Photo is not null)
+        {
+            var validationError = GetImageValidationError(request.Photo);
+            if (validationError is not null) return BadRequest(new { error = validationError });
+            photoUrl = await _imageService.UploadAsync(
+                request.Photo.OpenReadStream(), request.Photo.FileName,
+                request.Photo.ContentType, ct);
+        }
+
+        var availability = request.Availability ?? new List<AvailabilitySlotInput>();
+        try
+        {
+            await _mediator.Send(
+                new UpdateBarberByAdminCommand(id, request.Name, request.Email, request.Password, photoUrl, availability), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
+
     [HttpPatch("barbers/{id:guid}/deactivate")]
     public async Task<IActionResult> DeactivateBarber(Guid id, CancellationToken ct)
     {
@@ -222,6 +261,13 @@ public record CreateBarberRequest(
     string Name,
     string Email,
     string Password,
+    IFormFile? Photo,
+    List<AvailabilitySlotInput>? Availability);
+
+public record UpdateBarberRequest(
+    string Name,
+    string Email,
+    string? Password,
     IFormFile? Photo,
     List<AvailabilitySlotInput>? Availability);
 

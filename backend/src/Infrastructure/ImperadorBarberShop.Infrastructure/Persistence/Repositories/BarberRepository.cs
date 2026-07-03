@@ -46,4 +46,10 @@ public class BarberRepository : IBarberRepository
         _context.Barbers.Update(barber);
         return Task.CompletedTask;
     }
+
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var barber = await _context.Barbers.FindAsync(new object[] { id }, cancellationToken);
+        if (barber is not null) _context.Barbers.Remove(barber);
+    }
 }

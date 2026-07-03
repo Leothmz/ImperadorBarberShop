@@ -37,4 +37,10 @@ public class ServiceRepository : IServiceRepository
         _context.Services.Update(service);
         return Task.CompletedTask;
     }
+
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var service = await _context.Services.FindAsync(new object[] { id }, cancellationToken);
+        if (service is not null) _context.Services.Remove(service);
+    }
 }

@@ -82,4 +82,10 @@ public class AppointmentRepository : IAppointmentRepository
                 && a.ScheduledAt <= windowEnd
                 && a.ScheduledAt >= windowStart)
             .ToListAsync(ct);
+
+    public Task<bool> AnyByBarberIdAsync(Guid barberId, CancellationToken cancellationToken = default)
+        => _context.Appointments.AnyAsync(a => a.BarberId == barberId, cancellationToken);
+
+    public Task<bool> AnyByServiceIdAsync(Guid serviceId, CancellationToken cancellationToken = default)
+        => _context.AppointmentServices.AnyAsync(a => a.ServiceId == serviceId, cancellationToken);
 }
