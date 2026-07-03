@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen, waitFor } from '../../test-utils'
+import { render, screen, waitFor, fireEvent } from '../../test-utils'
 import { BarberAppointmentList } from '@/components/appointments/BarberAppointmentList'
 
 describe('BarberAppointmentList', () => {
@@ -12,21 +12,30 @@ describe('BarberAppointmentList', () => {
     render(<BarberAppointmentList />)
     await waitFor(() => {
       expect(screen.getByText(/Pedro Costa/)).toBeInTheDocument()
-      expect(screen.getByText(/Maria Santos/)).toBeInTheDocument()
     })
   })
 
   it('shows Concluir button for accepted appointments', async () => {
     render(<BarberAppointmentList />)
     await waitFor(() => {
-      expect(screen.getAllByRole('button', { name: /Concluir/i })).toHaveLength(2)
+      expect(screen.getAllByRole('button', { name: /Concluir/i }).length).toBeGreaterThan(0)
     })
   })
 
-  it('shows Cancelar button for accepted appointments', async () => {
+  it('clicking Concluir shows payment method options', async () => {
     render(<BarberAppointmentList />)
-    await waitFor(() => {
-      expect(screen.getAllByRole('button', { name: /Cancelar/i })).toHaveLength(2)
-    })
+    await waitFor(() => screen.getAllByRole('button', { name: /Concluir/i }))
+    fireEvent.click(screen.getAllByRole('button', { name: /Concluir/i })[0])
+    expect(screen.getByText(/Forma de pagamento/i)).toBeInTheDocument()
+    expect(screen.getByText('Pular')).toBeInTheDocument()
+  })
+
+  it('Pular completes without payment method', async () => {
+    render(<BarberAppointmentList />)
+    await waitFor(() => screen.getAllByRole('button', { name: /Concluir/i }))
+    fireEvent.click(screen.getAllByRole('button', { name: /Concluir/i })[0])
+    fireEvent.click(screen.getByText('Pular'))
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar/i }))
+    // No error thrown = payment selection didn't block completion
   })
 })

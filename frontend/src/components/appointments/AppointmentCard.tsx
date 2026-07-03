@@ -48,6 +48,21 @@ export function AppointmentCard({ appointment, actions }: AppointmentCardProps) 
         <span className="font-semibold text-brand-gold">{formatCurrency(totalPrice)}</span>
       </div>
 
+      {appointment.status === 'Completed' && (
+        <div className="flex items-center gap-2 text-sm">
+          {appointment.paymentMethod ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-brand-gold/15 px-2.5 py-0.5 text-xs font-medium text-brand-gold">
+              {appointment.paymentMethod === 'Dinheiro' && '💵'}
+              {appointment.paymentMethod === 'Cartão' && '💳'}
+              {appointment.paymentMethod === 'Pix' && '⚡'}
+              {' '}{appointment.paymentMethod}
+            </span>
+          ) : (
+            <span className="text-xs text-brand-white/30">— sem método</span>
+          )}
+        </div>
+      )}
+
       {appointment.notes && (
         <p className="text-xs text-brand-white/40 italic">"{appointment.notes}"</p>
       )}
