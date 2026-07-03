@@ -9,7 +9,7 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
     public void Configure(EntityTypeBuilder<Expense> builder)
     {
         builder.HasKey(e => e.Id);
-        builder.Property(e => e.Amount).IsRequired().HasColumnType("numeric(10,2)");
+        builder.Property(e => e.Amount).IsRequired();
         builder.Property(e => e.Description).IsRequired().HasMaxLength(200);
         builder.Property(e => e.Date).IsRequired();
         builder.Property(e => e.CreatedAt).IsRequired();

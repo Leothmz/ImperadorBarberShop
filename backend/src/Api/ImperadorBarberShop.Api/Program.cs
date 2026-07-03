@@ -120,6 +120,8 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
+    // Enable WAL mode for SQLite: allows concurrent reads during writes
+    await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
     var seeder = scope.ServiceProvider.GetRequiredService<AdminSeedService>();
     await seeder.SeedAsync();
 }

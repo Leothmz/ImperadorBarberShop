@@ -4,20 +4,17 @@ using ImperadorBarberShop.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 
 namespace ImperadorBarberShop.IntegrationTests;
 
 public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:16-alpine")
-        .WithDatabase("imperador_test")
-        .WithUsername("test_user")
-        .WithPassword("test_pass")
-        .Build();
+    // Keep the connection open for the lifetime of the fixture so the in-memory
+    // database survives across requests. Closing it drops the database.
+    private readonly SqliteConnection _connection = new("Data Source=:memory:");
 
     // appsettings.json (checked in) has no Jwt/Email section, and there is no
     // appsettings.Testing.json — ASP.NET Core's config chain for the "Testing"
@@ -54,12 +51,12 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
         foreach (var (key, value) in TestEnvironmentVariables)
             Environment.SetEnvironmentVariable(key, value);
 
-        await _postgres.StartAsync();
+        await _connection.OpenAsync();
     }
 
     public new async Task DisposeAsync()
     {
-        await _postgres.StopAsync();
+        await _connection.CloseAsync();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -74,9 +71,9 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
             if (descriptor is not null)
                 services.Remove(descriptor);
 
-            // Register with the test PostgreSQL container
+            // Register with the shared in-memory SQLite connection
             services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(_postgres.GetConnectionString()));
+                options.UseSqlite(_connection));
 
             // Replace real Cloudinary with a no-op fake for integration tests
             var imageDescriptor = services.SingleOrDefault(

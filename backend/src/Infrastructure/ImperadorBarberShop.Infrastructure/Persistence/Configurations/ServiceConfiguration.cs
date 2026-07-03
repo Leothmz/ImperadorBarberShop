@@ -29,7 +29,6 @@ public class ServiceConfiguration : IEntityTypeConfiguration<Service>
         builder.Property(s => s.DurationMinutes).IsRequired();
 
         builder.Property(s => s.Price)
-            .HasColumnType("decimal(10,2)")
             .IsRequired();
 
         builder.Property(s => s.IsActive).IsRequired();

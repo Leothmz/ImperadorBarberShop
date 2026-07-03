@@ -11,7 +11,6 @@ public class BarberConfiguration : IEntityTypeConfiguration<Barber>
         builder.HasKey(b => b.Id);
 
         builder.Property(b => b.AverageRating)
-            .HasColumnType("decimal(3,2)")
             .IsRequired();
 
         builder.Property(b => b.IsActive).IsRequired().HasDefaultValue(true);

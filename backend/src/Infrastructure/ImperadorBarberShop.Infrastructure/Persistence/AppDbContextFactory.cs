@@ -20,10 +20,10 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
             .Build();
 
         var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? "Host=localhost;Port=5432;Database=imperador_barber;Username=imperador;Password=localdev";
+            ?? "Data Source=imperador_barber.db";
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseNpgsql(connectionString);
+        optionsBuilder.UseSqlite(connectionString);
 
         return new AppDbContext(optionsBuilder.Options);
     }
