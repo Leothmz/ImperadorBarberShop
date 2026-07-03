@@ -56,7 +56,7 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
 
     public new async Task DisposeAsync()
     {
-        await _connection.CloseAsync();
+        await _connection.DisposeAsync();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
