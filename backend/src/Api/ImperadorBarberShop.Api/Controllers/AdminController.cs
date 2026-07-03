@@ -5,8 +5,10 @@ using ImperadorBarberShop.Application.Commands.Admin;
 using ImperadorBarberShop.Application.Commands.Appointments;
 using ImperadorBarberShop.Application.Commands.Auth;
 using ImperadorBarberShop.Application.Commands.Blocks;
+using ImperadorBarberShop.Application.Commands.Financial;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Application.Queries.Admin;
+using ImperadorBarberShop.Application.Queries.Appointments;
 using ImperadorBarberShop.Application.Queries.Blocks;
 using ImperadorBarberShop.Application.Queries.Financial;
 using ImperadorBarberShop.Application.Queries.Services;
@@ -163,6 +165,30 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("financial/expenses")]
+    public async Task<IActionResult> GetExpenses(
+        [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetExpensesQuery(from, to), ct));
+
+    [HttpPost("financial/expenses")]
+    public async Task<IActionResult> CreateExpense([FromBody] CreateExpenseRequest request, CancellationToken ct)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var id = await _mediator.Send(new CreateExpenseCommand(request.Amount, request.Description, request.Date, userId), ct);
+        return CreatedAtAction(nameof(GetExpenses), null, new { id });
+    }
+
+    [HttpDelete("financial/expenses/{id:guid}")]
+    public async Task<IActionResult> DeleteExpense(Guid id, CancellationToken ct)
+    {
+        await _mediator.Send(new DeleteExpenseCommand(id), ct);
+        return NoContent();
+    }
+
+    [HttpGet("barbers/{barberId:guid}/appointments")]
+    public async Task<IActionResult> GetBarberAppointments(Guid barberId, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetBarberAppointmentsQuery(barberId), ct));
+
     [HttpPatch("appointments/{id:guid}/payment")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -208,3 +234,5 @@ public record AdminCreateBarberBlockBody(
     DateTime? RecurrenceEndsAt);
 
 public record AdminUpdatePaymentRequest(PaymentMethod PaymentMethod);
+
+public record CreateExpenseRequest(decimal Amount, string Description, DateOnly Date);

@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IServiceAddonRepository, ServiceAddonRepository>();
         services.AddScoped<IAppSettingsRepository, AppSettingsRepository>();
         services.AddScoped<IBarberBlockRepository, BarberBlockRepository>();
+        services.AddScoped<IExpenseRepository, ExpenseRepository>();
         services.AddHttpClient();
         services.AddScoped<IWhatsAppService>(sp =>
         {
