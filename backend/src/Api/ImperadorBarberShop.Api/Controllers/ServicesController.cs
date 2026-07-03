@@ -12,12 +12,10 @@ namespace ImperadorBarberShop.Api.Controllers;
 public class ServicesController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IImageService _imageService;
 
-    public ServicesController(IMediator mediator, IImageService imageService)
+    public ServicesController(IMediator mediator)
     {
         _mediator = mediator;
-        _imageService = imageService;
     }
 
     /// <summary>Get all active services.</summary>
@@ -31,14 +29,14 @@ public class ServicesController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = "RequireAdminRole")]
-    public async Task<IActionResult> CreateService([FromForm] CreateServiceRequest request, CancellationToken ct)
+    public async Task<IActionResult> CreateService([FromForm] CreateServiceRequest request, [FromServices] IImageService imageService, CancellationToken ct)
     {
         string? photoUrl = null;
         if (request.Photo is not null)
         {
             var validationError = GetImageValidationError(request.Photo);
             if (validationError is not null) return BadRequest(new { error = validationError });
-            photoUrl = await _imageService.UploadAsync(
+            photoUrl = await imageService.UploadAsync(
                 request.Photo.OpenReadStream(), request.Photo.FileName, request.Photo.ContentType, ct);
         }
         var id = await _mediator.Send(
@@ -48,14 +46,14 @@ public class ServicesController : ControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Policy = "RequireAdminRole")]
-    public async Task<IActionResult> UpdateService(Guid id, [FromForm] UpdateServiceRequest request, CancellationToken ct)
+    public async Task<IActionResult> UpdateService(Guid id, [FromForm] UpdateServiceRequest request, [FromServices] IImageService imageService, CancellationToken ct)
     {
         string? photoUrl = null;
         if (request.Photo is not null)
         {
             var validationError = GetImageValidationError(request.Photo);
             if (validationError is not null) return BadRequest(new { error = validationError });
-            photoUrl = await _imageService.UploadAsync(
+            photoUrl = await imageService.UploadAsync(
                 request.Photo.OpenReadStream(), request.Photo.FileName, request.Photo.ContentType, ct);
         }
         await _mediator.Send(
