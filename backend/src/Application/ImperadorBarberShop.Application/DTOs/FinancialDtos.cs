@@ -1,6 +1,15 @@
 namespace ImperadorBarberShop.Application.DTOs;
 
-public record FinancialSummaryDto(decimal TotalRevenue, int TotalAppointments, decimal AverageTicket, DateOnly From, DateOnly To);
+public record FinancialSummaryDto(
+    decimal TotalRevenue,
+    int TotalAppointments,
+    decimal AverageTicket,
+    DateOnly From,
+    DateOnly To,
+    decimal TotalExpenses,
+    decimal NetRevenue);
+
+public record FinancialTimelineItemDto(string Period, decimal Revenue, int Appointments);
 
 public record FinancialByBarberItemDto(Guid BarberId, string BarberName, int Appointments, decimal Revenue);
 

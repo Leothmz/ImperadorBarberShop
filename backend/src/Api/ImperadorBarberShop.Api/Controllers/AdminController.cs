@@ -165,6 +165,14 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("financial/timeline")]
+    public async Task<IActionResult> GetTimeline(
+        [FromQuery] DateOnly from,
+        [FromQuery] DateOnly to,
+        [FromQuery] string groupBy = "day",
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetFinancialTimelineQuery(from, to, groupBy), ct));
+
     [HttpGet("financial/expenses")]
     public async Task<IActionResult> GetExpenses(
         [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken ct)
