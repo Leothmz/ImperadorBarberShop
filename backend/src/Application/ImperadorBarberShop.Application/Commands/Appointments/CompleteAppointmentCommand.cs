@@ -15,6 +15,7 @@ public class CompleteAppointmentCommandValidator : AbstractValidator<CompleteApp
     {
         RuleFor(x => x.AppointmentId).NotEmpty();
         RuleFor(x => x.BarberId).NotEmpty();
+        RuleFor(x => x.PaymentMethod).IsInEnum().When(x => x.PaymentMethod.HasValue);
     }
 }
 

@@ -17,6 +17,7 @@ public class UpdatePaymentMethodCommandValidator : AbstractValidator<UpdatePayme
     public UpdatePaymentMethodCommandValidator()
     {
         RuleFor(x => x.AppointmentId).NotEmpty();
+        RuleFor(x => x.PaymentMethod).IsInEnum();
     }
 }
 
