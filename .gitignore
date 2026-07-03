@@ -17,7 +17,8 @@ coverage/
 *.coverage
 *.coveragexml
 
-# EF Core migrations lock
+# SQLite database files
+*.db
 *.db-shm
 *.db-wal
 

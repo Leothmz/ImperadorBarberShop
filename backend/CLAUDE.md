@@ -1,7 +1,7 @@
 # Backend — O Imperador Barber Shop
 
 ## Tech Stack
-- .NET 9, ASP.NET Core, EF Core 9 + Npgsql (PostgreSQL 16)
+- .NET 9, ASP.NET Core, EF Core 9 + SQLite
 - MediatR (CQRS), FluentValidation, AutoMapper
 - BCrypt.Net-Next (password hashing, cost 12)
 - JWT Bearer (access token 15 min, refresh token 7 days)
@@ -18,7 +18,7 @@ src/
 
 tests/
 ├── ImperadorBarberShop.UnitTests/               ← xUnit + NSubstitute + FluentAssertions
-└── ImperadorBarberShop.IntegrationTests/        ← WebApplicationFactory + Testcontainers.PostgreSql
+└── ImperadorBarberShop.IntegrationTests/        ← WebApplicationFactory + SQLite in-memory
 ```
 
 ## Key Design Decisions
@@ -33,14 +33,14 @@ tests/
 ## Running the API
 
 ```bash
-# Prerequisites: docker-compose up -d (starts PostgreSQL)
 # Ensure appsettings.Development.json has connection string + JWT settings (see root CLAUDE.md)
 
 cd backend
 dotnet run --project src/Api/ImperadorBarberShop.Api
 
-# API: http://localhost:5000
-# Swagger: http://localhost:5000/swagger
+# API: http://localhost:5044
+# Swagger: http://localhost:5044/swagger
+# Database file: backend/imperador_barber.db (created automatically on first run)
 ```
 
 ## Running Tests
@@ -51,7 +51,7 @@ cd backend
 # Unit tests (fast, no DB)
 dotnet test tests/ImperadorBarberShop.UnitTests
 
-# Integration tests (spins up PostgreSQL container via Testcontainers — requires Docker)
+# Integration tests (SQLite in-memory — no Docker required)
 dotnet test tests/ImperadorBarberShop.IntegrationTests
 
 # All tests with coverage
@@ -79,7 +79,7 @@ Migrations are also applied automatically on startup in Development (`db.Databas
 All sensitive config is in `appsettings.Development.json` (gitignored). See root `CLAUDE.md` for the full structure.
 
 Required keys:
-- `ConnectionStrings:DefaultConnection` — PostgreSQL connection string
+- `ConnectionStrings:DefaultConnection` — SQLite connection string (e.g. `Data Source=imperador_barber.db`)
 - `Jwt:Secret` — min 256-bit random string (e.g. `openssl rand -base64 32`)
 - `Jwt:Issuer`
 - `Jwt:Audience`
