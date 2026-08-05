@@ -141,14 +141,30 @@ using (var settingsScope = app.Services.CreateScope())
         if (!existing.ContainsKey(key))
             await settingsRepo.SetAsync(key, val);
 
-    var envMappings = new Dictionary<string, string>
+    // Config de infraestrutura: a variável de ambiente manda em todo boot. Não é
+    // editável pelo painel admin, então trocar a URL/chave da Evolution no host
+    // precisa valer sem mexer no banco.
+    var infraFromEnv = new Dictionary<string, string>
     {
-        ["notifications:channels"]     = "NOTIFICATIONS__CHANNELS",
-        ["whatsapp:evolutionApiUrl"]  = "WHATSAPP__EVOLUTIONAPIURL",
-        ["whatsapp:evolutionApiKey"]  = "WHATSAPP__EVOLUTIONAPIKEY",
-        ["whatsapp:instanceName"]     = "WHATSAPP__INSTANCENAME",
+        ["whatsapp:evolutionApiUrl"] = "WHATSAPP__EVOLUTIONAPIURL",
+        ["whatsapp:evolutionApiKey"] = "WHATSAPP__EVOLUTIONAPIKEY",
+        ["whatsapp:instanceName"]    = "WHATSAPP__INSTANCENAME",
     };
-    foreach (var (key, envVar) in envMappings)
+    foreach (var (key, envVar) in infraFromEnv)
+    {
+        var envVal = Environment.GetEnvironmentVariable(envVar);
+        if (string.IsNullOrEmpty(envVal)) continue;
+        if (existing.TryGetValue(key, out var current) && current == envVal) continue;
+        await settingsRepo.SetAsync(key, envVal);
+    }
+
+    // Preferências editáveis no painel admin: a env var só semeia o primeiro
+    // valor, senão cada restart desfaria o que o admin escolheu na tela.
+    var seedFromEnv = new Dictionary<string, string>
+    {
+        ["notifications:channels"] = "NOTIFICATIONS__CHANNELS",
+    };
+    foreach (var (key, envVar) in seedFromEnv)
     {
         var envVal = Environment.GetEnvironmentVariable(envVar);
         if (!string.IsNullOrEmpty(envVal) && !existing.ContainsKey(key))

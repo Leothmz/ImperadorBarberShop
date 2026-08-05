@@ -1,0 +1,34 @@
+# Evolution API — ponte com o WhatsApp. Serviço à parte da aplicação; sobe no
+# mesmo servidor com:  docker compose -f docker-compose.evolution.yml up -d
+#
+# Depois de subir:
+#   1. gere uma chave forte e coloque em AUTHENTICATION_API_KEY abaixo
+#   2. use a MESMA chave em WHATSAPP__EVOLUTIONAPIKEY da API
+#   3. abra /admin/whatsapp no site e escaneie o QR com o celular da barbearia
+#
+# A porta 8080 NÃO deve ficar exposta na internet: quem tem a chave manda
+# mensagem por esse número. Deixe acessível só para a API (mesma rede docker) ou
+# feche a porta no firewall.
+
+services:
+  evolution-api:
+    image: atendai/evolution-api:v2.1.1
+    container_name: evolution-api
+    restart: unless-stopped
+    ports:
+      # Só no loopback: a API acessa por localhost, ninguém de fora alcança.
+      - "127.0.0.1:8080:8080"
+    environment:
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:?defina EVOLUTION_API_KEY no .env}
+      # Sessões do WhatsApp gravadas em arquivo — sem banco externo.
+      DATABASE_ENABLED: "false"
+      CACHE_REDIS_ENABLED: "false"
+      CACHE_LOCAL_ENABLED: "true"
+      DEL_INSTANCE: "false"
+      LOG_LEVEL: ERROR
+    volumes:
+      # Persiste a sessão: sem isto, todo restart pede QR de novo.
+      - evolution_instances:/evolution/instances
+
+volumes:
+  evolution_instances:

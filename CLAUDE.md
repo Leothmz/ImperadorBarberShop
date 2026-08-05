@@ -134,6 +134,21 @@ public enum AppointmentStatus { Accepted = 0, Cancelled = 1, Completed = 2 }
 | GET | `/appointments/barber` | Barber | All appointments for logged-in barber |
 | PATCH | `/appointments/{id}/cancel-by-barber` | Barber | Barber-initiated cancel (e.g. emergencies) |
 | PATCH | `/appointments/{id}/complete` | Barber | Mark as Completed → unlocks the client's review link |
+| PATCH | `/appointments/{id}/payment` | Barber | Register/update payment method |
+
+### Admin — appointments
+
+The admin manages **any** barber's appointments. The commands take a nullable
+`RequesterBarberId`: the barber-facing endpoints pass the JWT's `barberId` (IDOR check
+applies), the admin endpoints pass `null` (check skipped). Same command, same rules,
+different caller.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/barbers/{id}/appointments` | Every appointment of that barber, any status |
+| PATCH | `/admin/appointments/{id}/complete` | Mark as Completed — optional body `{ paymentMethod? }` |
+| PATCH | `/admin/appointments/{id}/cancel` | Cancel the appointment |
+| PATCH | `/admin/appointments/{id}/payment` | Register/update payment method |
 
 ### Reviews
 
@@ -143,11 +158,62 @@ public enum AppointmentStatus { Accepted = 0, Cancelled = 1, Completed = 2 }
 
 ---
 
-## Email Notifications (via IEmailService)
+## Notifications
 
-| Event | Recipients | Subject |
+Channels are configured at runtime in `AppSettings` under `notifications:channels`
+(`email`, `whatsapp` or `email,whatsapp`), editable at `/admin/whatsapp` → Notificações.
+
+| Event | Recipient | Channel |
 |-------|-----------|---------|
-| Appointment created | Barber | "Novo agendamento de {clientName}" |
+| Appointment created | Barber | per `notifications:channels` |
+| Appointment cancelled | Client | per `notifications:channels` |
+| Appointment completed | Client | per `notifications:channels` |
+| Reminder before appointment | Client | per `notifications:channels` |
+
+**Sending is asynchronous.** Handlers call `INotificationQueue.Enqueue(...)` and return
+immediately; `NotificationDispatcher` (a `BackgroundService`) drains the queue, each job in
+its own DI scope. Never `await` `INotificationService` inside a handler — a slow SMTP or
+WhatsApp gateway would hold the client's HTTP response until the network timeout.
+
+The queue lives in memory: pending notifications are lost if the process dies. Acceptable
+for best-effort delivery; persist it if delivery ever becomes a hard requirement.
+
+---
+
+## Deploy Configuration
+
+All config comes from environment variables — see [`.env.example`](.env.example) for the
+full list with explanations. ASP.NET maps `__` to section nesting (`Jwt__Secret` →
+section `Jwt`, key `Secret`).
+
+Two different behaviours on startup, by design:
+
+| Keys | Behaviour | Why |
+|------|-----------|-----|
+| `WHATSAPP__EVOLUTIONAPIURL`, `WHATSAPP__EVOLUTIONAPIKEY`, `WHATSAPP__INSTANCENAME` | Env var wins on **every** boot | Infrastructure, not editable in the admin UI — rotating a key or moving the server must take effect on restart |
+| `NOTIFICATIONS__CHANNELS` | Seeds only when the key is absent | Editable at `/admin/whatsapp`; overwriting on each boot would undo the admin's choice |
+
+First boot also creates the admin user from `Admin__Email` / `Admin__Password`. Changing
+those later does **not** change an existing admin's password.
+
+### WhatsApp (Evolution API)
+
+Evolution API is a separate service — the app only talks to it over HTTP. Bring it up with
+[`docker-compose.evolution.yml`](docker-compose.evolution.yml), point
+`WHATSAPP__EVOLUTIONAPIURL` at it, reuse the same API key on both sides, then pair the
+barbershop's phone by scanning the QR code at `/admin/whatsapp`.
+
+Keep port 8080 off the public internet: anyone holding the API key can send messages as
+that number. The compose file binds it to `127.0.0.1` for this reason.
+
+Evolution API drives WhatsApp Web with a real number (unofficial). Fine for this volume,
+but don't use a personal number — Meta can ban it. The official path is WhatsApp Cloud API.
+
+### Persistent volumes
+
+Two things must survive a redeploy, or data is silently lost:
+- the SQLite file in `ConnectionStrings__DefaultConnection`
+- the `evolution_instances` volume (otherwise the WhatsApp session drops and the QR must be scanned again)
 
 ---
 
