@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { formatCurrency, formatDateTime, toApiDate } from '@/lib/utils/formatDateTime'
 import { formatDuration } from '@/lib/utils/formatDuration'
-import { isValidBrPhone } from '@/lib/utils/phone'
+import { isValidBrPhone, normalizeBrPhone } from '@/lib/utils/phone'
 import type { Barber, Service } from '@/types/api.types'
 
 interface BookingConfirmationProps {
@@ -39,12 +39,16 @@ export function BookingConfirmation({
   const totalDuration = services.reduce((acc, s) => acc + s.durationMinutes, 0)
   const totalPrice = services.reduce((acc, s) => acc + s.price, 0)
 
-  // Build UTC ISO datetime the same way book/page.tsx does before sending to
-  // the API — append "Z" so the display matches the value that will be stored.
+  // A API trabalha em horário de parede: os slots vêm como "09:00:00" e o
+  // agendamento volta como "2026-08-06T09:00:00", sem fuso. Marcar com "Z" aqui
+  // fazia o resumo exibir 09:00 como 06:00 no horário de Brasília.
   const dateString = toApiDate(selectedDate) // "YYYY-MM-DD"
-  const scheduledAt = new Date(`${dateString}T${selectedSlot}Z`)
+  const scheduledAt = `${dateString}T${selectedSlot}`
 
-  const canConfirm = clientName.trim().length > 0 && isValidBrPhone(clientPhone)
+  // Valida o telefone já normalizado, igual ao que é enviado para a API. Validar
+  // o texto cru exigia digitar "+5511999998888" sem espaço nem traço — até o
+  // formato do placeholder reprovava, e o botão nunca habilitava.
+  const canConfirm = clientName.trim().length > 0 && isValidBrPhone(normalizeBrPhone(clientPhone))
 
   return (
     <div className="flex flex-col gap-6">
@@ -94,7 +98,7 @@ export function BookingConfirmation({
           <div className="flex justify-between">
             <span className="text-brand-white/60 text-sm">Data e horário</span>
             <span className="text-brand-white font-medium">
-              {formatDateTime(scheduledAt.toISOString())}
+              {formatDateTime(scheduledAt)}
             </span>
           </div>
 

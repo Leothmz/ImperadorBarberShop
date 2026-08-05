@@ -67,14 +67,16 @@ export default function AgendarPage() {
     if (!selectedBarber || !selectedDate || !selectedSlot) return
 
     const dateString = toApiDate(selectedDate)
-    const scheduledAt = new Date(`${dateString}T${selectedSlot}Z`)
+    // Horário de parede, sem fuso: é o mesmo formato dos slots e do que a API
+    // devolve. Converter para UTC aqui deslocaria o agendamento em 3 horas.
+    const scheduledAt = `${dateString}T${selectedSlot}`
 
     try {
       const result = await createAppointment.mutateAsync({
         clientName: clientName.trim(),
         clientPhone: normalizeBrPhone(clientPhone),
         barberId: selectedBarber.id,
-        scheduledAt: scheduledAt.toISOString(),
+        scheduledAt,
         serviceIds: selectedServiceIds,
         notes: notes.trim() || undefined,
       })
