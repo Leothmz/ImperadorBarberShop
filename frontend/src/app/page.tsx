@@ -6,7 +6,7 @@ export default function LandingPage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden px-4 text-center">
+      <section className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden px-4 py-10 text-center">
         {/* Background gradient decoration */}
         <div
           aria-hidden="true"
@@ -27,14 +27,14 @@ export default function LandingPage() {
           className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full border border-brand-gold/8"
         />
 
-        <div className="relative z-10 flex flex-col items-center gap-6 max-w-3xl">
+        <div className="relative z-10 flex flex-col items-center gap-4 max-w-3xl sm:gap-6">
           {/* Logo */}
           <Image
             src="/logo.png"
             alt="O Imperador Barber Shop"
             width={160}
             height={160}
-            className="mb-2"
+            className="h-28 w-28 sm:mb-2 sm:h-40 sm:w-40"
             priority
           />
 
@@ -72,8 +72,10 @@ export default function LandingPage() {
         </div>
 
         {/* Scroll indicator */}
+        {/* Hidden on mobile: the hero content already fills the screen there, so the cue
+            only collided with the buttons */}
         <div
-          className="absolute bottom-8 flex flex-col items-center gap-2"
+          className="absolute bottom-8 hidden flex-col items-center gap-2 sm:flex"
           aria-hidden="true"
         >
           <span className="text-xs tracking-widest text-brand-white/30 uppercase">
