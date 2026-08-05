@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { DayPicker } from 'react-day-picker'
+import 'react-day-picker/style.css'
 import { useAvailableSlots } from '@/hooks/useAvailableSlots'
 import { Spinner } from '@/components/ui/Spinner'
 import { formatTimeSlot, toApiDate } from '@/lib/utils/formatDateTime'
@@ -79,26 +80,31 @@ export function SlotPicker({
           onMonthChange={setMonth}
           disabled={isDisabled}
           locale={ptBR}
+          // Chaves da API v9 do react-day-picker. As da v8 (caption, head_row,
+          // day_selected…) são ignoradas em silêncio: o dia escolhido não
+          // acendia e não dava para distinguir os dias liberados.
           classNames={{
             root: 'rdp-root',
             months: 'flex flex-col gap-4',
             month: 'flex flex-col gap-2',
-            caption: 'flex justify-between items-center px-1',
+            month_caption: 'flex items-center justify-center py-1',
             caption_label: 'font-montserrat font-semibold text-brand-white capitalize',
-            nav: 'flex gap-1',
-            nav_button:
-              'h-7 w-7 rounded bg-brand-white/10 text-brand-white hover:bg-brand-gold/20 transition-colors flex items-center justify-center',
-            table: 'w-full border-collapse',
-            head_row: 'flex',
-            head_cell:
-              'text-brand-white/40 rounded-md w-10 font-normal text-xs text-center',
-            row: 'flex w-full mt-1',
-            cell: 'relative p-0 text-center',
-            day: 'h-10 w-10 rounded-full font-normal text-sm text-brand-white hover:bg-brand-gold/20 transition-colors',
-            day_selected: 'bg-brand-gold text-brand-black font-bold hover:bg-brand-gold',
-            day_today: 'border border-brand-gold/50 text-brand-gold',
-            day_disabled: 'text-brand-white/20 cursor-not-allowed hover:bg-transparent',
-            day_outside: 'text-brand-white/20',
+            nav: 'flex items-center justify-between',
+            button_previous:
+              'flex h-8 w-8 items-center justify-center rounded bg-brand-white/10 fill-brand-white transition-colors hover:bg-brand-gold/20',
+            button_next:
+              'flex h-8 w-8 items-center justify-center rounded bg-brand-white/10 fill-brand-white transition-colors hover:bg-brand-gold/20',
+            month_grid: 'w-full border-collapse',
+            weekdays: 'flex',
+            weekday: 'w-10 text-center text-xs font-normal text-brand-white/40',
+            week: 'mt-1 flex w-full',
+            day: 'h-10 w-10 p-0 text-center',
+            day_button:
+              'h-10 w-10 rounded-full text-sm text-brand-white transition-colors hover:bg-brand-gold/20 disabled:cursor-not-allowed disabled:text-brand-white/20 disabled:hover:bg-transparent',
+            selected: '[&>button]:bg-brand-gold [&>button]:font-bold [&>button]:text-brand-black',
+            today: '[&>button]:border [&>button]:border-brand-gold/50 [&>button]:text-brand-gold',
+            outside: '[&>button]:text-brand-white/20',
+            hidden: 'invisible',
           }}
         />
       </div>
