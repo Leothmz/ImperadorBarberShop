@@ -18,15 +18,15 @@ export default function WhatsAppPage() {
   const [tab, setTab] = useState<Tab>('connection')
 
   return (
-    <div>
-      <h1 className="font-montserrat text-2xl font-bold text-brand-gold mb-6">WhatsApp</h1>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <h1 className="font-montserrat text-2xl font-black text-brand-white">WhatsApp</h1>
 
-      <div className="flex gap-2 mb-6 border-b border-brand-white/10">
+      <div className="flex border-b border-brand-white/10">
         {(['connection', 'notifications'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
+            className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors sm:flex-none ${
               tab === t
                 ? 'border-b-2 border-brand-gold text-brand-gold'
                 : 'text-brand-white/60 hover:text-brand-white'
@@ -61,29 +61,30 @@ function ConnectionTab() {
   }[status?.status ?? 'disconnected']
 
   return (
-    <div className="flex flex-col gap-6 max-w-md">
-      <div className="bg-brand-black-soft rounded-lg p-4 flex items-center gap-3">
-        <span className={`font-semibold ${statusLabel.color}`}>{statusLabel.text}</span>
-        {status?.phoneNumber && (
-          <span className="text-brand-white/60 text-sm">{status.phoneNumber}</span>
+    <div className="flex flex-col gap-4">
+      <div className="rounded-xl border border-brand-white/10 bg-brand-black-soft p-4">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className={`font-semibold ${statusLabel.color}`}>{statusLabel.text}</span>
+          {status?.phoneNumber && (
+            <span className="text-sm text-brand-white/60">{status.phoneNumber}</span>
+          )}
+        </div>
+        {status?.status === 'disconnected' && (
+          <p className="mt-2 text-sm text-brand-white/60">Escaneie o QR code para conectar</p>
         )}
       </div>
 
       {isQrRequired && qr && (
-        <div className="flex flex-col items-center gap-3">
-          <p className="text-brand-white/70 text-sm">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-brand-white/10 bg-brand-black-soft p-4">
+          <p className="text-sm text-brand-white/70">
             Abra o WhatsApp no celular → Dispositivos vinculados → Vincular um dispositivo
           </p>
           <img
             src={qr.qrCode}
             alt="QR Code WhatsApp"
-            className="w-64 h-64 rounded-lg"
+            className="h-auto w-full max-w-64 rounded-lg"
           />
         </div>
-      )}
-
-      {status?.status === 'disconnected' && (
-        <p className="text-brand-white/60 text-sm">Escaneie o QR code para conectar</p>
       )}
 
       {status?.status === 'connected' && (
@@ -147,9 +148,9 @@ function NotificationsTab() {
   })
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
-      <div className="bg-brand-black-soft rounded-lg p-4 flex flex-col gap-3">
-        <p className="text-brand-white/70 text-sm font-medium">Canais de notificação</p>
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 rounded-xl border border-brand-white/10 bg-brand-black-soft p-4">
+        <p className="text-sm font-medium text-brand-white/70">Canais de notificação</p>
         <div className="space-y-2">
           {[
             { value: 'email', label: 'Apenas Email' },
@@ -167,7 +168,7 @@ function NotificationsTab() {
         )}
       </div>
 
-      <div className="bg-brand-black-soft rounded-lg p-4 flex flex-col gap-3">
+      <div className="flex flex-col gap-3 rounded-xl border border-brand-white/10 bg-brand-black-soft p-4">
         <label className="flex flex-col gap-1">
           <span className="text-brand-white/70 text-sm">Lembrete (minutos antes)</span>
           <input
@@ -175,7 +176,7 @@ function NotificationsTab() {
             min={5}
             max={1440}
             {...register('reminderMinutesBefore', { valueAsNumber: true })}
-            className="bg-brand-black border border-brand-white/20 text-brand-white rounded-lg px-3 py-2 w-32 focus:outline-none focus:border-brand-gold"
+            className="w-32 rounded-lg border border-brand-white/20 bg-brand-black px-3 py-2 text-brand-white focus:border-brand-gold focus:outline-none"
           />
           {errors.reminderMinutesBefore && (
             <p className="text-red-400 text-xs">{errors.reminderMinutesBefore.message}</p>
@@ -198,15 +199,15 @@ function NotificationsTab() {
         </label>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={updateSettings.isPending}
-          className="px-6 py-2 bg-brand-gold text-brand-black font-semibold rounded-lg hover:bg-brand-gold-light transition-colors disabled:opacity-50"
+          className="w-full rounded-lg bg-brand-gold px-6 py-2.5 font-semibold text-brand-black transition-colors hover:bg-brand-gold-light disabled:opacity-50 sm:w-auto"
         >
           {updateSettings.isPending ? 'Salvando...' : 'Salvar'}
         </button>
-        {saved && <span className="text-green-400 text-sm">Configurações salvas!</span>}
+        {saved && <span className="text-sm text-green-400">Configurações salvas!</span>}
       </div>
     </form>
   )

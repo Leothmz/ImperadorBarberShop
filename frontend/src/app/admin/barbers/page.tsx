@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -130,12 +130,12 @@ function AvailabilityPicker({
           const isEnabled = availabilityValues[index]?.enabled
 
           return (
-            <div key={field.id} className="flex items-center gap-3 flex-wrap">
+            <div key={field.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               <Controller
                 control={control}
                 name={`availability.${index}.enabled`}
                 render={({ field: { value, onChange } }) => (
-                  <label className="flex items-center gap-2 w-24 cursor-pointer">
+                  <label className="flex cursor-pointer items-center gap-2 sm:w-24">
                     <input
                       type="checkbox"
                       checked={value}
@@ -149,7 +149,7 @@ function AvailabilityPicker({
               />
               <div
                 className={[
-                  'flex items-center gap-2 transition-opacity',
+                  'flex flex-1 items-center gap-2 transition-opacity',
                   isEnabled ? 'opacity-100' : 'opacity-30',
                 ].join(' ')}
               >
@@ -157,14 +157,14 @@ function AvailabilityPicker({
                 <input
                   type="time"
                   disabled={!isEnabled}
-                  className="rounded border border-brand-white/20 bg-brand-black-soft px-2 py-1 text-sm text-brand-white focus:border-brand-gold focus:outline-none"
+                  className="min-w-0 flex-1 rounded border border-brand-white/20 bg-brand-black-soft px-2 py-1 text-sm text-brand-white focus:border-brand-gold focus:outline-none sm:flex-none"
                   {...register(`availability.${index}.startTime`)}
                 />
                 <label className="text-xs text-brand-white/50">Fim</label>
                 <input
                   type="time"
                   disabled={!isEnabled}
-                  className="rounded border border-brand-white/20 bg-brand-black-soft px-2 py-1 text-sm text-brand-white focus:border-brand-gold focus:outline-none"
+                  className="min-w-0 flex-1 rounded border border-brand-white/20 bg-brand-black-soft px-2 py-1 text-sm text-brand-white focus:border-brand-gold focus:outline-none sm:flex-none"
                   {...register(`availability.${index}.endTime`)}
                 />
               </div>
@@ -414,112 +414,108 @@ export default function BarbersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-montserrat text-2xl font-black text-brand-white">Barbeiros</h1>
-        <Button onClick={() => setShowCreateModal(true)}>Adicionar Barbeiro</Button>
+        <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
+          Adicionar Barbeiro
+        </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-brand-white/10">
-        <table className="w-full text-sm text-brand-white/80">
-          <thead>
-            <tr className="border-b border-brand-white/10 bg-brand-black-soft text-left text-brand-white/40">
-              <th className="px-4 py-3">Barbeiro</th>
-              <th className="px-4 py-3">E-mail</th>
-              <th className="px-4 py-3">Avaliação</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {barbers?.map((barber) => (
-              <React.Fragment key={barber.id}>
-                <tr className="border-b border-brand-white/5 hover:bg-brand-white/5 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      {barber.photoUrl ? (
-                        <Image
-                          src={barber.photoUrl}
-                          alt={barber.name}
-                          width={36}
-                          height={36}
-                          className="rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-9 w-9 rounded-full bg-brand-gold/20 flex items-center justify-center text-brand-gold font-bold text-sm">
-                          {barber.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <span className="font-medium text-brand-white">{barber.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-brand-white/60">{barber.email}</td>
-                  <td className="px-4 py-3">
-                    <span className="text-brand-gold">
-                      {barber.averageRating > 0 ? `${barber.averageRating.toFixed(1)} ★` : '—'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={[
-                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                        barber.isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400',
-                      ].join(' ')}
-                    >
-                      {barber.isActive ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Button variant="secondary" size="sm" onClick={() => setEditTarget(barber)}>
-                        Editar
-                      </Button>
-                      {barber.isActive ? (
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => deactivate.mutate(barber.id)}
-                          isLoading={deactivate.isPending && deactivate.variables === barber.id}
-                        >
-                          Desativar
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => activate.mutate(barber.id)}
-                          isLoading={activate.isPending && activate.variables === barber.id}
-                        >
-                          Ativar
-                        </Button>
-                      )}
-                      <Button variant="danger" size="sm" onClick={() => setDeleteTarget(barber)}>
-                        Excluir
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-                <tr key={`${barber.id}-blocks`} className="border-b border-brand-white/5">
-                  <td colSpan={5} className="px-4 pb-4">
-                    <AdminBlocksSection barberId={barber.id} />
-                  </td>
-                </tr>
-                <tr key={`${barber.id}-appointments`} className="border-b border-brand-white/5">
-                  <td colSpan={5} className="px-4 pb-4">
-                    <AdminAppointmentsSection barberId={barber.id} />
-                  </td>
-                </tr>
-              </React.Fragment>
-            ))}
-            {barbers?.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-brand-white/40">
-                  Nenhum barbeiro cadastrado.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className="flex flex-col gap-4">
+        {barbers?.map((barber) => (
+          <article
+            key={barber.id}
+            className="rounded-xl border border-brand-white/10 bg-brand-black-soft p-4"
+          >
+            <div className="flex items-start gap-3">
+              {barber.photoUrl ? (
+                <Image
+                  src={barber.photoUrl}
+                  alt={barber.name}
+                  width={44}
+                  height={44}
+                  className="h-11 w-11 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-gold/20 text-sm font-bold text-brand-gold">
+                  {barber.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-brand-white">{barber.name}</span>
+                  <span
+                    className={[
+                      'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                      barber.isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400',
+                    ].join(' ')}
+                  >
+                    {barber.isActive ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+                <p className="truncate text-sm text-brand-white/50">{barber.email}</p>
+                <p className="text-sm text-brand-gold">
+                  {barber.averageRating > 0 ? `${barber.averageRating.toFixed(1)} ★` : 'Sem avaliações'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setEditTarget(barber)}>
+                Editar
+              </Button>
+              {barber.isActive ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => deactivate.mutate(barber.id)}
+                  isLoading={deactivate.isPending && deactivate.variables === barber.id}
+                >
+                  Desativar
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => activate.mutate(barber.id)}
+                  isLoading={activate.isPending && activate.variables === barber.id}
+                >
+                  Ativar
+                </Button>
+              )}
+              <Button variant="danger" size="sm" onClick={() => setDeleteTarget(barber)}>
+                Excluir
+              </Button>
+            </div>
+
+            {/* <details> em vez de estado: bloqueios e atendimentos são longos e
+                empurravam o próximo barbeiro para fora da tela */}
+            <details className="group mt-4 border-t border-brand-white/10 pt-3">
+              <summary className="cursor-pointer list-none text-sm text-brand-white/60 transition-colors hover:text-brand-gold">
+                <span className="inline-block transition-transform group-open:rotate-90">›</span> Bloqueios de agenda
+              </summary>
+              <div className="mt-3">
+                <AdminBlocksSection barberId={barber.id} />
+              </div>
+            </details>
+
+            <details className="group mt-2 border-t border-brand-white/10 pt-3">
+              <summary className="cursor-pointer list-none text-sm text-brand-white/60 transition-colors hover:text-brand-gold">
+                <span className="inline-block transition-transform group-open:rotate-90">›</span> Atendimentos
+              </summary>
+              <div className="mt-3">
+                <AdminAppointmentsSection barberId={barber.id} />
+              </div>
+            </details>
+          </article>
+        ))}
+
+        {barbers?.length === 0 && (
+          <p className="rounded-xl border border-brand-white/10 bg-brand-black-soft px-4 py-8 text-center text-brand-white/40">
+            Nenhum barbeiro cadastrado.
+          </p>
+        )}
       </div>
 
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Adicionar Barbeiro">

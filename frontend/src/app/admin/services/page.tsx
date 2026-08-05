@@ -298,83 +298,86 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-montserrat text-2xl font-black text-brand-white">Serviços</h1>
-        <Button onClick={() => setShowCreateModal(true)}>Adicionar Serviço</Button>
+        <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
+          Adicionar Serviço
+        </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-brand-white/10">
-        <table className="w-full text-sm text-brand-white/80">
-          <thead>
-            <tr className="border-b border-brand-white/10 bg-brand-black-soft text-left text-brand-white/40">
-              <th className="px-4 py-3">Serviço</th>
-              <th className="px-4 py-3">Preço</th>
-              <th className="px-4 py-3">Duração</th>
-              <th className="px-4 py-3">Complementos</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {services?.map((service) => (
-              <tr key={service.id} className="border-b border-brand-white/5 hover:bg-brand-white/5 transition-colors">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    {service.photoUrl ? (
-                      <Image src={service.photoUrl} alt={service.name} width={36} height={36} className="rounded-md object-cover" />
-                    ) : (
-                      <div className="h-9 w-9 rounded-md bg-brand-gold/10 flex items-center justify-center">
-                        <span className="text-brand-gold text-lg">✂</span>
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-medium text-brand-white">{service.name}</p>
-                      <p className="text-xs text-brand-white/40 line-clamp-1">{service.description}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-brand-gold">
-                  {service.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </td>
-                <td className="px-4 py-3">{service.durationMinutes} min</td>
-                <td className="px-4 py-3">
-                  <button onClick={() => setAddonsTarget(service)} className="text-xs text-brand-gold hover:underline">
-                    {service.addons.length} complemento{service.addons.length !== 1 ? 's' : ''}
-                  </button>
-                </td>
-                <td className="px-4 py-3">
-                  <span className={[
-                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                    service.isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400',
-                  ].join(' ')}>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {services?.map((service) => (
+          <article
+            key={service.id}
+            className="flex flex-col rounded-xl border border-brand-white/10 bg-brand-black-soft p-4"
+          >
+            <div className="flex items-start gap-3">
+              {service.photoUrl ? (
+                <Image
+                  src={service.photoUrl}
+                  alt={service.name}
+                  width={44}
+                  height={44}
+                  className="h-11 w-11 shrink-0 rounded-md object-cover"
+                />
+              ) : (
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-brand-gold/10">
+                  <span className="text-lg text-brand-gold">✂</span>
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium text-brand-white">{service.name}</p>
+                  <span
+                    className={[
+                      'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                      service.isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400',
+                    ].join(' ')}
+                  >
                     {service.isActive ? 'Ativo' : 'Inativo'}
                   </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Button variant="secondary" size="sm" onClick={() => setEditTarget(service)}>Editar</Button>
-                    {service.isActive ? (
-                      <Button variant="danger" size="sm" onClick={() => deactivate.mutate(service.id)} isLoading={deactivate.isPending && deactivate.variables === service.id}>
-                        Desativar
-                      </Button>
-                    ) : (
-                      <Button variant="secondary" size="sm" onClick={() => activate.mutate(service.id)} isLoading={activate.isPending && activate.variables === service.id}>
-                        Ativar
-                      </Button>
-                    )}
-                    <Button variant="danger" size="sm" onClick={() => setDeleteTarget(service)}>Excluir</Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {services?.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-brand-white/40">Nenhum serviço cadastrado.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                </div>
+                <p className="line-clamp-2 text-xs text-brand-white/40">{service.description}</p>
+              </div>
+            </div>
+
+            <p className="mt-3 text-sm text-brand-white/60">
+              <span className="font-semibold text-brand-gold">
+                {service.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </span>
+              {' · '}
+              {service.durationMinutes} min
+            </p>
+
+            <button
+              onClick={() => setAddonsTarget(service)}
+              className="mt-1 self-start text-xs text-brand-gold hover:underline"
+            >
+              {service.addons.length} complemento{service.addons.length !== 1 ? 's' : ''}
+            </button>
+
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-brand-white/10 pt-3">
+              <Button variant="secondary" size="sm" onClick={() => setEditTarget(service)}>Editar</Button>
+              {service.isActive ? (
+                <Button variant="secondary" size="sm" onClick={() => deactivate.mutate(service.id)} isLoading={deactivate.isPending && deactivate.variables === service.id}>
+                  Desativar
+                </Button>
+              ) : (
+                <Button variant="secondary" size="sm" onClick={() => activate.mutate(service.id)} isLoading={activate.isPending && activate.variables === service.id}>
+                  Ativar
+                </Button>
+              )}
+              <Button variant="danger" size="sm" onClick={() => setDeleteTarget(service)}>Excluir</Button>
+            </div>
+          </article>
+        ))}
+
+        {services?.length === 0 && (
+          <p className="rounded-xl border border-brand-white/10 bg-brand-black-soft px-4 py-8 text-center text-brand-white/40 sm:col-span-2 xl:col-span-3">
+            Nenhum serviço cadastrado.
+          </p>
+        )}
       </div>
 
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Adicionar Serviço">
