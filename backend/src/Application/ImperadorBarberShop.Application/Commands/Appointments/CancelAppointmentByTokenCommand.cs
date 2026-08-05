@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Interfaces;
 using MediatR;
@@ -18,16 +18,16 @@ public class CancelAppointmentByTokenCommandValidator : AbstractValidator<Cancel
 public class CancelAppointmentByTokenCommandHandler : IRequestHandler<CancelAppointmentByTokenCommand>
 {
     private readonly IAppointmentRepository _appointmentRepository;
-    private readonly INotificationService _notificationService;
+    private readonly INotificationQueue _notifications;
     private readonly IUnitOfWork _unitOfWork;
 
     public CancelAppointmentByTokenCommandHandler(
         IAppointmentRepository appointmentRepository,
-        INotificationService notificationService,
+        INotificationQueue notifications,
         IUnitOfWork unitOfWork)
     {
         _appointmentRepository = appointmentRepository;
-        _notificationService   = notificationService;
+        _notifications         = notifications;
         _unitOfWork            = unitOfWork;
     }
 
@@ -45,10 +45,7 @@ public class CancelAppointmentByTokenCommandHandler : IRequestHandler<CancelAppo
         await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        try
-        {
-            await _notificationService.SendAppointmentCancelledAsync(appointment, cancellationToken);
-        }
-        catch { /* best-effort */ }
+        // Fora do ciclo da requisição: SMTP/WhatsApp lento não segura a resposta
+        _notifications.Enqueue((n, ct) => n.SendAppointmentCancelledAsync(appointment, ct));
     }
 }

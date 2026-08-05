@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using ImperadorBarberShop.Application.Commands.Appointments;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Entities;
@@ -11,13 +11,13 @@ namespace ImperadorBarberShop.UnitTests.Appointments;
 public class CancelAppointmentByTokenCommandHandlerTests
 {
     private readonly IAppointmentRepository _appointmentRepository = Substitute.For<IAppointmentRepository>();
-    private readonly INotificationService _notificationService = Substitute.For<INotificationService>();
+    private readonly INotificationQueue _notifications = Substitute.For<INotificationQueue>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CancelAppointmentByTokenCommandHandler _handler;
 
     public CancelAppointmentByTokenCommandHandlerTests()
     {
-        _handler = new CancelAppointmentByTokenCommandHandler(_appointmentRepository, _notificationService, _unitOfWork);
+        _handler = new CancelAppointmentByTokenCommandHandler(_appointmentRepository, _notifications, _unitOfWork);
     }
 
     [Fact]

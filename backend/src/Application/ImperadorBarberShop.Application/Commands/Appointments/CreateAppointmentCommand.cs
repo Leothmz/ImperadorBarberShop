@@ -37,20 +37,20 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
     private readonly IBarberRepository _barberRepository;
     private readonly IServiceRepository _serviceRepository;
     private readonly IAppointmentRepository _appointmentRepository;
-    private readonly INotificationService _notificationService;
+    private readonly INotificationQueue _notifications;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateAppointmentCommandHandler(
         IBarberRepository barberRepository,
         IServiceRepository serviceRepository,
         IAppointmentRepository appointmentRepository,
-        INotificationService notificationService,
+        INotificationQueue notifications,
         IUnitOfWork unitOfWork)
     {
         _barberRepository      = barberRepository;
         _serviceRepository     = serviceRepository;
         _appointmentRepository = appointmentRepository;
-        _notificationService   = notificationService;
+        _notifications         = notifications;
         _unitOfWork            = unitOfWork;
     }
 
@@ -98,13 +98,9 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         await _appointmentRepository.AddAsync(appointment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Send notification to barber (best-effort — failure must not roll back the appointment)
-        try
-        {
-            await _notificationService.SendAppointmentCreatedAsync(
-                appointment, barber, services, cancellationToken);
-        }
-        catch { /* best-effort */ }
+        // Enfileira o aviso ao barbeiro: o cliente recebe o 201 sem esperar SMTP/WhatsApp
+        _notifications.Enqueue((n, ct) =>
+            n.SendAppointmentCreatedAsync(appointment, barber, services, ct));
 
         return new CreateAppointmentResult(appointment.Id, appointment.AccessToken);
     }

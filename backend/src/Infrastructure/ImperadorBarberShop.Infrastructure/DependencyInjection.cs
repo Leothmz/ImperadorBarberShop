@@ -55,6 +55,11 @@ public static class DependencyInjection
         services.AddScoped<AdminSeedService>();
         services.AddHostedService<ReminderBackgroundService>();
 
+        // Fila de notificações: singleton porque atravessa escopos de requisição
+        services.AddSingleton<NotificationQueue>();
+        services.AddSingleton<INotificationQueue>(sp => sp.GetRequiredService<NotificationQueue>());
+        services.AddHostedService<NotificationDispatcher>();
+
         return services;
     }
 }

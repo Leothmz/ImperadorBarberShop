@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using ImperadorBarberShop.Application.Commands.Appointments;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Entities;
@@ -12,14 +12,14 @@ public class CreateAppointmentCommandHandlerTests
     private readonly IBarberRepository _barberRepository = Substitute.For<IBarberRepository>();
     private readonly IServiceRepository _serviceRepository = Substitute.For<IServiceRepository>();
     private readonly IAppointmentRepository _appointmentRepository = Substitute.For<IAppointmentRepository>();
-    private readonly INotificationService _notificationService = Substitute.For<INotificationService>();
+    private readonly INotificationQueue _notifications = Substitute.For<INotificationQueue>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CreateAppointmentCommandHandler _handler;
 
     public CreateAppointmentCommandHandlerTests()
     {
         _handler = new CreateAppointmentCommandHandler(
-            _barberRepository, _serviceRepository, _appointmentRepository, _notificationService, _unitOfWork);
+            _barberRepository, _serviceRepository, _appointmentRepository, _notifications, _unitOfWork);
     }
 
     private void SetupHappyPath(Guid barberId, Service service)
@@ -51,6 +51,22 @@ public class CreateAppointmentCommandHandlerTests
         result.Id.Should().NotBeEmpty();
         result.AccessToken.Should().NotBeNullOrEmpty();
         await _appointmentRepository.Received(1).AddAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void Handle_ValidCommand_EnqueuesNotificationInsteadOfAwaitingIt()
+    {
+        var barberId = Guid.NewGuid();
+        var serviceId = Guid.NewGuid();
+        var service = Service.Create("Corte", "Corte moderno", 30, 35.00m);
+        SetupHappyPath(barberId, service);
+
+        var command = new CreateAppointmentCommand(
+            "João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), new List<Guid> { serviceId }, null);
+
+        // O handler não pode aguardar SMTP/WhatsApp: só enfileira o envio.
+        _handler.Handle(command, CancellationToken.None).IsCompletedSuccessfully.Should().BeTrue();
+        _notifications.Received(1).Enqueue(Arg.Any<Func<INotificationService, CancellationToken, Task>>());
     }
 
     [Fact]
