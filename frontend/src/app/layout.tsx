@@ -18,10 +18,12 @@ const inter = Inter({
   display: 'swap',
 })
 
+// Ícones vêm de src/app/icon.png e src/app/apple-icon.png (convenção de arquivo do Next)
 export const metadata: Metadata = {
   title: 'O Imperador Barber Shop',
   description: 'Agende seu corte com os melhores barbeiros da cidade.',
-  icons: { icon: '/favicon.ico' },
+  // Nome curto no ícone da tela de início; o title completo corta no iOS
+  appleWebApp: { title: 'OImperador' },
 }
 
 export default function RootLayout({
