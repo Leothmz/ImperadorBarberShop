@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using ImperadorBarberShop.Application.Commands.Appointments;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Entities;
@@ -12,13 +12,13 @@ namespace ImperadorBarberShop.UnitTests.Appointments;
 public class CompleteAppointmentCommandHandlerTests
 {
     private readonly IAppointmentRepository _appointmentRepository = Substitute.For<IAppointmentRepository>();
-    private readonly INotificationService _notificationService = Substitute.For<INotificationService>();
+    private readonly INotificationQueue _notifications = Substitute.For<INotificationQueue>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CompleteAppointmentCommandHandler _handler;
 
     public CompleteAppointmentCommandHandlerTests()
     {
-        _handler = new CompleteAppointmentCommandHandler(_appointmentRepository, _notificationService, _unitOfWork);
+        _handler = new CompleteAppointmentCommandHandler(_appointmentRepository, _notifications, _unitOfWork);
     }
 
     [Fact]
@@ -55,6 +55,21 @@ public class CompleteAppointmentCommandHandlerTests
         var act = () => _handler.Handle(new CompleteAppointmentCommand(appointment.Id, Guid.NewGuid()), CancellationToken.None);
 
         await act.Should().ThrowAsync<ForbiddenException>();
+    }
+
+    [Fact]
+    public async Task Handle_AdminWithoutBarberId_CompletesAnyBarbersAppointment()
+    {
+        // RequesterBarberId nulo = admin: conclui o atendimento de qualquer barbeiro.
+        var otherBarberId = Guid.NewGuid();
+        var appointment = Appointment.Create("João", "+5511999990000", otherBarberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
+        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
+
+        await _handler.Handle(new CompleteAppointmentCommand(appointment.Id, null, PaymentMethod.Pix), CancellationToken.None);
+
+        appointment.Status.Should().Be(AppointmentStatus.Completed);
+        appointment.PaymentMethod.Should().Be(PaymentMethod.Pix);
     }
 
     [Fact]

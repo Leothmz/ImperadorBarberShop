@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using ImperadorBarberShop.Application.Commands.Appointments;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Entities;
@@ -12,13 +12,13 @@ namespace ImperadorBarberShop.UnitTests.Appointments;
 public class CancelAppointmentByBarberCommandHandlerTests
 {
     private readonly IAppointmentRepository _appointmentRepository = Substitute.For<IAppointmentRepository>();
-    private readonly INotificationService _notificationService = Substitute.For<INotificationService>();
+    private readonly INotificationQueue _notifications = Substitute.For<INotificationQueue>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CancelAppointmentByBarberCommandHandler _handler;
 
     public CancelAppointmentByBarberCommandHandlerTests()
     {
-        _handler = new CancelAppointmentByBarberCommandHandler(_appointmentRepository, _notificationService, _unitOfWork);
+        _handler = new CancelAppointmentByBarberCommandHandler(_appointmentRepository, _notifications, _unitOfWork);
     }
 
     [Fact]
@@ -56,6 +56,20 @@ public class CancelAppointmentByBarberCommandHandlerTests
         var act = () => _handler.Handle(new CancelAppointmentByBarberCommand(appointment.Id, Guid.NewGuid()), CancellationToken.None);
 
         await act.Should().ThrowAsync<ForbiddenException>();
+    }
+
+    [Fact]
+    public async Task Handle_AdminWithoutBarberId_CancelsAnyBarbersAppointment()
+    {
+        // RequesterBarberId nulo = admin: cancela o atendimento de qualquer barbeiro.
+        var otherBarberId = Guid.NewGuid();
+        var appointment = Appointment.Create("João", "+5511999990000", otherBarberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
+        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
+
+        await _handler.Handle(new CancelAppointmentByBarberCommand(appointment.Id, null), CancellationToken.None);
+
+        appointment.Status.Should().Be(AppointmentStatus.Cancelled);
     }
 
     [Fact]

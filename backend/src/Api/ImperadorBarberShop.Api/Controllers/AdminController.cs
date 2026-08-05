@@ -249,6 +249,31 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    // O admin age sobre o agendamento de qualquer barbeiro: RequesterBarberId
+    // nulo pula a checagem de dono, como já acontece no endpoint de pagamento.
+    [HttpPatch("appointments/{id:guid}/complete")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CompleteAppointment(
+        Guid id,
+        [FromBody] AdminCompleteAppointmentRequest? request,
+        CancellationToken ct)
+    {
+        await _mediator.Send(new CompleteAppointmentCommand(id, null, request?.PaymentMethod), ct);
+        return NoContent();
+    }
+
+    [HttpPatch("appointments/{id:guid}/cancel")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CancelAppointment(Guid id, CancellationToken ct)
+    {
+        await _mediator.Send(new CancelAppointmentByBarberCommand(id, null), ct);
+        return NoContent();
+    }
+
     private static string? GetImageValidationError(IFormFile file)
     {
         if (file.Length > 5 * 1024 * 1024) return "Image must be smaller than 5 MB.";
@@ -288,5 +313,7 @@ public record AdminCreateBarberBlockBody(
     DateTime? RecurrenceEndsAt);
 
 public record AdminUpdatePaymentRequest(PaymentMethod PaymentMethod);
+
+public record AdminCompleteAppointmentRequest(PaymentMethod? PaymentMethod);
 
 public record CreateExpenseRequest(decimal Amount, string Description, DateOnly Date);

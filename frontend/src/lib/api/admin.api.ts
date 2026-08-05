@@ -103,6 +103,12 @@ export const adminApi = {
 
   updateAppointmentPayment: (id: string, paymentMethod: PaymentMethod) =>
     apiClient.patch(`/admin/appointments/${id}/payment`, { paymentMethod }),
+
+  completeAppointment: (id: string, paymentMethod?: PaymentMethod) =>
+    apiClient.patch(`/admin/appointments/${id}/complete`, { paymentMethod: paymentMethod ?? null }),
+
+  cancelAppointment: (id: string) =>
+    apiClient.patch(`/admin/appointments/${id}/cancel`),
 }
 
 export const adminServicesApi = {

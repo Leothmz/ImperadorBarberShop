@@ -262,6 +262,14 @@ export const handlers = [
     return HttpResponse.json(mockBarberAppointments)
   }),
 
+  http.patch(`${BASE_URL}/admin/appointments/:id/complete`, () => {
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.patch(`${BASE_URL}/admin/appointments/:id/cancel`, () => {
+    return new HttpResponse(null, { status: 204 })
+  }),
+
   http.get(`${BASE_URL}/admin/financial/summary`, () => {
     return HttpResponse.json({
       totalRevenue: 1250,

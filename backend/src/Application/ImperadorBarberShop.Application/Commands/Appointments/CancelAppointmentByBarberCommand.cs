@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
@@ -6,30 +6,33 @@ using MediatR;
 
 namespace ImperadorBarberShop.Application.Commands.Appointments;
 
-public record CancelAppointmentByBarberCommand(Guid AppointmentId, Guid BarberId) : IRequest;
+public record CancelAppointmentByBarberCommand(
+    Guid AppointmentId,
+    Guid? RequesterBarberId)   // null = admin, bypasses IDOR
+    : IRequest;
 
 public class CancelAppointmentByBarberCommandValidator : AbstractValidator<CancelAppointmentByBarberCommand>
 {
     public CancelAppointmentByBarberCommandValidator()
     {
         RuleFor(x => x.AppointmentId).NotEmpty();
-        RuleFor(x => x.BarberId).NotEmpty();
+        RuleFor(x => x.RequesterBarberId).NotEmpty().When(x => x.RequesterBarberId.HasValue);
     }
 }
 
 public class CancelAppointmentByBarberCommandHandler : IRequestHandler<CancelAppointmentByBarberCommand>
 {
     private readonly IAppointmentRepository _appointmentRepository;
-    private readonly INotificationService _notificationService;
+    private readonly INotificationQueue _notifications;
     private readonly IUnitOfWork _unitOfWork;
 
     public CancelAppointmentByBarberCommandHandler(
         IAppointmentRepository appointmentRepository,
-        INotificationService notificationService,
+        INotificationQueue notifications,
         IUnitOfWork unitOfWork)
     {
         _appointmentRepository = appointmentRepository;
-        _notificationService   = notificationService;
+        _notifications         = notifications;
         _unitOfWork            = unitOfWork;
     }
 
@@ -39,17 +42,14 @@ public class CancelAppointmentByBarberCommandHandler : IRequestHandler<CancelApp
         if (appointment is null)
             throw new KeyNotFoundException($"Appointment '{request.AppointmentId}' not found.");
 
-        if (appointment.BarberId != request.BarberId)
+        if (request.RequesterBarberId.HasValue && appointment.BarberId != request.RequesterBarberId)
             throw new ForbiddenException("You are not authorized to cancel this appointment.");
 
         appointment.Cancel();
         await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        try
-        {
-            await _notificationService.SendAppointmentCancelledAsync(appointment, cancellationToken);
-        }
-        catch { /* best-effort */ }
+        // Fora do ciclo da requisição: SMTP/WhatsApp lento não segura a resposta
+        _notifications.Enqueue((n, ct) => n.SendAppointmentCancelledAsync(appointment, ct));
     }
 }
