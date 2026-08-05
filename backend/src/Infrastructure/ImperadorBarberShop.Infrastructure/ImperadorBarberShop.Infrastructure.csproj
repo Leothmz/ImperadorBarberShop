@@ -8,14 +8,16 @@
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="CloudinaryDotNet" Version="1.29.2" />
-    <PackageReference Include="MailKit" Version="4.11.0" />
+    <PackageReference Include="MailKit" Version="4.17.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.18" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.18">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.18" />
+    <!-- Overrides the 2.1.10 pulled transitively by EF Core Sqlite (GHSA-2m69-gcr7-jv3q). Remove when EF Core ships 2.1.12+ itself. -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.7.0" />
   </ItemGroup>
 
