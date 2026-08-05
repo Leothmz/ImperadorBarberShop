@@ -57,7 +57,7 @@ O Imperador Barber Shop é uma aplicação full-stack moderna que conecta client
 | Tecnologia | Uso |
 |------------|-----|
 | ASP.NET Core 9 | API REST |
-| Entity Framework Core 9 + Npgsql | ORM + PostgreSQL |
+| Entity Framework Core 9 + SQLite | ORM + banco de dados |
 | MediatR | CQRS (Commands & Queries) |
 | FluentValidation | Validação de entrada |
 | BCrypt.Net | Hash de senhas (custo 12) |
@@ -79,10 +79,9 @@ O Imperador Barber Shop é uma aplicação full-stack moderna que conecta client
 ### Infraestrutura
 | Tecnologia | Uso |
 |------------|-----|
-| PostgreSQL 16 | Banco de dados principal |
-| Docker / Docker Compose | Ambiente local de desenvolvimento |
+| SQLite (WAL) | Banco de dados principal — arquivo local, sem servidor |
 | xUnit + NSubstitute + FluentAssertions | Testes unitários do backend |
-| Testcontainers | Testes de integração com PostgreSQL real |
+| SQLite in-memory | Testes de integração (sem Docker) |
 | Vitest + React Testing Library | Testes unitários do frontend |
 | MSW v2 | Mock de API nos testes de frontend |
 | Playwright | Testes E2E |
@@ -172,9 +171,10 @@ User ──< Barber ──< BarberAvailability
 
 ### Pré-requisitos
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [.NET SDK 9](https://dotnet.microsoft.com/download/dotnet/9.0)
 - [Node.js 24+](https://nodejs.org/)
+
+> O banco é SQLite — um arquivo `imperador_barber.db` criado na primeira execução. Sem Docker, sem servidor de banco.
 
 ### 1. Clone o repositório
 
@@ -183,20 +183,14 @@ git clone https://github.com/seu-usuario/ImperadorBarberShop.git
 cd ImperadorBarberShop
 ```
 
-### 2. Suba o banco de dados
-
-```bash
-docker-compose up -d
-```
-
-### 3. Configure o backend
+### 2. Configure o backend
 
 Crie o arquivo `backend/src/Api/ImperadorBarberShop.Api/appsettings.Development.json`:
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=imperador_barber;Username=imperador;Password=localdev"
+    "DefaultConnection": "Data Source=imperador_barber.db"
   },
   "Jwt": {
     "SecretKey": "<string-aleatória-mínimo-32-caracteres>",
@@ -219,7 +213,7 @@ Crie o arquivo `backend/src/Api/ImperadorBarberShop.Api/appsettings.Development.
 
 > As migrações são aplicadas automaticamente na inicialização em ambiente Development.
 
-### 4. Inicie o backend
+### 3. Inicie o backend
 
 ```bash
 cd backend
@@ -228,14 +222,14 @@ dotnet run --project src/Api/ImperadorBarberShop.Api
 # Swagger: http://localhost:5000/swagger
 ```
 
-### 5. Configure o frontend
+### 4. Configure o frontend
 
 ```bash
 # frontend/.env.local
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
-### 6. Inicie o frontend
+### 5. Inicie o frontend
 
 ```bash
 cd frontend
@@ -252,7 +246,7 @@ npm run dev
 # Testes unitários do backend
 cd backend && dotnet test tests/ImperadorBarberShop.UnitTests
 
-# Testes de integração (requer Docker)
+# Testes de integração (SQLite in-memory, sem Docker)
 cd backend && dotnet test tests/ImperadorBarberShop.IntegrationTests
 
 # Todos os testes com cobertura

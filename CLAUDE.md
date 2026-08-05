@@ -8,7 +8,6 @@ Barbershop scheduling platform. Clients book appointments anonymously (no accoun
 ImperadorBarberShop/
 ├── CLAUDE.md                  ← you are here (authoritative domain + API docs)
 ├── .gitignore
-├── docker-compose.yml         ← PostgreSQL 16 for local dev
 ├── backend/                   ← ASP.NET Core 9, Clean Architecture
 │   ├── CLAUDE.md
 │   ├── ImperadorBarberShop.sln
@@ -155,14 +154,10 @@ public enum AppointmentStatus { Accepted = 0, Cancelled = 1, Completed = 2 }
 ## Local Development
 
 ### Prerequisites
-- Docker Desktop (for PostgreSQL)
 - .NET SDK 9
 - Node.js 24+
 
-### Start PostgreSQL
-```bash
-docker-compose up -d
-```
+The database is SQLite — a local `imperador_barber.db` file created and migrated automatically on first run in Development. No Docker, no external database server.
 
 ### Start Backend
 ```bash
@@ -199,7 +194,7 @@ cd frontend && npx playwright test
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=imperador_barber;Username=imperador;Password=localdev"
+    "DefaultConnection": "Data Source=imperador_barber.db"
   },
   "Jwt": {
     "SecretKey": "<min-256-bit-random-string>",
