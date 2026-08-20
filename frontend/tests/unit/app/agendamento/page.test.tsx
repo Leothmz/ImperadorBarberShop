@@ -8,7 +8,7 @@ import { ManageAppointmentView } from '@/app/agendamento/[token]/ManageAppointme
 
 const BASE_URL = 'http://localhost:5000/api/v1'
 
-function respondWith(appointment: unknown) {
+function respondWith(appointment: Record<string, unknown>) {
   server.use(
     http.get(`${BASE_URL}/appointments/manage/:token`, () => HttpResponse.json(appointment))
   )

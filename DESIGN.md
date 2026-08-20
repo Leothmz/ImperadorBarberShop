@@ -336,6 +336,30 @@ Pill (`9999px`), `10px/2px` padding, `0.75rem` weight 600, always a 20%-opacity 
 color: green for Confirmado, gray for Cancelado, **gold for Concluído**. The label is Portuguese and
 comes from a single `statusConfig` map — status colors are never written inline.
 
+### Hero Hair Rain (signature)
+
+A `<canvas>` behind the landing hero renders golden hair strands falling through the
+lamplight — the instant after the clippers pass. Strands are tapered quadratic curves in the
+three golds, in three depth layers (far = thin, slow, dim; near = thick, fast, bright), with
+a slow tumble and sinusoidal sway. A radial `destination-out` mask erases whatever falls
+behind the hero text, so legibility never depends on where a strand happens to land.
+
+Density scales with viewport area (26–84 strands), DPR is capped at 2, and the loop stops
+when the hero scrolls offscreen or the tab hides. Under `prefers-reduced-motion` it paints
+one static scatter and never starts the loop — the composition survives, the movement does
+not.
+
+**The One Cut Rule.** The hero is the only place motion is authored. Everything else in the
+product animates to explain state, never to decorate.
+
+### Snip CTA (signature)
+
+The primary landing CTA carries two coupled effects: a warm radial highlight that tracks the
+pointer across the gold (the room's light following the hand), and a burst of strands
+released from the exact point of contact on click — pressing the button *is* the cut.
+Keyboard activation releases the burst from the button's center. Both are suppressed under
+reduced motion; the color feedback stays.
+
 ### Star Rating
 Gold-filled stars against `white/20` empties, `aria-label`ed as "Avaliação: N de 5". The input
 variant is 32px buttons that scale to `1.1` on hover with a hover-preview fill; the display variant

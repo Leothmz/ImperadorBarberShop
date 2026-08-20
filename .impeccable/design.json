@@ -8,70 +8,178 @@
         "role": "primary",
         "displayName": "Warm Lamplight",
         "canonical": "#C9A84C",
-        "tonalRamp": ["#1E1909", "#3B3213", "#584B1D", "#756426", "#927D30", "#AF963A", "#CDB05C", "#EBD79E"]
+        "tonalRamp": [
+          "#1E1909",
+          "#3B3213",
+          "#584B1D",
+          "#756426",
+          "#927D30",
+          "#AF963A",
+          "#CDB05C",
+          "#EBD79E"
+        ]
       },
       "brand-gold-light": {
         "role": "primary",
         "displayName": "Lamplight Flare",
         "canonical": "#E8C96A",
-        "tonalRamp": ["#241E0C", "#463C18", "#685924", "#8A7630", "#AC933C", "#CEB04F", "#E8C96A", "#F4E3AE"]
+        "tonalRamp": [
+          "#241E0C",
+          "#463C18",
+          "#685924",
+          "#8A7630",
+          "#AC933C",
+          "#CEB04F",
+          "#E8C96A",
+          "#F4E3AE"
+        ]
       },
       "brand-gold-dark": {
         "role": "primary",
         "displayName": "Lamplight Ember",
         "canonical": "#A8872E",
-        "tonalRamp": ["#191407", "#32280E", "#4B3C15", "#64501C", "#7D6423", "#96782A", "#A8872E", "#D4BC7B"]
+        "tonalRamp": [
+          "#191407",
+          "#32280E",
+          "#4B3C15",
+          "#64501C",
+          "#7D6423",
+          "#96782A",
+          "#A8872E",
+          "#D4BC7B"
+        ]
       },
       "brand-black": {
         "role": "neutral",
         "displayName": "Shop Black",
         "canonical": "#0D0D0D",
-        "tonalRamp": ["#000000", "#0D0D0D", "#1A1A1A", "#2B2B2B", "#4A4A4A", "#7A7A7A", "#B5B5B5", "#F5F5F5"]
+        "tonalRamp": [
+          "#000000",
+          "#0D0D0D",
+          "#1A1A1A",
+          "#2B2B2B",
+          "#4A4A4A",
+          "#7A7A7A",
+          "#B5B5B5",
+          "#F5F5F5"
+        ]
       },
       "brand-black-soft": {
         "role": "neutral",
         "displayName": "Chair Leather",
         "canonical": "#1A1A1A",
-        "tonalRamp": ["#000000", "#0D0D0D", "#1A1A1A", "#2B2B2B", "#4A4A4A", "#7A7A7A", "#B5B5B5", "#F5F5F5"]
+        "tonalRamp": [
+          "#000000",
+          "#0D0D0D",
+          "#1A1A1A",
+          "#2B2B2B",
+          "#4A4A4A",
+          "#7A7A7A",
+          "#B5B5B5",
+          "#F5F5F5"
+        ]
       },
       "brand-white": {
         "role": "neutral",
         "displayName": "Bone White",
         "canonical": "#F5F5F5",
-        "tonalRamp": ["#0D0D0D", "#1A1A1A", "#2B2B2B", "#4A4A4A", "#7A7A7A", "#A8A8A8", "#D4D4D4", "#F5F5F5"]
+        "tonalRamp": [
+          "#0D0D0D",
+          "#1A1A1A",
+          "#2B2B2B",
+          "#4A4A4A",
+          "#7A7A7A",
+          "#A8A8A8",
+          "#D4D4D4",
+          "#F5F5F5"
+        ]
       },
       "status-confirmed": {
         "role": "tertiary",
         "displayName": "Confirmed Green",
         "canonical": "#4ADE80",
-        "tonalRamp": ["#08170D", "#0F2E1B", "#174528", "#1E5C36", "#267343", "#2D8A51", "#4ADE80", "#A9EFC4"]
+        "tonalRamp": [
+          "#08170D",
+          "#0F2E1B",
+          "#174528",
+          "#1E5C36",
+          "#267343",
+          "#2D8A51",
+          "#4ADE80",
+          "#A9EFC4"
+        ]
       },
       "status-cancelled": {
         "role": "tertiary",
         "displayName": "Cancelled Gray",
         "canonical": "#9CA3AF",
-        "tonalRamp": ["#111214", "#1F2126", "#2E3138", "#3D414A", "#4C515C", "#6B717D", "#9CA3AF", "#D5D9DE"]
+        "tonalRamp": [
+          "#111214",
+          "#1F2126",
+          "#2E3138",
+          "#3D414A",
+          "#4C515C",
+          "#6B717D",
+          "#9CA3AF",
+          "#D5D9DE"
+        ]
       },
       "danger": {
         "role": "tertiary",
         "displayName": "Alert Red",
         "canonical": "#DC2626",
-        "tonalRamp": ["#1A0505", "#340909", "#4E0E0E", "#681212", "#821717", "#B01E1E", "#DC2626", "#F19393"]
+        "tonalRamp": [
+          "#1A0505",
+          "#340909",
+          "#4E0E0E",
+          "#681212",
+          "#821717",
+          "#B01E1E",
+          "#DC2626",
+          "#F19393"
+        ]
       },
       "danger-text": {
         "role": "tertiary",
         "displayName": "Alert Red Text",
         "canonical": "#F87171",
-        "tonalRamp": ["#1E0D0D", "#3B1A1A", "#582727", "#753434", "#924141", "#C55858", "#F87171", "#FCB9B9"]
+        "tonalRamp": [
+          "#1E0D0D",
+          "#3B1A1A",
+          "#582727",
+          "#753434",
+          "#924141",
+          "#C55858",
+          "#F87171",
+          "#FCB9B9"
+        ]
       }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Landing hero name only. One per page, landing surface only." },
-      "headline": { "displayName": "Headline", "purpose": "Section headings and CTA blocks." },
-      "title": { "displayName": "Title", "purpose": "Modal titles, card headings, dashboard section titles." },
-      "body": { "displayName": "Body", "purpose": "All prose. Inter, constrained to max-w-xl in marketing copy." },
-      "label": { "displayName": "Label", "purpose": "Tracked-out uppercase eyebrows, admin section labels, micro-cues." },
-      "wordmark": { "displayName": "Wordmark", "purpose": "Stacked 'O IMPERADOR' / 'BARBER SHOP' lockup in header and footer." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing hero name only. One per page, landing surface only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings and CTA blocks."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Modal titles, card headings, dashboard section titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All prose. Inter, constrained to max-w-xl in marketing copy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Tracked-out uppercase eyebrows, admin section labels, micro-cues."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "Stacked 'O IMPERADOR' / 'BARBER SHOP' lockup in header and footer."
+      }
     },
     "shadows": [
       {
@@ -81,14 +189,51 @@
       }
     ],
     "motion": [
-      { "name": "state", "value": "150ms ease (transition-colors duration-150)", "purpose": "Default for hover/active color shifts on buttons, chips, inputs, cards." },
-      { "name": "drawer", "value": "200ms cubic-bezier(0, 0, 0.2, 1)", "purpose": "Admin sidebar translate in/out below lg." },
-      { "name": "star-pop", "value": "transform scale(1.1) on hover", "purpose": "Star rating input hover preview." },
-      { "name": "spin", "value": "1s linear infinite", "purpose": "Button and page loading arcs." }
+      {
+        "name": "state",
+        "value": "150ms ease (transition-colors duration-150)",
+        "purpose": "Default for hover/active color shifts on buttons, chips, inputs, cards."
+      },
+      {
+        "name": "drawer",
+        "value": "200ms cubic-bezier(0, 0, 0.2, 1)",
+        "purpose": "Admin sidebar translate in/out below lg."
+      },
+      {
+        "name": "arrival",
+        "value": "460ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Authored entrance: the landing service list revealing as a list, 55ms per sibling."
+      },
+      {
+        "name": "lamplight",
+        "value": "200ms ease-out on opacity",
+        "purpose": "Pointer-tracked radial highlight across the hero CTA's gold."
+      },
+      {
+        "name": "star-pop",
+        "value": "transform scale(1.1) on hover",
+        "purpose": "Star rating input hover preview."
+      },
+      {
+        "name": "spin",
+        "value": "1s linear infinite",
+        "purpose": "Button and page loading arcs."
+      },
+      {
+        "name": "hair-rain",
+        "value": "requestAnimationFrame, 26-84 strands, DPR capped at 2",
+        "purpose": "The landing hero's authored moment. Paused offscreen and on hidden tabs; a single static frame under prefers-reduced-motion."
+      }
     ],
     "breakpoints": [
-      { "name": "sm", "value": "640px" },
-      { "name": "lg", "value": "1024px" }
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
     ]
   },
   "components": [
@@ -169,13 +314,46 @@
       "Portuguese-only copy; R$ and DD/MM formatting are part of the visual rhythm"
     ],
     "rules": [
-      { "name": "The One Light Rule", "body": "There is one accent hue in this product. Any new color must be a status signal (green/gray/red) or a tint of #C9A84C. A second decorative hue is a defect.", "section": "colors" },
-      { "name": "The Tint Ladder Rule", "body": "Emphasis below \"primary\" is expressed as brand-gold at 5/10/15/20/30% opacity over black — never as a new solid color. Hover is /10, selected fill is /10 with a solid #C9A84C border, active nav is /15, badge fill is /20, decorative borders are /30 and below.", "section": "colors" },
-      { "name": "The Opacity Type Scale Rule", "body": "Secondary text is brand-white at a documented opacity step, not a gray. /60 for prose, /50 for metadata, /30 for placeholders. Never introduce #9CA3AF as body text.", "section": "colors" },
-      { "name": "The Wide-Track Rule", "body": "Uppercase is always tracked out — 0.1em for labels, 0.35em–0.4em for the wordmark subline and the hero's \"BARBER SHOP\". Untracked uppercase reads as shouting; tracked uppercase reads as engraving.", "section": "typography" },
-      { "name": "The Two Voices Rule", "body": "Montserrat states, Inter explains. If a string is longer than five words and isn't a heading, it is Inter.", "section": "typography" },
-      { "name": "The Thumb Zone Rule", "body": "Anything a client must tap on a phone — slot chips, service rows, primary CTAs, the running total — is at least 40px tall and reachable in the lower half of the viewport.", "section": "layout" },
-      { "name": "The Hairline Rule", "body": "Every raised surface is separated from what's behind it by exactly one 1px hairline. Two nested borders, or a border plus a shadow, is over-drawing.", "section": "shapes" }
+      {
+        "name": "The One Light Rule",
+        "body": "There is one accent hue in this product. Any new color must be a status signal (green/gray/red) or a tint of #C9A84C. A second decorative hue is a defect.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tint Ladder Rule",
+        "body": "Emphasis below \"primary\" is expressed as brand-gold at 5/10/15/20/30% opacity over black — never as a new solid color. Hover is /10, selected fill is /10 with a solid #C9A84C border, active nav is /15, badge fill is /20, decorative borders are /30 and below.",
+        "section": "colors"
+      },
+      {
+        "name": "The Opacity Type Scale Rule",
+        "body": "Secondary text is brand-white at a documented opacity step, not a gray. /60 for prose, /50 for metadata, /30 for placeholders. Never introduce #9CA3AF as body text.",
+        "section": "colors"
+      },
+      {
+        "name": "The Wide-Track Rule",
+        "body": "Uppercase is always tracked out — 0.1em for labels, 0.35em–0.4em for the wordmark subline and the hero's \"BARBER SHOP\". Untracked uppercase reads as shouting; tracked uppercase reads as engraving.",
+        "section": "typography"
+      },
+      {
+        "name": "The Two Voices Rule",
+        "body": "Montserrat states, Inter explains. If a string is longer than five words and isn't a heading, it is Inter.",
+        "section": "typography"
+      },
+      {
+        "name": "The Thumb Zone Rule",
+        "body": "Anything a client must tap on a phone — slot chips, service rows, primary CTAs, the running total — is at least 40px tall and reachable in the lower half of the viewport.",
+        "section": "layout"
+      },
+      {
+        "name": "The Hairline Rule",
+        "body": "Every raised surface is separated from what's behind it by exactly one 1px hairline. Two nested borders, or a border plus a shadow, is over-drawing.",
+        "section": "shapes"
+      },
+      {
+        "name": "The One Cut Rule",
+        "body": "The hero is the only place motion is authored. Everything else in the product animates to explain state, never to decorate.",
+        "section": "components"
+      }
     ],
     "dos": [
       "Do express every non-primary emphasis as a brand-gold opacity tint (/5 /10 /15 /20 /30) over black, per The Tint Ladder Rule.",

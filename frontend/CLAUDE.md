@@ -74,3 +74,21 @@ invalid interactive nesting and costs the link its screen-reader semantics.
 
 The wizard keeps its step in `history.state` (`?passo=N`), so the browser Back button walks
 back one step instead of leaving the booking entirely.
+
+## Landing page
+
+`src/components/landing/` — the landing is composed of client sections that read real data;
+it never hardcodes a service, a price or a rating.
+
+| Component | Notes |
+|---|---|
+| `HairRain` | Canvas hero background. Listens for the `imperador:snip` window event to release a burst of strands at a point. Pauses offscreen/hidden, static frame under `prefers-reduced-motion`. |
+| `SnipButton` | The hero CTA. Tracks the pointer into `--mx`/`--my` for the `.snip-cta` highlight and dispatches `imperador:snip` on click. |
+| `HowItWorks` | Static, factual. The step numbers stay because the order is the information. |
+| `ServiceBoard` | The price board, from `useServices()`. Staggered reveal on first scroll into view. |
+| `BarberLineup` | Real barbers from `useBarbers()`, each deep-linking to `/agendar?barbeiro=<id>`. Renders nothing when the list is empty or errored rather than showing a decorated void. |
+
+`/agendar` reads `?barbeiro=<id>` and jumps straight to step 2 with that barber selected.
+
+Landing copy is bound by PRODUCT.md: no tenure claims, no testimonials, no ratings the page
+does not actually display. `tests/unit/app/HomePage.test.tsx` asserts those absences.

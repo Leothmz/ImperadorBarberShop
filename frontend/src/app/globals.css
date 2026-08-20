@@ -49,3 +49,97 @@ h1, h2, h3, h4, h5, h6 {
   --rdp-day-width: 40px;
   --rdp-day-height: 40px;
 }
+
+/* ── Superfícies do navegador ────────────────────────────────────────────────
+   Seleção, cursor e sublinhado saem do navegador sem dono nenhum; aqui eles
+   pertencem à mesma paleta do resto. */
+::selection {
+  background-color: rgba(201, 168, 76, 0.3);
+  color: #F5F5F5;
+}
+
+:root {
+  caret-color: #C9A84C;
+  accent-color: #C9A84C;
+}
+
+a {
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+
+/* ── CTA do herói ────────────────────────────────────────────────────────────
+   A luz da sala segue o dedo: o ouro clareia a partir do ponto tocado. */
+.snip-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.snip-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(
+    circle 120px at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 243, 205, 0.85),
+    rgba(232, 201, 106, 0) 70%
+  );
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.snip-cta:hover::before,
+.snip-cta:focus-visible::before {
+  opacity: 1;
+}
+
+.snip-cta:active {
+  transform: scale(0.985);
+}
+
+/* ── Entrada da lista de serviços ───────────────────────────────────────────
+   Uma lista que aparece como lista. O atraso total para no último item. */
+@keyframes strand-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.reveal-list > * {
+  opacity: 0;
+  animation: strand-in 460ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+/* Sem JS a lista tem que continuar visível. */
+.no-js .reveal-list > * {
+  opacity: 1;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-list > * {
+    opacity: 1;
+    animation: none;
+  }
+
+  .snip-cta:active {
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

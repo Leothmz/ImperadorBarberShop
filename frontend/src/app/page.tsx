@@ -1,6 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { buttonClasses } from '@/components/ui/Button'
+import { HairRain } from '@/components/landing/HairRain'
+import { SnipButton } from '@/components/landing/SnipButton'
+import { HowItWorks } from '@/components/landing/HowItWorks'
+import { ServiceBoard } from '@/components/landing/ServiceBoard'
+import { BarberLineup } from '@/components/landing/BarberLineup'
 
 export default function LandingPage() {
   return (
@@ -9,7 +14,7 @@ export default function LandingPage() {
       {/* svh, não vh: no celular o vh mede a viewport maior e empurra o CTA para
           fora da tela na primeira pintura. */}
       <section className="relative flex min-h-[85svh] flex-col items-center justify-center overflow-hidden px-4 py-10 text-center">
-        {/* Background gradient decoration */}
+        {/* A luz única da sala */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
@@ -19,18 +24,10 @@ export default function LandingPage() {
           }}
         />
 
-        {/* Decorative lines */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full border border-brand-gold/5"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full border border-brand-gold/8"
-        />
+        {/* O instante depois de a máquina passar */}
+        <HairRain />
 
         <div className="relative z-10 flex flex-col items-center gap-4 max-w-3xl sm:gap-6">
-          {/* Logo */}
           <Image
             src="/logo.png"
             alt="O Imperador Barber Shop"
@@ -40,13 +37,8 @@ export default function LandingPage() {
             priority
           />
 
-          {/* O diferencial real do produto, dito antes de qualquer outra coisa */}
-          <span className="inline-flex items-center rounded-full border border-brand-gold/30 bg-brand-gold/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-brand-gold">
-            Agendamento sem cadastro
-          </span>
-
-          {/* Main heading — clamp e nowrap: no celular o "O" quebrava sozinho
-              numa linha e virava um ponto branco solto acima do nome. */}
+          {/* clamp e nowrap: no celular o "O" quebrava sozinho numa linha e
+              virava um ponto branco solto acima do nome. */}
           <h1 className="font-montserrat text-[clamp(2.25rem,11vw,4.5rem)] font-black leading-tight tracking-tight whitespace-nowrap text-brand-white">
             O <span className="text-brand-gold">IMPERADOR</span>
           </h1>
@@ -60,25 +52,31 @@ export default function LandingPage() {
           </p>
 
           <div className="mt-2">
-            <Link href="/agendar" className={buttonClasses({ size: 'lg', className: 'min-w-[220px]' })}>
+            <SnipButton href="/agendar" className="min-w-[220px]">
               Agendar agora
-            </Link>
+            </SnipButton>
           </div>
         </div>
       </section>
 
+      <HowItWorks />
+      <ServiceBoard />
+      <BarberLineup />
+
       {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-brand-gold/20 bg-brand-black-soft p-12 text-center">
-          <h2 className="font-montserrat text-3xl font-black text-brand-white mb-4">
-            Pronto para uma nova experiência?
+      <section className="border-t border-brand-white/10 px-4 py-20">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="font-montserrat text-3xl font-black tracking-tight text-brand-white sm:text-4xl">
+            Sua cadeira está livre
           </h2>
-          <p className="text-brand-white/60 mb-8 text-lg">
-            Agende seu primeiro corte hoje mesmo, sem cadastro.
+          <p className="mx-auto mt-3 max-w-prose text-lg text-brand-white/60">
+            Leva menos de um minuto e não pede cadastro.
           </p>
-          <Link href="/agendar" className={buttonClasses({ size: 'lg' })}>
-            Agendar agora
-          </Link>
+          <div className="mt-8">
+            <Link href="/agendar" className={buttonClasses({ size: 'lg' })}>
+              Agendar agora
+            </Link>
+          </div>
         </div>
       </section>
     </>

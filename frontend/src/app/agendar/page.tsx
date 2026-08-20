@@ -10,6 +10,7 @@ import { BookingConfirmation } from '@/components/booking/BookingConfirmation'
 import { Button } from '@/components/ui/Button'
 import { useCreateAppointment } from '@/hooks/useAppointments'
 import { useServices } from '@/hooks/useServices'
+import { useBarbers } from '@/hooks/useBarbers'
 import { normalizeBrPhone } from '@/lib/utils/phone'
 import { toApiDate } from '@/lib/utils/formatDateTime'
 import { describeBookingError } from '@/lib/utils/appointmentError'
@@ -48,7 +49,11 @@ export default function AgendarPage() {
   const [restored, setRestored] = useState(false)
 
   const { data: allServices } = useServices()
+  // Mesma query que o BarberPicker usa: vem do cache, sem requisição extra.
+  const { data: allBarbers } = useBarbers()
   const createAppointment = useCreateAppointment()
+  // `?barbeiro=<id>` vem da fila de barbeiros da home: o cliente já escolheu.
+  const [pendingBarberId, setPendingBarberId] = useState<string | null>(null)
 
   // O público chega de link do WhatsApp e troca de app no meio do fluxo — sem
   // rascunho, voltar para a aba recomeça do passo 1 com tudo perdido.
@@ -56,6 +61,9 @@ export default function AgendarPage() {
     /* eslint-disable react-hooks/set-state-in-effect -- hidratação: o rascunho vive
        no sessionStorage, que não existe no servidor. Ler durante o render faria o
        cliente divergir do HTML já enviado. */
+    const requestedBarber = new URLSearchParams(window.location.search).get('barbeiro')
+    if (requestedBarber) setPendingBarberId(requestedBarber)
+
     const draft = loadDraft()
     if (draft) {
       setSelectedBarber(draft.barber)
@@ -111,6 +119,21 @@ export default function AgendarPage() {
     setStep(next)
     window.history.pushState({ passo: next }, '', `?passo=${next}`)
   }, [])
+
+  // Escolha vinda da home: assim que os barbeiros carregam, pula o passo 1.
+  useEffect(() => {
+    if (!pendingBarberId || !allBarbers) return
+    const barber = allBarbers.find((b) => b.id === pendingBarberId)
+    /* eslint-disable react-hooks/set-state-in-effect -- a escolha chega pela URL e
+       o barbeiro só existe depois que a lista carrega; não há como resolver isso
+       durante o render. */
+    setPendingBarberId(null)
+    if (!barber) return
+    setSelectedBarber(barber)
+    setSelectedSlot(null)
+    goToStep(2)
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [pendingBarberId, allBarbers, goToStep])
 
   function toggleService(service: Service) {
     // Trocar serviço muda a duração total, e a duração total decide quais
