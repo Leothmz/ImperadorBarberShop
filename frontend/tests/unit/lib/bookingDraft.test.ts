@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import {
   clampStep,
+  pruneMissingServiceIds,
   clearDraft,
   emptyDraft,
   loadDraft,
@@ -101,5 +102,50 @@ describe('session persistence', () => {
     clearDraft()
 
     expect(loadDraft()).toBeNull()
+  })
+})
+
+describe('pruneMissingServiceIds', () => {
+  const catalog = [
+    {
+      id: 'svc-1',
+      name: 'Corte',
+      description: '',
+      durationMinutes: 30,
+      price: 35,
+      isActive: true,
+      photoUrl: null,
+      addons: [
+        {
+          id: 'addon-1',
+          name: 'Barba',
+          description: '',
+          durationMinutes: 20,
+          price: 25,
+          isActive: true,
+          photoUrl: null,
+          addons: [],
+        },
+      ],
+    },
+  ]
+
+  it('keeps the same array reference when nothing vanished', () => {
+    const selected = ['svc-1', 'addon-1']
+    // Devolver um array novo aqui poria o efeito que chama isto em laço infinito.
+    expect(pruneMissingServiceIds(selected, catalog)).toBe(selected)
+  })
+
+  it('drops a service the admin deactivated mid-booking', () => {
+    expect(pruneMissingServiceIds(['svc-1', 'svc-removido'], catalog)).toEqual(['svc-1'])
+  })
+
+  it('drops a vanished addon but keeps its parent', () => {
+    expect(pruneMissingServiceIds(['svc-1', 'addon-sumido'], catalog)).toEqual(['svc-1'])
+  })
+
+  it('leaves the cart untouched while the catalog is still loading', () => {
+    const selected = ['svc-1']
+    expect(pruneMissingServiceIds(selected, undefined)).toBe(selected)
   })
 })

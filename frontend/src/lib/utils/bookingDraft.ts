@@ -1,4 +1,4 @@
-import type { Barber } from '@/types/api.types'
+import type { Barber, Service } from '@/types/api.types'
 import { toApiDate } from '@/lib/utils/formatDateTime'
 
 const STORAGE_KEY = 'imperador_booking_draft'
@@ -79,4 +79,28 @@ export function clearDraft(): void {
   } catch {
     // idem
   }
+}
+
+/**
+ * Remove do carrinho os serviços que sumiram do catálogo — o admin pode
+ * desativar um serviço enquanto alguém está agendando, e o catálogo revalida
+ * sozinho. Sem isto o resumo continuaria somando um item que a API vai recusar.
+ *
+ * Devolve o próprio array quando não há nada a remover: criar um array novo a
+ * cada checagem colocaria o efeito que chama isto em laço infinito.
+ */
+export function pruneMissingServiceIds(
+  selectedIds: string[],
+  services: Service[] | undefined
+): string[] {
+  if (!services) return selectedIds
+
+  const available = new Set<string>()
+  for (const service of services) {
+    available.add(service.id)
+    for (const addon of service.addons ?? []) available.add(addon.id)
+  }
+
+  const kept = selectedIds.filter((id) => available.has(id))
+  return kept.length === selectedIds.length ? selectedIds : kept
 }

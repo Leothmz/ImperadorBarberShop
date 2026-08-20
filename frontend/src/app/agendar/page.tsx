@@ -19,6 +19,7 @@ import {
   clearDraft,
   loadDraft,
   parseDraftDate,
+  pruneMissingServiceIds,
   saveDraft,
   serializeDraftDate,
 } from '@/lib/utils/bookingDraft'
@@ -103,6 +104,18 @@ export default function AgendarPage() {
     clientPhone,
     notes,
   ])
+
+  // O catálogo revalida sozinho: se um serviço escolhido for desativado no meio
+  // do caminho, ele sai do carrinho antes de virar um total errado.
+  useEffect(() => {
+    const kept = pruneMissingServiceIds(selectedServiceIds, allServices)
+    if (kept === selectedServiceIds) return
+    /* eslint-disable react-hooks/set-state-in-effect -- reação a dados do servidor
+       que chegaram depois do render; não há como saber disso durante o render. */
+    setSelectedServiceIds(kept)
+    setSelectedSlot(null)
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [allServices, selectedServiceIds])
 
   // O passo vive no histórico para que o Voltar do navegador volte um passo em
   // vez de abandonar o agendamento inteiro.

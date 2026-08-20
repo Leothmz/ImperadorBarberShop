@@ -8,6 +8,17 @@ function getAllServices() {
   return apiClient.get<Service[]>('/admin/services').then((r) => r.data)
 }
 
+/**
+ * Toda alteração no catálogo tem que derrubar as duas caches: a do admin
+ * (`['admin','services']`, que inclui inativos) e a pública (`['services']`, que
+ * alimenta a home e o agendamento). Invalidar só a primeira deixava o próprio
+ * admin vendo a tabela antiga no site depois de mexer nela.
+ */
+function invalidateServiceCaches(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['admin', 'services'] })
+  qc.invalidateQueries({ queryKey: ['services'] })
+}
+
 export function useAdminAllServices() {
   return useQuery({ queryKey: ['admin', 'services'], queryFn: getAllServices })
 }
@@ -16,7 +27,7 @@ export function useCreateService() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreateServicePayload) => adminServicesApi.createService(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'services'] }),
+    onSuccess: () => invalidateServiceCaches(qc),
   })
 }
 
@@ -24,7 +35,7 @@ export function useUpdateService() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: UpdateServicePayload) => adminServicesApi.updateService(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'services'] }),
+    onSuccess: () => invalidateServiceCaches(qc),
   })
 }
 
@@ -32,7 +43,7 @@ export function useDeleteService() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => adminServicesApi.deleteService(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'services'] }),
+    onSuccess: () => invalidateServiceCaches(qc),
   })
 }
 
@@ -40,7 +51,7 @@ export function useDeactivateService() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => adminServicesApi.deactivateService(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'services'] }),
+    onSuccess: () => invalidateServiceCaches(qc),
   })
 }
 
@@ -48,7 +59,7 @@ export function useActivateService() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => adminServicesApi.activateService(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'services'] }),
+    onSuccess: () => invalidateServiceCaches(qc),
   })
 }
 
@@ -57,7 +68,7 @@ export function useAddAddon() {
   return useMutation({
     mutationFn: ({ serviceId, addonId }: { serviceId: string; addonId: string }) =>
       adminServicesApi.addAddon(serviceId, addonId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'services'] }),
+    onSuccess: () => invalidateServiceCaches(qc),
   })
 }
 
@@ -66,6 +77,6 @@ export function useRemoveAddon() {
   return useMutation({
     mutationFn: ({ serviceId, addonId }: { serviceId: string; addonId: string }) =>
       adminServicesApi.removeAddon(serviceId, addonId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'services'] }),
+    onSuccess: () => invalidateServiceCaches(qc),
   })
 }
