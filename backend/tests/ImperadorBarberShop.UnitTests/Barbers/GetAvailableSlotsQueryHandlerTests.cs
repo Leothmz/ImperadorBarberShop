@@ -224,13 +224,15 @@ public class GetAvailableSlotsQueryHandlerTests
     [Fact]
     public async Task Handle_SlotOverlapsBlock_ExcludesSlot()
     {
-        var barberId = Guid.NewGuid();
-        var date = new DateOnly(2026, 8, 7); // a Friday
+        // Usa o mesmo dia rolante do resto da classe: uma data fixa vira um teste
+        // com prazo de validade — assim que ela fica no passado, o handler filtra
+        // todos os horários e a asserção passa a falhar sozinha.
+        var barberId = _barberId;
+        var date = _monday;
         var serviceId = Guid.NewGuid();
 
-        _availabilityRepository.GetByBarberIdAndDayAsync(barberId, DayOfWeek.Friday, Arg.Any<CancellationToken>())
-            .Returns(BarberAvailability.Create(barberId, DayOfWeek.Friday,
-                new TimeOnly(9, 0), new TimeOnly(17, 0)));
+        _availabilityRepository.GetByBarberIdAndDayAsync(barberId, DayOfWeek.Monday, Arg.Any<CancellationToken>())
+            .Returns(_mondayAvailability);
 
         _serviceRepository.GetByIdsAsync(Arg.Any<List<Guid>>(), Arg.Any<CancellationToken>())
             .Returns(new List<Service> { Service.Create("Corte", "desc", 30, 35m) });
