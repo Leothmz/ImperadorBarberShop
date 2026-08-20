@@ -82,12 +82,17 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("RequireAdminRole", policy => policy.RequireClaim("role", "Admin"));
 });
 
-// CORS — allow only configured frontend URL
-var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://localhost:3000";
+// CORS — allow only the configured frontend origins. Accepts a comma-separated
+// list so apex and www can coexist in production, and so a dev machine can serve
+// both http://localhost:3000 and its LAN address when testing on a real phone.
+var frontendOrigins = (builder.Configuration["FrontendUrl"] ?? "http://localhost:3000")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(origin => origin.TrimEnd('/'))
+    .ToArray();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
-        policy.WithOrigins(frontendUrl)
+        policy.WithOrigins(frontendOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
