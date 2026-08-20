@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { formatCurrency, formatDateTime, toApiDate } from '@/lib/utils/formatDateTime'
@@ -45,26 +46,46 @@ export function BookingConfirmation({
   const dateString = toApiDate(selectedDate) // "YYYY-MM-DD"
   const scheduledAt = `${dateString}T${selectedSlot}`
 
+  const [nameTouched, setNameTouched] = useState(false)
+  const [phoneTouched, setPhoneTouched] = useState(false)
+
   // Valida o telefone já normalizado, igual ao que é enviado para a API. Validar
   // o texto cru exigia digitar "+5511999998888" sem espaço nem traço — até o
   // formato do placeholder reprovava, e o botão nunca habilitava.
-  const canConfirm = clientName.trim().length > 0 && isValidBrPhone(normalizeBrPhone(clientPhone))
+  const phoneIsValid = isValidBrPhone(normalizeBrPhone(clientPhone))
+  const canConfirm = clientName.trim().length > 0 && phoneIsValid
 
   return (
-    <div className="flex flex-col gap-6">
+    <form
+      className="flex flex-col gap-6"
+      onSubmit={(e) => {
+        e.preventDefault()
+        // Enter no campo do telefone confirma, em vez de não fazer nada
+        if (canConfirm && !isLoading) onConfirm()
+      }}
+    >
       {/* Contact info */}
       <div className="flex flex-col gap-3">
         <Input
           label="Nome completo"
           value={clientName}
           onChange={(e) => onClientNameChange(e.target.value)}
+          onBlur={() => setNameTouched(true)}
+          autoComplete="name"
           placeholder="Seu nome"
+          error={nameTouched && clientName.trim().length === 0 ? 'Precisamos do seu nome para o barbeiro te chamar.' : undefined}
         />
         <Input
           label="WhatsApp"
           value={clientPhone}
           onChange={(e) => onClientPhoneChange(e.target.value)}
+          onBlur={() => setPhoneTouched(true)}
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel"
           placeholder="+55 11 99999-0000"
+          hint="Usamos só para te enviar o link do agendamento."
+          error={phoneTouched && !phoneIsValid ? 'Digite um número com DDD, como 11 99999-0000.' : undefined}
         />
       </div>
 
@@ -125,12 +146,12 @@ export function BookingConfirmation({
           onChange={(e) => onNotesChange(e.target.value)}
           placeholder="Ex: Prefiro o corte mais curto nas laterais..."
           rows={3}
-          className="w-full rounded-md border border-brand-white/20 bg-brand-black-soft px-3 py-2.5 text-brand-white placeholder:text-brand-white/30 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold resize-none"
+          className="w-full rounded-md border border-brand-white/20 bg-brand-black px-3 py-2.5 text-brand-white placeholder:text-brand-white/30 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold resize-none"
         />
       </div>
 
       <Button
-        onClick={onConfirm}
+        type="submit"
         isLoading={isLoading}
         disabled={!canConfirm}
         size="lg"
@@ -138,6 +159,12 @@ export function BookingConfirmation({
       >
         Confirmar Agendamento
       </Button>
-    </div>
+
+      {/* A regra das 2h prendia o cliente sem nunca ter sido dita: ele só
+          descobria como um botão morto na hora de cancelar. */}
+      <p className="text-center text-xs text-brand-white/50">
+        Você pode cancelar pelo link do agendamento até 2 horas antes do horário.
+      </p>
+    </form>
   )
 }

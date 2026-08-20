@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { BarberPicker } from '@/components/booking/BarberPicker'
 import { ServicePicker } from '@/components/booking/ServicePicker'
 import { SlotPicker } from '@/components/booking/SlotPicker'
@@ -11,14 +12,28 @@ import { useCreateAppointment } from '@/hooks/useAppointments'
 import { useServices } from '@/hooks/useServices'
 import { normalizeBrPhone } from '@/lib/utils/phone'
 import { toApiDate } from '@/lib/utils/formatDateTime'
+import { describeBookingError } from '@/lib/utils/appointmentError'
+import { shopWhatsappLink } from '@/lib/utils/whatsapp'
+import {
+  clearDraft,
+  loadDraft,
+  parseDraftDate,
+  saveDraft,
+  serializeDraftDate,
+} from '@/lib/utils/bookingDraft'
 import type { Barber, Service } from '@/types/api.types'
 
 type Step = 1 | 2 | 3 | 4
 
 const STEP_LABELS = ['Barbeiro', 'Serviços', 'Data e Horário', 'Confirmar']
 
+function toStep(value: number): Step {
+  return Math.min(Math.max(Math.trunc(value) || 1, 1), 4) as Step
+}
+
 export default function AgendarPage() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [step, setStep] = useState<Step>(1)
 
   const [selectedBarber, setSelectedBarber] = useState<Barber | null>(null)
@@ -28,11 +43,79 @@ export default function AgendarPage() {
   const [notes, setNotes] = useState('')
   const [clientName, setClientName] = useState('')
   const [clientPhone, setClientPhone] = useState('')
+  // Só persiste depois de restaurar: gravar antes apagaria o rascunho com os
+  // estados vazios do primeiro render.
+  const [restored, setRestored] = useState(false)
 
   const { data: allServices } = useServices()
   const createAppointment = useCreateAppointment()
 
+  // O público chega de link do WhatsApp e troca de app no meio do fluxo — sem
+  // rascunho, voltar para a aba recomeça do passo 1 com tudo perdido.
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- hidratação: o rascunho vive
+       no sessionStorage, que não existe no servidor. Ler durante o render faria o
+       cliente divergir do HTML já enviado. */
+    const draft = loadDraft()
+    if (draft) {
+      setSelectedBarber(draft.barber)
+      setSelectedServiceIds(draft.serviceIds)
+      setSelectedDate(parseDraftDate(draft.date))
+      setSelectedSlot(draft.slot)
+      setClientName(draft.clientName)
+      setClientPhone(draft.clientPhone)
+      setNotes(draft.notes)
+      setStep(toStep(draft.step))
+      window.history.replaceState({ passo: draft.step }, '', `?passo=${draft.step}`)
+    }
+    setRestored(true)
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [])
+
+  useEffect(() => {
+    if (!restored) return
+    saveDraft({
+      step,
+      barber: selectedBarber,
+      serviceIds: selectedServiceIds,
+      date: serializeDraftDate(selectedDate),
+      slot: selectedSlot,
+      clientName,
+      clientPhone,
+      notes,
+    })
+  }, [
+    restored,
+    step,
+    selectedBarber,
+    selectedServiceIds,
+    selectedDate,
+    selectedSlot,
+    clientName,
+    clientPhone,
+    notes,
+  ])
+
+  // O passo vive no histórico para que o Voltar do navegador volte um passo em
+  // vez de abandonar o agendamento inteiro.
+  useEffect(() => {
+    function handlePopState(event: PopStateEvent) {
+      const passo = (event.state as { passo?: number } | null)?.passo
+      setStep(toStep(Number(passo ?? 1)))
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  const goToStep = useCallback((next: Step) => {
+    setStep(next)
+    window.history.pushState({ passo: next }, '', `?passo=${next}`)
+  }, [])
+
   function toggleService(service: Service) {
+    // Trocar serviço muda a duração total, e a duração total decide quais
+    // horários cabem: manter o slot antigo enviaria um horário que não serve mais.
+    setSelectedSlot(null)
     setSelectedServiceIds(prev => {
       if (prev.includes(service.id)) {
         const addonIds = new Set((service.addons ?? []).map(a => a.id))
@@ -43,6 +126,7 @@ export default function AgendarPage() {
   }
 
   function toggleAddon(addonId: string) {
+    setSelectedSlot(null)
     setSelectedServiceIds((prev) =>
       prev.includes(addonId) ? prev.filter((id) => id !== addonId) : [...prev, addonId]
     )
@@ -56,11 +140,18 @@ export default function AgendarPage() {
   }
 
   function handleNext() {
-    if (step < 4) setStep((step + 1) as Step)
+    if (step < 4) goToStep((step + 1) as Step)
   }
 
   function handleBack() {
-    if (step > 1) setStep((step - 1) as Step)
+    if (step > 1) goToStep((step - 1) as Step)
+  }
+
+  function backToSlots() {
+    createAppointment.reset()
+    setSelectedSlot(null)
+    queryClient.invalidateQueries({ queryKey: ['slots'] })
+    goToStep(3)
   }
 
   async function handleConfirm() {
@@ -80,9 +171,12 @@ export default function AgendarPage() {
         serviceIds: selectedServiceIds,
         notes: notes.trim() || undefined,
       })
-      router.push(`/agendamento/${result.accessToken}`)
+      clearDraft()
+      // `novo=1` faz a página de gestão abrir como confirmação, e não como o
+      // mesmo card que um link velho abriria semanas depois.
+      router.push(`/agendamento/${result.accessToken}?novo=1`)
     } catch {
-      // Error handled by mutation state
+      // Tratado por `bookingError` abaixo, com a recuperação certa para cada caso.
     }
   }
 
@@ -95,11 +189,16 @@ export default function AgendarPage() {
 
   const selectedServicesForDisplay = [...selectedServices, ...selectedAddons]
 
+  const bookingError = createAppointment.isError
+    ? describeBookingError(createAppointment.error)
+    : null
+  const contactLink = shopWhatsappLink('Olá! Tentei agendar pelo site e não consegui.')
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
       <div className="mb-8">
-        <h1 className="font-montserrat text-2xl font-black text-brand-white">Novo Agendamento</h1>
-        <p className="mt-1 text-sm text-brand-white/50">Siga os passos para agendar seu atendimento</p>
+        <h1 className="font-montserrat text-2xl font-black text-brand-white">Agende seu horário</h1>
+        <p className="mt-1 text-sm text-brand-white/50">Sem cadastro — leva menos de um minuto</p>
       </div>
 
       <nav aria-label="Progresso do agendamento" className="mb-8">
@@ -135,10 +234,14 @@ export default function AgendarPage() {
                       stepNum
                     )}
                   </div>
+                  {/* O rótulo do passo atual fica visível no celular: sem ele o
+                      indicador vira quatro dígitos nus no aparelho que mais importa. */}
                   <span
                     className={[
-                      'hidden sm:block text-xs font-medium',
-                      isCurrent ? 'text-brand-gold' : isCompleted ? 'text-brand-gold/60' : 'text-brand-white/30',
+                      'text-[0.65rem] leading-tight text-center sm:text-xs font-medium',
+                      isCurrent ? 'text-brand-gold' : 'hidden sm:block',
+                      isCompleted ? 'text-brand-gold/60' : '',
+                      !isCurrent && !isCompleted ? 'text-brand-white/30' : '',
                     ].join(' ')}
                   >
                     {label}
@@ -217,10 +320,42 @@ export default function AgendarPage() {
           />
         )}
 
-        {createAppointment.isError && (
-          <p role="alert" className="mt-4 text-sm text-red-400">
-            Erro ao criar agendamento. Tente novamente.
-          </p>
+        {bookingError && (
+          <div
+            role="alert"
+            className="mt-4 flex flex-col gap-3 rounded-lg border border-red-500/40 bg-red-500/10 p-4"
+          >
+            <p className="text-sm text-red-300">{bookingError.message}</p>
+
+            {bookingError.action === 'pick-another-slot' && (
+              <Button variant="secondary" size="sm" onClick={backToSlots} className="self-start">
+                Escolher outro horário
+              </Button>
+            )}
+
+            {bookingError.action === 'contact' && contactLink && (
+              <a
+                href={contactLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="self-start rounded-md border border-brand-gold px-3 py-1.5 text-sm text-brand-gold transition-colors hover:bg-brand-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2 focus-visible:ring-offset-brand-black"
+              >
+                Falar com a barbearia
+              </a>
+            )}
+
+            {bookingError.action === 'retry' && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleConfirm}
+                isLoading={createAppointment.isPending}
+                className="self-start"
+              >
+                Tentar de novo
+              </Button>
+            )}
+          </div>
         )}
       </div>
 

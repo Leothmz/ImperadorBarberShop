@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export function Footer() {
   return (
     <footer className="border-t border-brand-white/10 bg-brand-black py-8">
@@ -11,9 +13,18 @@ export function Footer() {
               BARBER SHOP
             </span>
           </div>
-          <p className="text-sm text-brand-white/40">
-            &copy; {new Date().getFullYear()} O Imperador Barber Shop. Todos os direitos reservados.
-          </p>
+          <div className="flex flex-col items-center gap-2 sm:items-end">
+            {/* A entrada da equipe vive aqui, fora do caminho do cliente */}
+            <Link
+              href="/login"
+              className="rounded px-2 py-2 text-sm text-brand-white/60 transition-colors hover:text-brand-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2 focus-visible:ring-offset-brand-black"
+            >
+              Área do barbeiro
+            </Link>
+            <p className="text-sm text-brand-white/60">
+              &copy; {new Date().getFullYear()} O Imperador Barber Shop. Todos os direitos reservados.
+            </p>
+          </div>
         </div>
       </div>
     </footer>

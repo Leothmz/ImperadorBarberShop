@@ -26,6 +26,7 @@ Fonts: Montserrat (headings), Inter (body)
 /                         Landing page (public)
 /agendar                  Public 4-step booking wizard (no account needed)
 /agendamento/[token]      Public appointment management (cancel / leave a review)
+                          `?novo=1` renders it as the post-booking confirmation
 /login                    Barber login
 /register/barber          Barber registration + availability picker
 /barber/dashboard         Barber appointment management
@@ -57,3 +58,19 @@ npm run test:e2e:ui    # Playwright UI mode
 - Hooks: `src/hooks/` — wrap TanStack Query + API calls
 - API layer: `src/lib/api/` — typed Axios calls
 - Types: `src/types/api.types.ts` — mirrors backend DTOs exactly
+
+## Client-journey utilities
+
+| Module | Why it exists |
+|--------|---------------|
+| `lib/utils/appointmentError.ts` | Maps a failed booking to the *right* recovery. A 409 sends the client back to the slot grid; a 429 never says "tente novamente" (that guarantees a second failure) and offers the WhatsApp link instead. |
+| `lib/utils/bookingDraft.ts` | Mirrors the wizard into `sessionStorage`. The audience switches apps mid-flow to copy a phone number; without this, coming back restarts at step 1. `clampStep` refuses to restore past the data actually saved. |
+| `lib/utils/ics.ts` | Builds the calendar file in floating local time — the API works in wall-clock time and a UTC conversion would move the appointment. |
+| `lib/utils/whatsapp.ts` | Returns `null` when `NEXT_PUBLIC_WHATSAPP_NUMBER` is unset, so contact links disappear rather than pointing nowhere. |
+
+`buttonClasses()` (exported from `components/ui/Button.tsx`) styles a `<Link>` as a button.
+Use it instead of wrapping `<Button>` in `<Link>` — that renders `<a><button>`, which is
+invalid interactive nesting and costs the link its screen-reader semantics.
+
+The wizard keeps its step in `history.state` (`?passo=N`), so the browser Back button walks
+back one step instead of leaving the booking entirely.

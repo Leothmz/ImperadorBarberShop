@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useAuthContext } from '@/providers/AuthProvider'
-import { Button } from '@/components/ui/Button'
+import { Button, buttonClasses } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
 
 export function Header() {
@@ -26,28 +26,20 @@ export function Header() {
           </span>
         </Link>
 
+        {/* Só a ação do cliente mora aqui. A porta do barbeiro fica no rodapé:
+            quase todo o tráfego vem do Instagram e é cliente. */}
         <nav className="flex items-center gap-3">
-          <Link href="/agendar">
-            <Button variant="primary" size="sm">
-              Agendar
-            </Button>
+          <Link href="/agendar" className={buttonClasses({ size: 'md' })}>
+            Agendar
           </Link>
-          {!user ? (
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                Entrar
-              </Button>
-            </Link>
-          ) : (
+          {user && (
             <>
               {user.role === 'Barber' && (
-                <Link href="/barber/dashboard">
-                  <Button variant="ghost" size="sm">
-                    Minha Agenda
-                  </Button>
+                <Link href="/barber/dashboard" className={buttonClasses({ variant: 'ghost', size: 'md' })}>
+                  Minha Agenda
                 </Link>
               )}
-              <Button variant="secondary" size="sm" onClick={handleLogout}>
+              <Button variant="secondary" size="md" onClick={handleLogout}>
                 Sair
               </Button>
             </>
