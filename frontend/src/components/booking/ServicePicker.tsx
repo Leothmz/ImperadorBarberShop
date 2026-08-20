@@ -62,7 +62,8 @@ export function ServicePicker({ selectedServiceIds, onToggle, onToggleAddon }: S
             <div key={service.id}>
               <label
                 className={[
-                  'flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-all duration-150',
+                  'flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-colors duration-150',
+                  'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-gold has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-brand-black',
                   isSelected
                     ? 'border-brand-gold bg-brand-gold/10'
                     : 'border-brand-white/10 bg-brand-black-soft hover:border-brand-gold/50',
@@ -98,6 +99,7 @@ export function ServicePicker({ selectedServiceIds, onToggle, onToggleAddon }: S
                         key={addon.id}
                         className={[
                           'flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
+                          'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-gold has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-brand-black',
                           addonSelected
                             ? 'border-brand-gold bg-brand-gold/10'
                             : 'border-brand-white/10 bg-brand-black hover:border-brand-gold/30',

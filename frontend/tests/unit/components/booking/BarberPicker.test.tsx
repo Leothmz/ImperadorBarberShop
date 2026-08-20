@@ -20,7 +20,7 @@ describe('BarberPicker', () => {
     const handleSelect = vi.fn()
     render(<BarberPicker selectedBarberId={null} onSelect={handleSelect} />)
     await waitFor(() => screen.getByText('Carlos Andrade'))
-    screen.getAllByRole('listitem')[0].click()
+    screen.getAllByRole('button')[0].click()
     expect(handleSelect).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Carlos Andrade' })
     )
@@ -29,9 +29,24 @@ describe('BarberPicker', () => {
   it('marks the selected barber with aria-pressed true', async () => {
     render(<BarberPicker selectedBarberId="barber-1" onSelect={vi.fn()} />)
     await waitFor(() => screen.getByText('Carlos Andrade'))
-    const buttons = screen.getAllByRole('listitem')
+    const buttons = screen.getAllByRole('button')
     const carlosButton = buttons.find((b) => b.textContent?.includes('Carlos Andrade'))
     expect(carlosButton).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('exposes each barber as a real button inside a list item', async () => {
+    render(<BarberPicker selectedBarberId={null} onSelect={vi.fn()} />)
+    await waitFor(() => screen.getByText('Carlos Andrade'))
+
+    // role="listitem" num <button> apagava a semântica de botão e descartava o
+    // aria-pressed; o cartão tem que continuar sendo botão dentro de um <li>.
+    const buttons = screen.getAllByRole('button')
+    expect(buttons.length).toBe(2)
+    buttons.forEach((button) => {
+      expect(button.tagName).toBe('BUTTON')
+      expect(button.closest('li')).not.toBeNull()
+    })
+    expect(screen.getAllByRole('listitem').length).toBe(2)
   })
 
   it('shows "Selecionado" text for selected barber', async () => {

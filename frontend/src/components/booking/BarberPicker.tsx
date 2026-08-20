@@ -38,23 +38,23 @@ export function BarberPicker({ selectedBarberId, onSelect }: BarberPickerProps) 
   }
 
   return (
-    <div
+    <ul
       className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-      role="list"
       aria-label="Lista de barbeiros"
     >
       {barbers.map((barber) => {
         const isSelected = barber.id === selectedBarberId
         return (
+          <li key={barber.id} className="flex">
           <button
-            key={barber.id}
-            role="listitem"
+            type="button"
             onClick={() => onSelect(barber)}
             aria-pressed={isSelected}
             className={[
-              'flex flex-col items-center gap-3 rounded-xl border p-6 text-center transition-all duration-150 cursor-pointer',
+              'flex w-full flex-col items-center gap-3 rounded-xl border p-6 text-center transition-colors duration-150 cursor-pointer',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2 focus-visible:ring-offset-brand-black',
               isSelected
-                ? 'border-brand-gold bg-brand-gold/10 shadow-[0_0_20px_rgba(201,168,76,0.2)]'
+                ? 'border-brand-gold bg-brand-gold/10'
                 : 'border-brand-white/10 bg-brand-black-soft hover:border-brand-gold/50 hover:bg-brand-gold/5',
             ].join(' ')}
           >
@@ -79,8 +79,9 @@ export function BarberPicker({ selectedBarberId, onSelect }: BarberPickerProps) 
               <span className="text-xs font-semibold text-brand-gold">Selecionado</span>
             )}
           </button>
+          </li>
         )
       })}
-    </div>
+    </ul>
   )
 }

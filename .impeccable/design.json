@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-20T00:00:00.000Z",
+  "title": "Design System: O Imperador Barber Shop",
+  "extensions": {
+    "colorMeta": {
+      "brand-gold": {
+        "role": "primary",
+        "displayName": "Warm Lamplight",
+        "canonical": "#C9A84C",
+        "tonalRamp": [
+          "#1E1909",
+          "#3B3213",
+          "#584B1D",
+          "#756426",
+          "#927D30",
+          "#AF963A",
+          "#CDB05C",
+          "#EBD79E"
+        ]
+      },
+      "brand-gold-light": {
+        "role": "primary",
+        "displayName": "Lamplight Flare",
+        "canonical": "#E8C96A",
+        "tonalRamp": [
+          "#241E0C",
+          "#463C18",
+          "#685924",
+          "#8A7630",
+          "#AC933C",
+          "#CEB04F",
+          "#E8C96A",
+          "#F4E3AE"
+        ]
+      },
+      "brand-gold-dark": {
+        "role": "primary",
+        "displayName": "Lamplight Ember",
+        "canonical": "#A8872E",
+        "tonalRamp": [
+          "#191407",
+          "#32280E",
+          "#4B3C15",
+          "#64501C",
+          "#7D6423",
+          "#96782A",
+          "#A8872E",
+          "#D4BC7B"
+        ]
+      },
+      "brand-black": {
+        "role": "neutral",
+        "displayName": "Shop Black",
+        "canonical": "#0D0D0D",
+        "tonalRamp": [
+          "#000000",
+          "#0D0D0D",
+          "#1A1A1A",
+          "#2B2B2B",
+          "#4A4A4A",
+          "#7A7A7A",
+          "#B5B5B5",
+          "#F5F5F5"
+        ]
+      },
+      "brand-black-soft": {
+        "role": "neutral",
+        "displayName": "Chair Leather",
+        "canonical": "#1A1A1A",
+        "tonalRamp": [
+          "#000000",
+          "#0D0D0D",
+          "#1A1A1A",
+          "#2B2B2B",
+          "#4A4A4A",
+          "#7A7A7A",
+          "#B5B5B5",
+          "#F5F5F5"
+        ]
+      },
+      "brand-white": {
+        "role": "neutral",
+        "displayName": "Bone White",
+        "canonical": "#F5F5F5",
+        "tonalRamp": [
+          "#0D0D0D",
+          "#1A1A1A",
+          "#2B2B2B",
+          "#4A4A4A",
+          "#7A7A7A",
+          "#A8A8A8",
+          "#D4D4D4",
+          "#F5F5F5"
+        ]
+      },
+      "status-confirmed": {
+        "role": "tertiary",
+        "displayName": "Confirmed Green",
+        "canonical": "#4ADE80",
+        "tonalRamp": [
+          "#08170D",
+          "#0F2E1B",
+          "#174528",
+          "#1E5C36",
+          "#267343",
+          "#2D8A51",
+          "#4ADE80",
+          "#A9EFC4"
+        ]
+      },
+      "status-cancelled": {
+        "role": "tertiary",
+        "displayName": "Cancelled Gray",
+        "canonical": "#9CA3AF",
+        "tonalRamp": [
+          "#111214",
+          "#1F2126",
+          "#2E3138",
+          "#3D414A",
+          "#4C515C",
+          "#6B717D",
+          "#9CA3AF",
+          "#D5D9DE"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Alert Red",
+        "canonical": "#DC2626",
+        "tonalRamp": [
+          "#1A0505",
+          "#340909",
+          "#4E0E0E",
+          "#681212",
+          "#821717",
+          "#B01E1E",
+          "#DC2626",
+          "#F19393"
+        ]
+      },
+      "danger-text": {
+        "role": "tertiary",
+        "displayName": "Alert Red Text",
+        "canonical": "#F87171",
+        "tonalRamp": [
+          "#1E0D0D",
+          "#3B1A1A",
+          "#582727",
+          "#753434",
+          "#924141",
+          "#C55858",
+          "#F87171",
+          "#FCB9B9"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing hero name only. One per page, landing surface only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings and CTA blocks."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Modal titles, card headings, dashboard section titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All prose. Inter, constrained to max-w-xl in marketing copy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Tracked-out uppercase eyebrows, admin section labels, micro-cues."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "Stacked 'O IMPERADOR' / 'BARBER SHOP' lockup in header and footer."
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay",
+        "value": "0 25px 50px -12px rgba(0,0,0,0.25)",
+        "purpose": "Modal dialog only, above a black/70 backdrop-blur scrim. The single shipped shadow."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state",
+        "value": "150ms ease (transition-colors duration-150)",
+        "purpose": "Default for hover/active color shifts on buttons, chips, inputs, cards."
+      },
+      {
+        "name": "drawer",
+        "value": "200ms cubic-bezier(0, 0, 0.2, 1)",
+        "purpose": "Admin sidebar translate in/out below lg."
+      },
+      {
+        "name": "arrival",
+        "value": "460ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Authored entrance: the landing service list revealing as a list, 55ms per sibling."
+      },
+      {
+        "name": "lamplight",
+        "value": "200ms ease-out on opacity",
+        "purpose": "Pointer-tracked radial highlight across the hero CTA's gold."
+      },
+      {
+        "name": "star-pop",
+        "value": "transform scale(1.1) on hover",
+        "purpose": "Star rating input hover preview."
+      },
+      {
+        "name": "spin",
+        "value": "1s linear infinite",
+        "purpose": "Button and page loading arcs."
+      },
+      {
+        "name": "hair-rain",
+        "value": "requestAnimationFrame, 26-84 strands, DPR capped at 2",
+        "purpose": "The landing hero's authored moment. Paused offscreen and on hidden tabs; a single static frame under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single solid-gold element on most screens. Booking CTAs, form submits.",
+      "html": "<button class=\"ds-btn-primary\">Agendar agora</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #C9A84C; color: #0D0D0D; font-family: Inter, system-ui, sans-serif; font-weight: 600; font-size: 1rem; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; transition: background-color 150ms ease; } .ds-btn-primary:hover { background: #E8C96A; } .ds-btn-primary:active { background: #A8872E; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #0D0D0D, 0 0 0 4px #C9A84C; } .ds-btn-primary:disabled { opacity: 0.5; cursor: default; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Gold outline on transparent. Paired beside primary for the lower-intent action.",
+      "html": "<button class=\"ds-btn-secondary\">Área do Barbeiro</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: transparent; color: #C9A84C; font-family: Inter, system-ui, sans-serif; font-weight: 500; font-size: 1rem; padding: 10px 20px; border: 1px solid #C9A84C; border-radius: 6px; cursor: pointer; transition: background-color 150ms ease; } .ds-btn-secondary:hover { background: rgba(201,168,76,0.1); } .ds-btn-secondary:active { background: rgba(201,168,76,0.2); } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 2px #0D0D0D, 0 0 0 4px #C9A84C; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Labelled field with hint; border shifts to gold on focus, to red with an alert message on error.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-phone\">WhatsApp</label><input class=\"ds-input\" id=\"ds-phone\" placeholder=\"(11) 91234-5678\" /><p class=\"ds-field-hint\">Usamos só para confirmar o horário.</p></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 4px; font-family: Inter, system-ui, sans-serif; max-width: 320px; } .ds-field-label { font-size: 0.875rem; font-weight: 500; color: rgba(245,245,245,0.8); } .ds-input { width: 100%; background: #1A1A1A; color: #F5F5F5; border: 1px solid rgba(245,245,245,0.2); border-radius: 6px; padding: 10px 12px; font-size: 1rem; outline: none; transition: border-color 150ms ease, box-shadow 150ms ease; } .ds-input::placeholder { color: rgba(245,245,245,0.3); } .ds-input:focus { border-color: #C9A84C; box-shadow: 0 0 0 1px #C9A84C; } .ds-field-hint { font-size: 0.75rem; color: rgba(245,245,245,0.5); margin: 0; }"
+    },
+    {
+      "name": "Time Slot Chip",
+      "kind": "chip",
+      "refersTo": "chip-slot",
+      "description": "Bookable time in a 3-up (4-up at sm) listbox grid. Selection inverts to solid gold.",
+      "html": "<div class=\"ds-slot-grid\"><button class=\"ds-slot\">09:00</button><button class=\"ds-slot ds-slot--selected\">09:40</button><button class=\"ds-slot\">10:20</button></div>",
+      "css": ".ds-slot-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; max-width: 280px; } .ds-slot { background: transparent; color: #F5F5F5; font-family: Inter, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; padding: 8px 12px; border: 1px solid rgba(245,245,245,0.2); border-radius: 8px; cursor: pointer; transition: background-color 150ms ease, border-color 150ms ease; } .ds-slot:hover { border-color: rgba(201,168,76,0.5); background: rgba(201,168,76,0.1); } .ds-slot:focus-visible { outline: none; box-shadow: 0 0 0 2px #0D0D0D, 0 0 0 4px #C9A84C; } .ds-slot--selected { background: #C9A84C; border-color: #C9A84C; color: #0D0D0D; }"
+    },
+    {
+      "name": "Service Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Selectable service row: name and duration left, gold price right. Selected state is a gold border over a gold/10 wash.",
+      "html": "<label class=\"ds-service ds-service--selected\"><input type=\"checkbox\" class=\"ds-service-check\" checked /><span class=\"ds-service-body\"><span class=\"ds-service-name\">Fade / Disfarçado</span><span class=\"ds-service-desc\">Máquina e tesoura, acabamento na navalha.</span></span><span class=\"ds-service-meta\"><span class=\"ds-service-price\">R$ 45,00</span><span class=\"ds-service-dur\">40 min</span></span></label>",
+      "css": ".ds-service { display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid rgba(245,245,245,0.1); border-radius: 12px; background: #1A1A1A; font-family: Inter, system-ui, sans-serif; cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease; max-width: 420px; } .ds-service:hover { border-color: rgba(201,168,76,0.5); } .ds-service--selected { border-color: #C9A84C; background: rgba(201,168,76,0.1); } .ds-service-check { width: 20px; height: 20px; accent-color: #C9A84C; } .ds-service-body { display: flex; flex-direction: column; flex: 1; } .ds-service-name { color: #F5F5F5; font-weight: 500; } .ds-service-desc { color: rgba(245,245,245,0.5); font-size: 0.875rem; } .ds-service-meta { display: flex; flex-direction: column; align-items: flex-end; } .ds-service-price { color: #C9A84C; font-weight: 600; } .ds-service-dur { color: rgba(245,245,245,0.5); font-size: 0.75rem; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-status",
+      "description": "Appointment status pill. 20%-opacity fill of its own text color; Concluído is gold, not green.",
+      "html": "<span class=\"ds-badge ds-badge--confirmed\">Confirmado</span> <span class=\"ds-badge ds-badge--completed\">Concluído</span> <span class=\"ds-badge ds-badge--cancelled\">Cancelado</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 10px; font-family: Inter, system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; } .ds-badge--confirmed { color: #4ADE80; background: rgba(74,222,128,0.2); } .ds-badge--completed { color: #C9A84C; background: rgba(201,168,76,0.2); } .ds-badge--cancelled { color: #9CA3AF; background: rgba(156,163,175,0.2); }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Admin sidebar link. Active is a gold/15 wash with gold weight-600 text; inactive is white/70 warming to gold.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-item--active\" href=\"#\">Dashboard</a><a class=\"ds-nav-item\" href=\"#\">Barbeiros</a><a class=\"ds-nav-item\" href=\"#\">Serviços</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 4px; background: #1A1A1A; padding: 16px; width: 220px; border-right: 1px solid rgba(245,245,245,0.1); } .ds-nav-item { font-family: Inter, system-ui, sans-serif; font-size: 0.875rem; color: rgba(245,245,245,0.7); text-decoration: none; padding: 10px 16px; border-radius: 8px; transition: background-color 150ms ease, color 150ms ease; } .ds-nav-item:hover { background: rgba(201,168,76,0.1); color: #C9A84C; } .ds-nav-item--active { background: rgba(201,168,76,0.15); color: #C9A84C; font-weight: 600; }"
+    },
+    {
+      "name": "Wordmark",
+      "kind": "custom",
+      "refersTo": "wordmark",
+      "description": "Stacked lockup used in the header and footer. Montserrat 900 over a tracked-out subline.",
+      "html": "<a class=\"ds-wordmark\" href=\"#\"><span class=\"ds-wordmark-main\">O IMPERADOR</span><span class=\"ds-wordmark-sub\">BARBER SHOP</span></a>",
+      "css": ".ds-wordmark { display: inline-flex; flex-direction: column; line-height: 1; text-decoration: none; } .ds-wordmark-main { font-family: Montserrat, system-ui, sans-serif; font-weight: 900; font-size: 1.25rem; letter-spacing: 0.1em; color: #C9A84C; transition: color 150ms ease; } .ds-wordmark-sub { font-family: Montserrat, system-ui, sans-serif; font-size: 0.55rem; letter-spacing: 0.35em; color: rgba(201,168,76,0.6); } .ds-wordmark:hover .ds-wordmark-main { color: #E8C96A; } .ds-wordmark:hover .ds-wordmark-sub { color: rgba(201,168,76,0.8); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Gilded Chair",
+    "overview": "The barber's chair as a throne. The room is nearly black — #0D0D0D everywhere, with cards a half-step lighter at #1A1A1A — and a single warm gold falls on the thing being attended to: the selected service, the chosen time, the price, the confirmation. Nothing else glows. The interface is ceremony without stuffiness: the client is being attended to, not processed through a form.\n\nThe system is built almost entirely from two moves. First, tonal layering: black, black-soft, and a 1px rgba(245,245,245,0.1) hairline separate every surface from the one behind it. Second, the gold tint ladder: the same #C9A84C at 5% / 10% / 15% / 20% / 30% opacity does the work that a second and third accent color would do elsewhere — hover washes, selected states, badge fills, focus rings, decorative rings on the hero. Gold at full strength is reserved for things that are true right now: a price, a selected slot, the primary button, the wordmark.\n\nDensity is generous rather than efficient. Sections breathe at 80px; cards pad at 16–48px; text runs at 1.625 line-height. This is a mobile-first product opened one-handed from a WhatsApp link, so tap targets are large (40px slot chips, 44px+ buttons) and the layout is a single column until sm, with the barber and admin tools widening into two-column and sidebar shells at lg.",
+    "keyCharacteristics": [
+      "Near-black canvas, gold as the only accent hue",
+      "Hairline borders (1px white @ 10–20%) instead of shadows",
+      "Montserrat 900 with tight tracking for identity; Inter for everything read",
+      "Wide-tracked uppercase micro-labels (0.1em–0.4em) as the recurring formal gesture",
+      "State expressed as a gold tint wash, never as a color change to a different hue",
+      "Portuguese-only copy; R$ and DD/MM formatting are part of the visual rhythm"
+    ],
+    "rules": [
+      {
+        "name": "The One Light Rule",
+        "body": "There is one accent hue in this product. Any new color must be a status signal (green/gray/red) or a tint of #C9A84C. A second decorative hue is a defect.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tint Ladder Rule",
+        "body": "Emphasis below \"primary\" is expressed as brand-gold at 5/10/15/20/30% opacity over black — never as a new solid color. Hover is /10, selected fill is /10 with a solid #C9A84C border, active nav is /15, badge fill is /20, decorative borders are /30 and below.",
+        "section": "colors"
+      },
+      {
+        "name": "The Opacity Type Scale Rule",
+        "body": "Secondary text is brand-white at a documented opacity step, not a gray. /60 for prose, /50 for metadata, /30 for placeholders. Never introduce #9CA3AF as body text.",
+        "section": "colors"
+      },
+      {
+        "name": "The Wide-Track Rule",
+        "body": "Uppercase is always tracked out — 0.1em for labels, 0.35em–0.4em for the wordmark subline and the hero's \"BARBER SHOP\". Untracked uppercase reads as shouting; tracked uppercase reads as engraving.",
+        "section": "typography"
+      },
+      {
+        "name": "The Two Voices Rule",
+        "body": "Montserrat states, Inter explains. If a string is longer than five words and isn't a heading, it is Inter.",
+        "section": "typography"
+      },
+      {
+        "name": "The Thumb Zone Rule",
+        "body": "Anything a client must tap on a phone — slot chips, service rows, primary CTAs, the running total — is at least 40px tall and reachable in the lower half of the viewport.",
+        "section": "layout"
+      },
+      {
+        "name": "The Hairline Rule",
+        "body": "Every raised surface is separated from what's behind it by exactly one 1px hairline. Two nested borders, or a border plus a shadow, is over-drawing.",
+        "section": "shapes"
+      },
+      {
+        "name": "The One Cut Rule",
+        "body": "The hero is the only place motion is authored. Everything else in the product animates to explain state, never to decorate.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do express every non-primary emphasis as a brand-gold opacity tint (/5 /10 /15 /20 /30) over black, per The Tint Ladder Rule.",
+      "Do separate surfaces with exactly one 1px hairline: white/10 at rest, white/20 for input strokes, solid #C9A84C when selected.",
+      "Do give every focusable control the 2px gold ring with 2px brand-black offset — on a near-black page a ring without an offset disappears.",
+      "Do pair Montserrat 900 with tracked-out uppercase for identity, and set everything readable in Inter at 1.625 line-height.",
+      "Do keep tap targets ≥40px and keep the running total sticky bottom-0 — this is a phone product opened from a WhatsApp link.",
+      "Do route status labels and colors through statusConfig, and keep Concluído gold.",
+      "Do write all UI copy in Brazilian Portuguese, with R$ X,XX and DD/MM/YYYY."
+    ],
+    "donts": [
+      "Don't introduce a second decorative hue. Green, gray and red exist for status; everything else is gold or a neutral.",
+      "Don't use a gray hex for secondary text — use brand-white at an opacity step.",
+      "Don't add per-component shadows before the elevation scale is defined; the only shipped shadow is the modal's.",
+      "Don't stack a border and a shadow on the same surface, or nest two bordered containers.",
+      "Don't use solid #C9A84C for anything that isn't currently true — not for decoration, not for large fills, not for headings. Gold marks the selected, the primary, and the priced.",
+      "Don't use #E8C96A or #A8872E at rest; they exist only as hover and active states.",
+      "Don't put the display size on any surface but the landing hero, and never twice on one page.",
+      "Don't replace a button's label with a spinner — set isLoading and keep the words."
+    ]
+  }
+}

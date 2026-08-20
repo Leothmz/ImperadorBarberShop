@@ -146,7 +146,8 @@ export function SlotPicker({
                     aria-selected={isSelected}
                     onClick={() => onSlotChange(slot)}
                     className={[
-                      'rounded-lg border py-2 px-3 text-sm font-medium transition-all duration-150 cursor-pointer',
+                      'min-h-10 rounded-lg border py-2 px-3 text-sm font-medium transition-colors duration-150 cursor-pointer',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2 focus-visible:ring-offset-brand-black',
                       isSelected
                         ? 'border-brand-gold bg-brand-gold text-brand-black'
                         : 'border-brand-white/20 text-brand-white hover:border-brand-gold/50 hover:bg-brand-gold/10',

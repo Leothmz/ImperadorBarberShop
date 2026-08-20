@@ -1,13 +1,20 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Button } from '@/components/ui/Button'
+import { buttonClasses } from '@/components/ui/Button'
+import { HairRain } from '@/components/landing/HairRain'
+import { SnipButton } from '@/components/landing/SnipButton'
+import { HowItWorks } from '@/components/landing/HowItWorks'
+import { ServiceBoard } from '@/components/landing/ServiceBoard'
+import { BarberLineup } from '@/components/landing/BarberLineup'
 
 export default function LandingPage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden px-4 py-10 text-center">
-        {/* Background gradient decoration */}
+      {/* svh, não vh: no celular o vh mede a viewport maior e empurra o CTA para
+          fora da tela na primeira pintura. */}
+      <section className="relative flex min-h-[85svh] flex-col items-center justify-center overflow-hidden px-4 py-10 text-center">
+        {/* A luz única da sala */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
@@ -17,18 +24,10 @@ export default function LandingPage() {
           }}
         />
 
-        {/* Decorative lines */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full border border-brand-gold/5"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full border border-brand-gold/8"
-        />
+        {/* O instante depois de a máquina passar */}
+        <HairRain />
 
         <div className="relative z-10 flex flex-col items-center gap-4 max-w-3xl sm:gap-6">
-          {/* Logo */}
           <Image
             src="/logo.png"
             alt="O Imperador Barber Shop"
@@ -38,116 +37,44 @@ export default function LandingPage() {
             priority
           />
 
-          {/* Badge */}
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-brand-gold">
-            ✦ Excelência em cada corte
-          </span>
-
-          {/* Main heading */}
-          <h1 className="font-montserrat text-5xl font-black leading-tight tracking-tight text-brand-white sm:text-7xl">
-            O{' '}
-            <span className="text-brand-gold">IMPERADOR</span>
+          {/* clamp e nowrap: no celular o "O" quebrava sozinho numa linha e
+              virava um ponto branco solto acima do nome. */}
+          <h1 className="font-montserrat text-[clamp(2.25rem,11vw,4.5rem)] font-black leading-tight tracking-tight whitespace-nowrap text-brand-white">
+            O <span className="text-brand-gold">IMPERADOR</span>
           </h1>
           <p className="font-montserrat text-lg font-light tracking-[0.4em] text-brand-white/60 uppercase -mt-4">
             BARBER SHOP
           </p>
 
           <p className="max-w-xl text-lg text-brand-white/60 leading-relaxed">
-            Experimente o melhor da barbearia tradicional com um toque de sofisticação.
-            Agende seu horário com os melhores profissionais da cidade.
+            Escolha o barbeiro, os serviços e o horário. Sem criar conta, sem esperar resposta —
+            você recebe um link para acompanhar ou cancelar quando precisar.
           </p>
 
-          <div className="flex flex-col gap-3 sm:flex-row mt-2">
-            <Link href="/agendar">
-              <Button size="lg" className="min-w-[200px]">
-                Agendar agora
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="secondary" size="lg" className="min-w-[200px]">
-                Área do Barbeiro
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        {/* Hidden on mobile: the hero content already fills the screen there, so the cue
-            only collided with the buttons */}
-        <div
-          className="absolute bottom-8 hidden flex-col items-center gap-2 sm:flex"
-          aria-hidden="true"
-        >
-          <span className="text-xs tracking-widest text-brand-white/30 uppercase">
-            Conheça nossos barbeiros
-          </span>
-          <div className="h-6 w-px bg-gradient-to-b from-brand-gold/50 to-transparent" />
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 px-4">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-            {[
-              {
-                icon: '✂',
-                title: 'Barbeiros Experientes',
-                description:
-                  'Profissionais com anos de experiência prontos para transformar seu visual.',
-              },
-              {
-                icon: '📅',
-                title: 'Agendamento Fácil',
-                description:
-                  'Escolha data, horário e serviços em poucos cliques, sem espera.',
-              },
-              {
-                icon: '⭐',
-                title: 'Qualidade Garantida',
-                description:
-                  'Avaliações reais de clientes para que você escolha com confiança.',
-              },
-            ].map((feat) => (
-              <div
-                key={feat.title}
-                className="flex flex-col items-center gap-4 rounded-xl border border-brand-white/10 bg-brand-black-soft p-8 text-center transition-colors hover:border-brand-gold/30"
-              >
-                <span
-                  className="text-4xl"
-                  aria-hidden="true"
-                >
-                  {feat.icon}
-                </span>
-                <h3 className="font-montserrat font-bold text-brand-white">
-                  {feat.title}
-                </h3>
-                <p className="text-sm text-brand-white/60 leading-relaxed">
-                  {feat.description}
-                </p>
-              </div>
-            ))}
+          <div className="mt-2">
+            <SnipButton href="/agendar" className="min-w-[220px]">
+              Agendar agora
+            </SnipButton>
           </div>
         </div>
       </section>
+
+      <HowItWorks />
+      <ServiceBoard />
+      <BarberLineup />
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-brand-gold/20 bg-brand-black-soft p-12 text-center">
-          <h2 className="font-montserrat text-3xl font-black text-brand-white mb-4">
-            Pronto para uma nova experiência?
+      <section className="border-t border-brand-white/10 px-4 py-20">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="font-montserrat text-3xl font-black tracking-tight text-brand-white sm:text-4xl">
+            Sua cadeira está livre
           </h2>
-          <p className="text-brand-white/60 mb-8 text-lg">
-            Agende seu primeiro corte hoje mesmo, sem cadastro.
+          <p className="mx-auto mt-3 max-w-prose text-lg text-brand-white/60">
+            Leva menos de um minuto e não pede cadastro.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row justify-center">
-            <Link href="/agendar">
-              <Button size="lg">Agendar agora</Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="secondary" size="lg">
-                Área do Barbeiro
-              </Button>
+          <div className="mt-8">
+            <Link href="/agendar" className={buttonClasses({ size: 'lg' })}>
+              Agendar agora
             </Link>
           </div>
         </div>

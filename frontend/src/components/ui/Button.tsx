@@ -26,6 +26,34 @@ const sizeClasses: Record<ButtonSize, string> = {
   lg: 'px-7 py-3.5 text-lg',
 }
 
+const baseClasses = [
+  'inline-flex items-center justify-center gap-2 rounded-md transition-colors duration-150 cursor-pointer',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2 focus-visible:ring-offset-brand-black',
+].join(' ')
+
+interface ButtonClassOptions {
+  variant?: ButtonVariant
+  size?: ButtonSize
+  className?: string
+}
+
+/**
+ * Classes do botão sem o elemento `<button>`.
+ *
+ * Existe para que um `<Link>` que *parece* botão não precise embrulhar um
+ * `<button>` — `<a><button>` é aninhamento interativo inválido e some com a
+ * semântica de link para o leitor de tela.
+ */
+export function buttonClasses({
+  variant = 'primary',
+  size = 'md',
+  className = '',
+}: ButtonClassOptions = {}): string {
+  return [baseClasses, variantClasses[variant], sizeClasses[size], className]
+    .filter(Boolean)
+    .join(' ')
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
@@ -43,13 +71,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || isLoading}
-        className={[
-          'inline-flex items-center justify-center gap-2 rounded-md transition-colors duration-150 cursor-pointer',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2 focus-visible:ring-offset-brand-black',
-          variantClasses[variant],
-          sizeClasses[size],
-          className,
-        ].join(' ')}
+        className={buttonClasses({ variant, size, className })}
         {...props}
       >
         {isLoading && (

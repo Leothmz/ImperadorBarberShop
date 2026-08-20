@@ -78,6 +78,23 @@ public enum AppointmentStatus { Accepted = 0, Cancelled = 1, Completed = 2 }
 - Unique DB constraint on `(BarberId, ScheduledAt)` prevents double-booking race conditions.
 - Anti-spam on appointment creation: rate-limited per IP (5/hour, HTTP layer) and per `ClientPhone` (3/hour, application layer).
 
+### The access-token link is the client's only handle
+
+There is no client account, so the token URL is the whole relationship. The UI treats it
+as such:
+
+- Booking redirects to `/agendamento/{token}?novo=1`. That flag turns the manage page into
+  a confirmation — gold check, "Agendamento confirmado", and an explicit *"Guarde este
+  link"* — instead of the same card a three-week-old link would open.
+- The page offers **Guardar link** (`navigator.share`, falling back to clipboard) and
+  **Adicionar à agenda** (`.ics` built client-side in floating local time, so no timezone
+  conversion moves the appointment).
+- The 2-hour cancellation window is disclosed *before* booking, on the confirmation step —
+  it used to surface only as a dead button at the moment the client needed to cancel.
+
+The "appointment created" notification still goes to the **barber**, not the client. Until
+that changes, the browser the client booked from is the only place the link exists.
+
 ---
 
 ## Service Catalog (global, seeded)
@@ -129,7 +146,7 @@ public enum AppointmentStatus { Accepted = 0, Cancelled = 1, Completed = 2 }
 |--------|------|------|-------------|
 | POST | `/appointments` | Public (rate-limited) | Create appointment — `clientName, clientPhone, barberId, scheduledAt, serviceIds, notes?`. Auto-confirmed (`Accepted`). Returns `{ id, accessToken }`. Triggers email to barber. |
 | GET | `/appointments/manage/{token}` | Public | Appointment status/details for the public manage page |
-| POST | `/appointments/manage/{token}/cancel` | Public | Client cancels via their access token (>2h before, `Accepted` only) |
+| POST | `/appointments/manage/{token}/cancel` | Public | Client cancels via their access token (>2h before, `Accepted` only) — the UI confirms in a modal first |
 | POST | `/appointments/manage/{token}/review` | Public | Client submits a review via their access token (only if `Completed`) |
 | GET | `/appointments/barber` | Barber | All appointments for logged-in barber |
 | PATCH | `/appointments/{id}/cancel-by-barber` | Barber | Barber-initiated cancel (e.g. emergencies) |
@@ -284,4 +301,11 @@ cd frontend && npx playwright test
 ### Frontend (`.env.local` — gitignored)
 ```
 NEXT_PUBLIC_API_URL=http://localhost:5000
+# Opcional. Só dígitos, formato internacional. Sem ele a UI esconde o contato.
+NEXT_PUBLIC_WHATSAPP_NUMBER=5511999990000
 ```
+
+`NEXT_PUBLIC_WHATSAPP_NUMBER` is the client's escape hatch: it renders the "falar com a
+barbearia" link when a booking is rate-limited (429) and when someone needs to cancel
+inside the final 2 hours, which the site itself refuses. Unset, those links simply do not
+render — no invented phone number.
