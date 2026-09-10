@@ -1,12 +1,14 @@
 using ImperadorBarberShop.Application.Commands.Auth;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Infrastructure.Persistence;
+using ImperadorBarberShop.Infrastructure.Services;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace ImperadorBarberShop.IntegrationTests;
 
@@ -87,6 +89,19 @@ public class WebAppFixture : WebApplicationFactory<Program>, IAsyncLifetime
             var waDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IWhatsAppService));
             if (waDescriptor is not null) services.Remove(waDescriptor);
             services.AddScoped<IWhatsAppService, FakeWhatsAppService>();
+
+            // The notification dispatcher and the reminder loop run on their own threads
+            // but would share the single in-memory SqliteConnection above with the
+            // request under test — SqliteConnection is not thread-safe, and the collision
+            // surfaced as "SQLite Error 5: database is locked". Both have unit tests of
+            // their own; the HTTP tests don't need them running.
+            var backgroundLoops = services
+                .Where(d => d.ServiceType == typeof(IHostedService)
+                    && (d.ImplementationType == typeof(NotificationDispatcher)
+                        || d.ImplementationType == typeof(ReminderBackgroundService)))
+                .ToList();
+            foreach (var loop in backgroundLoops)
+                services.Remove(loop);
 
             // Apply migrations
             var sp = services.BuildServiceProvider();
