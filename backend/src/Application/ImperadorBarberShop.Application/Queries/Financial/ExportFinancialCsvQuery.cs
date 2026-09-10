@@ -32,7 +32,7 @@ public class ExportFinancialCsvQueryHandler : IRequestHandler<ExportFinancialCsv
             foreach (var aps in a.AppointmentServices)
             {
                 sb.AppendLine(
-                    $"{date},{barber},{client},{phone},{EscapeCsv(aps.Service.Name)},{aps.Service.Price:F2},{a.Id}");
+                    $"{date},{barber},{client},{phone},{EscapeCsv(aps.Service.Name)},{aps.UnitPrice:F2},{a.Id}");
             }
         }
 

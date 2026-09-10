@@ -5,6 +5,10 @@ namespace ImperadorBarberShop.Domain.Entities;
 
 public class Appointment
 {
+    /// <summary>Um barbeiro, um horário: a mesma recusa vale para a checagem e para o índice único.</summary>
+    public const string SlotTakenMessage =
+        "Esse horário acabou de ser reservado por outra pessoa. Escolha outro horário.";
+
     private readonly List<AppointmentService> _appointmentServices = new();
 
     public Guid Id { get; private set; }
@@ -34,7 +38,7 @@ public class Appointment
         DateTime scheduledAt,
         int totalDurationMinutes,
         string? notes,
-        IEnumerable<Guid> serviceIds)
+        IEnumerable<Service> services)
     {
         var now = DateTime.UtcNow;
         var appointment = new Appointment
@@ -52,8 +56,8 @@ public class Appointment
             UpdatedAt = now
         };
 
-        foreach (var serviceId in serviceIds)
-            appointment._appointmentServices.Add(AppointmentService.Create(appointment.Id, serviceId));
+        foreach (var service in services)
+            appointment._appointmentServices.Add(AppointmentService.Create(appointment.Id, service));
 
         return appointment;
     }

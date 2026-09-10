@@ -10,6 +10,8 @@ public class AppointmentServiceConfiguration : IEntityTypeConfiguration<Appointm
     {
         builder.HasKey(a => new { a.AppointmentId, a.ServiceId });
 
+        builder.Property(a => a.UnitPrice).IsRequired();
+
         builder.HasOne(a => a.Service)
             .WithMany()
             .HasForeignKey(a => a.ServiceId)

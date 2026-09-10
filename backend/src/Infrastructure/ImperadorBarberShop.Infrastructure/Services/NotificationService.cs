@@ -44,7 +44,7 @@ public class NotificationService : INotificationService
     {
         var channels     = await GetChannelsAsync(ct);
         var serviceNames = string.Join(", ", services.Select(s => s.Name));
-        var scheduledAt  = appointment.ScheduledAt.AddHours(-3).ToString("dd/MM/yyyy HH:mm");
+        var scheduledAt  = appointment.ScheduledAt.ToString("dd/MM/yyyy HH:mm");
 
         if (channels.Contains("email"))
         {
@@ -97,7 +97,7 @@ public class NotificationService : INotificationService
     public async Task SendAppointmentCancelledAsync(Appointment appointment, CancellationToken ct = default)
     {
         var channels    = await GetChannelsAsync(ct);
-        var scheduledAt = appointment.ScheduledAt.AddHours(-3).ToString("dd/MM/yyyy HH:mm");
+        var scheduledAt = appointment.ScheduledAt.ToString("dd/MM/yyyy HH:mm");
 
         if (channels.Contains("whatsapp"))
         {
@@ -149,7 +149,7 @@ public class NotificationService : INotificationService
     public async Task SendReminderAsync(Appointment appointment, CancellationToken ct = default)
     {
         var channels     = await GetChannelsAsync(ct);
-        var scheduledAt  = appointment.ScheduledAt.AddHours(-3).ToString("dd/MM/yyyy HH:mm");
+        var scheduledAt  = appointment.ScheduledAt.ToString("dd/MM/yyyy HH:mm");
         var serviceNames = string.Join(", ",
             appointment.AppointmentServices.Select(s => s.Service?.Name ?? string.Empty));
 

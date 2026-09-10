@@ -2,6 +2,7 @@
 using ImperadorBarberShop.Application.Commands.Appointments;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Entities;
+using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
 using NSubstitute;
 
@@ -100,13 +101,13 @@ public class CreateAppointmentCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_TimeSlotOccupied_ThrowsInvalidOperationException()
+    public async Task Handle_TimeSlotOccupied_ThrowsConflictException()
     {
         var barberId = Guid.NewGuid();
         var scheduledAt = DateTime.UtcNow.AddDays(1).Date.AddHours(10);
         var barber = Barber.Create(Guid.NewGuid());
         var service = Service.Create("Corte", "Corte", 30, 35.00m);
-        var existingAppt = Appointment.Create("Maria", "+5511999990001", barberId, scheduledAt, 30, null, new[] { Guid.NewGuid() });
+        var existingAppt = Appointment.Create("Maria", "+5511999990001", barberId, scheduledAt, 30, null, new[] { service });
 
         _barberRepository.GetByIdAsync(barberId, Arg.Any<CancellationToken>()).Returns(barber);
         _serviceRepository.GetByIdsAsync(Arg.Any<List<Guid>>(), Arg.Any<CancellationToken>())
@@ -121,7 +122,8 @@ public class CreateAppointmentCommandHandlerTests
 
         var act = () => _handler.Handle(command, CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*not available*");
+        // ConflictException → 409, que a tela de agendamento transforma em "escolha outro horário"
+        await act.Should().ThrowAsync<ConflictException>().WithMessage("*acabou de ser reservado*");
     }
 
     [Fact]
@@ -138,6 +140,28 @@ public class CreateAppointmentCommandHandlerTests
 
         var act = () => _handler.Handle(command, CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Too many*");
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*vários agendamentos*");
+    }
+
+    [Fact]
+    public async Task Handle_ValidCommand_SnapshotsTheServicePriceOnTheAppointment()
+    {
+        var barberId = Guid.NewGuid();
+        var service = Service.Create("Corte", "Corte moderno", 30, 35.00m);
+        SetupHappyPath(barberId, service);
+        Appointment? saved = null;
+        _ = _appointmentRepository.AddAsync(Arg.Do<Appointment>(a => saved = a), Arg.Any<CancellationToken>());
+
+        var command = new CreateAppointmentCommand(
+            "João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), new List<Guid> { service.Id }, null);
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Reajuste depois do agendamento não pode mudar o que ele valeu
+        service.Update("Corte", "Corte moderno", 30, 50.00m);
+
+        saved.Should().NotBeNull();
+        var line = saved!.AppointmentServices.Should().ContainSingle().Subject;
+        line.ServiceId.Should().Be(service.Id);
+        line.UnitPrice.Should().Be(35.00m);
     }
 }

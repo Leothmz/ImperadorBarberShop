@@ -54,7 +54,7 @@ public class AppointmentPaymentMethodTests
     [Fact]
     public void Complete_WithPaymentMethod_SetsMethodAndPaidAt()
     {
-        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Guid.NewGuid()]);
+        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
         appt.Complete(PaymentMethod.Pix);
         appt.Status.Should().Be(AppointmentStatus.Completed);
         appt.PaymentMethod.Should().Be(PaymentMethod.Pix);
@@ -64,7 +64,7 @@ public class AppointmentPaymentMethodTests
     [Fact]
     public void Complete_WithoutPaymentMethod_LeavesMethodNull()
     {
-        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Guid.NewGuid()]);
+        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
         appt.Complete();
         appt.Status.Should().Be(AppointmentStatus.Completed);
         appt.PaymentMethod.Should().BeNull();
@@ -74,7 +74,7 @@ public class AppointmentPaymentMethodTests
     [Fact]
     public void SetPaymentMethod_OnCompleted_SetsMethod()
     {
-        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Guid.NewGuid()]);
+        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
         appt.Complete();
         appt.SetPaymentMethod(PaymentMethod.Dinheiro);
         appt.PaymentMethod.Should().Be(PaymentMethod.Dinheiro);
@@ -84,7 +84,7 @@ public class AppointmentPaymentMethodTests
     [Fact]
     public void SetPaymentMethod_OnAccepted_ThrowsInvalidOperationException()
     {
-        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Guid.NewGuid()]);
+        var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
         var act = () => appt.SetPaymentMethod(PaymentMethod.Pix);
         act.Should().Throw<InvalidOperationException>();
     }

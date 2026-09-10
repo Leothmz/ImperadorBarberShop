@@ -10,11 +10,14 @@ public class ReminderBackgroundService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ReminderBackgroundService> _logger;
+    private readonly TimeProvider _clock;
 
-    public ReminderBackgroundService(IServiceScopeFactory scopeFactory, ILogger<ReminderBackgroundService> logger)
+    public ReminderBackgroundService(
+        IServiceScopeFactory scopeFactory, ILogger<ReminderBackgroundService> logger, TimeProvider clock)
     {
         _scopeFactory = scopeFactory;
         _logger       = logger;
+        _clock        = clock;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -36,10 +39,12 @@ public class ReminderBackgroundService : BackgroundService
 
         var minutesStr  = await settingsRepo.GetAsync("notifications:reminderMinutesBefore", ct) ?? "60";
         var minutes     = int.TryParse(minutesStr, out var m) ? m : 60;
-        var windowEnd   = DateTime.UtcNow.AddMinutes(minutes);
+        // ScheduledAt é horário de parede da barbearia: a janela sai do "agora" local dela
+        var now         = _clock.GetLocalNow().DateTime;
+        var windowEnd   = now.AddMinutes(minutes);
         var windowStart = windowEnd.AddMinutes(-10);
 
-        var appointments = await appointmentRepo.GetPendingRemindersAsync(windowStart, windowEnd, ct);
+        var appointments = await appointmentRepo.GetPendingRemindersAsync(now, windowStart, windowEnd, ct);
 
         foreach (var appointment in appointments)
         {

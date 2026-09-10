@@ -14,7 +14,6 @@ const BASE_URL = 'http://localhost:5000/api/v1'
 
 export const mockBarberLoginResult: LoginResult = {
   accessToken: 'mock-barber-access-token',
-  refreshToken: 'mock-barber-refresh-token',
   role: 'Barber',
   userId: 'user-barber-1',
   barberId: 'barber-1',
@@ -180,8 +179,8 @@ export const mockReviews: Review[] = [
 // ─── Handlers ────────────────────────────────────────────────────────────────
 
 export const handlers = [
-  // Auth
-  http.post(`${BASE_URL}/auth/login`, async () => {
+  // Auth — session routes are same-origin (proxied by the rewrite in next.config.ts)
+  http.post('*/api/v1/auth/login', async () => {
     return HttpResponse.json(mockBarberLoginResult)
   }),
 
@@ -189,9 +188,11 @@ export const handlers = [
     return HttpResponse.json(mockBarberLoginResult, { status: 201 })
   }),
 
-  http.post(`${BASE_URL}/auth/refresh`, async () => {
+  http.post('*/api/v1/auth/refresh', async () => {
     return HttpResponse.json(mockBarberLoginResult)
   }),
+
+  http.post('*/api/v1/auth/logout', () => new HttpResponse(null, { status: 204 })),
 
   // Services
   http.get(`${BASE_URL}/services`, () => {

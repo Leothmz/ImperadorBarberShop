@@ -62,6 +62,13 @@ public class ExceptionHandlingMiddleware
                 exception.Message,
                 (object?)null),
 
+            // Collides with the resource's current state (slot just taken) → 409 Conflict
+            ConflictException => (
+                HttpStatusCode.Conflict,
+                "Conflict",
+                exception.Message,
+                (object?)null),
+
             InvalidOperationException => (
                 HttpStatusCode.UnprocessableEntity,
                 "Business Rule Violation",

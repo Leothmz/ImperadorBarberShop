@@ -22,7 +22,7 @@ public class CreateReviewByTokenCommandHandlerTests
 
     private static Appointment CreateCompletedAppointment(Guid barberId)
     {
-        var appt = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddHours(-2), 30, null, new[] { Guid.NewGuid() });
+        var appt = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddHours(-2), 30, null, new[] { Service.Create("Corte", "Desc", 30, 35m) });
         appt.Complete();
         return appt;
     }
@@ -60,7 +60,7 @@ public class CreateReviewByTokenCommandHandlerTests
     [Fact]
     public async Task Handle_AppointmentNotCompleted_ThrowsInvalidOperationException()
     {
-        var appointment = Appointment.Create("João", "+5511999990000", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        var appointment = Appointment.Create("João", "+5511999990000", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, new[] { Service.Create("Corte", "Desc", 30, 35m) });
         // Status is Accepted, not Completed
 
         _appointmentRepository.GetByAccessTokenAsync(appointment.AccessToken, Arg.Any<CancellationToken>()).Returns(appointment);

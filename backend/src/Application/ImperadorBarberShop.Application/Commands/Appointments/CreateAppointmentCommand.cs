@@ -1,6 +1,7 @@
 using FluentValidation;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Entities;
+using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
 using MediatR;
 
@@ -18,15 +19,16 @@ public record CreateAppointmentResult(Guid Id, string AccessToken);
 
 public class CreateAppointmentCommandValidator : AbstractValidator<CreateAppointmentCommand>
 {
-    public CreateAppointmentCommandValidator()
+    public CreateAppointmentCommandValidator(TimeProvider clock)
     {
         RuleFor(x => x.ClientName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.ClientPhone).NotEmpty()
             .Matches(@"^\+55\d{11}$")
             .WithMessage("ClientPhone must be in the format +55DDDXXXXXXXXX.");
         RuleFor(x => x.BarberId).NotEmpty();
-        RuleFor(x => x.ScheduledAt).GreaterThan(DateTime.UtcNow)
-            .WithMessage("ScheduledAt must be in the future.");
+        // ScheduledAt é horário de parede da barbearia: compara com o "agora" dela, não com UTC
+        RuleFor(x => x.ScheduledAt).Must(scheduledAt => scheduledAt > clock.GetLocalNow().DateTime)
+            .WithMessage("O horário escolhido já passou. Escolha um horário futuro.");
         RuleFor(x => x.ServiceIds).NotEmpty().WithMessage("At least one service is required.");
         RuleFor(x => x.Notes).MaximumLength(500).When(x => x.Notes is not null);
     }
@@ -69,7 +71,8 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         var recentCount = await _appointmentRepository.CountCreatedByPhoneSinceAsync(
             request.ClientPhone, DateTime.UtcNow.AddHours(-1), cancellationToken);
         if (recentCount >= 3)
-            throw new InvalidOperationException("Too many appointment requests from this phone number. Try again later.");
+            throw new InvalidOperationException(
+                "Este WhatsApp já fez vários agendamentos na última hora. Aguarde um pouco ou fale com a barbearia.");
 
         // Check slot availability — ensure no overlap with existing appointments
         var date = DateOnly.FromDateTime(request.ScheduledAt);
@@ -83,7 +86,7 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         {
             var existingEnd = existing.ScheduledAt.AddMinutes(existing.TotalDurationMinutes);
             if (request.ScheduledAt < existingEnd && requestEnd > existing.ScheduledAt)
-                throw new InvalidOperationException("The requested time slot is not available.");
+                throw new ConflictException(Appointment.SlotTakenMessage);
         }
 
         var appointment = Appointment.Create(
@@ -93,7 +96,7 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
             request.ScheduledAt,
             totalDuration,
             request.Notes,
-            request.ServiceIds);
+            services);
 
         await _appointmentRepository.AddAsync(appointment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

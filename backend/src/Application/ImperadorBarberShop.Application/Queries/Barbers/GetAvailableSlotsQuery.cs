@@ -14,17 +14,20 @@ public class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailableSlotsQu
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IServiceRepository _serviceRepository;
     private readonly IBarberBlockRepository _blockRepository;
+    private readonly TimeProvider _clock;
 
     public GetAvailableSlotsQueryHandler(
         IBarberAvailabilityRepository availabilityRepository,
         IAppointmentRepository appointmentRepository,
         IServiceRepository serviceRepository,
-        IBarberBlockRepository blockRepository)
+        IBarberBlockRepository blockRepository,
+        TimeProvider clock)
     {
         _availabilityRepository = availabilityRepository;
         _appointmentRepository = appointmentRepository;
         _serviceRepository = serviceRepository;
         _blockRepository = blockRepository;
+        _clock = clock;
     }
 
     public async Task<List<TimeOnly>> Handle(GetAvailableSlotsQuery request, CancellationToken cancellationToken)
@@ -52,23 +55,25 @@ public class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailableSlotsQu
         var occupiedBlocks = activeAppointments
             .Select(a => (Start: a.ScheduledAt, End: a.ScheduledAt.AddMinutes(a.TotalDurationMinutes)))
             .Concat(blocks.Select(b => (
-                Start: request.Date.ToDateTime(TimeOnly.FromDateTime(b.StartsAt), DateTimeKind.Utc),
-                End: request.Date.ToDateTime(TimeOnly.FromDateTime(b.EndsAt), DateTimeKind.Utc))))
+                Start: request.Date.ToDateTime(TimeOnly.FromDateTime(b.StartsAt)),
+                End: request.Date.ToDateTime(TimeOnly.FromDateTime(b.EndsAt)))))
             .ToList();
 
         var slots = new List<TimeOnly>();
         var current = availability.StartTime;
         var windowEnd = availability.EndTime.AddMinutes(-totalDuration);
+        // Os horários são de parede da barbearia; o corte de "já passou" também
+        var now = _clock.GetLocalNow().DateTime;
 
         while (current <= windowEnd)
         {
-            var slotStart = request.Date.ToDateTime(current, DateTimeKind.Utc);
+            var slotStart = request.Date.ToDateTime(current);
             var slotEnd = slotStart.AddMinutes(totalDuration);
 
             var hasOverlap = occupiedBlocks.Any(block =>
                 slotStart < block.End && slotEnd > block.Start);
 
-            if (!hasOverlap && slotStart > DateTime.UtcNow)
+            if (!hasOverlap && slotStart > now)
                 slots.Add(current);
 
             current = current.AddMinutes(15);

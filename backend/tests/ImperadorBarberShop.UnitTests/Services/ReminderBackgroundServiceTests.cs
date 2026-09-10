@@ -18,6 +18,8 @@ public class ReminderBackgroundServiceTests
     private readonly IServiceScopeFactory   _scopeFactory   = Substitute.For<IServiceScopeFactory>();
     private readonly IServiceScope          _scope          = Substitute.For<IServiceScope>();
     private readonly IServiceProvider       _provider       = Substitute.For<IServiceProvider>();
+    // Servidor em UTC às 21:58; na barbearia são 18:58
+    private readonly FixedShopClock         _clock          = new(FixedShopClock.EveningUtc);
 
     private readonly ReminderBackgroundService _svc;
 
@@ -31,17 +33,17 @@ public class ReminderBackgroundServiceTests
         _provider.GetService(typeof(INotificationService)).Returns(_notifications);
         _provider.GetService(typeof(IUnitOfWork)).Returns(_unitOfWork);
 
-        _svc = new ReminderBackgroundService(_scopeFactory, NullLogger<ReminderBackgroundService>.Instance);
+        _svc = new ReminderBackgroundService(_scopeFactory, NullLogger<ReminderBackgroundService>.Instance, _clock);
     }
 
-    private static Appointment BuildAcceptedAppointment()
+    private Appointment BuildAcceptedAppointment()
     {
         return Appointment.Create(
             "João", "+5511999990000",
             Guid.NewGuid(),
-            DateTime.UtcNow.AddMinutes(45),
+            _clock.ShopNow.AddMinutes(45),
             30, null,
-            Array.Empty<Guid>());
+            Array.Empty<Service>());
     }
 
     [Fact]
@@ -53,7 +55,7 @@ public class ReminderBackgroundServiceTests
 
         var appt = BuildAcceptedAppointment();
         _appointments
-            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(new List<Appointment> { appt });
 
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
@@ -75,7 +77,7 @@ public class ReminderBackgroundServiceTests
             .Returns("60");
 
         _appointments
-            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(new List<Appointment>());
 
         // Act
@@ -93,12 +95,14 @@ public class ReminderBackgroundServiceTests
         _settings.GetAsync("notifications:reminderMinutesBefore", Arg.Any<CancellationToken>())
             .Returns((string?)null);
 
-        var now = DateTime.UtcNow;
+        var now = _clock.ShopNow;
+        DateTime? capturedNow         = null;
         DateTime? capturedWindowStart = null;
         DateTime? capturedWindowEnd   = null;
 
         _appointments
             .GetPendingRemindersAsync(
+                Arg.Do<DateTime>(d => capturedNow         = d),
                 Arg.Do<DateTime>(d => capturedWindowStart = d),
                 Arg.Do<DateTime>(d => capturedWindowEnd   = d),
                 Arg.Any<CancellationToken>())
@@ -107,13 +111,12 @@ public class ReminderBackgroundServiceTests
         // Act
         await _svc.ProcessRemindersAsync(CancellationToken.None);
 
-        // Assert: window end should be approximately UtcNow + 60 minutes
-        capturedWindowEnd.Should().NotBeNull();
-        capturedWindowEnd!.Value.Should().BeCloseTo(now.AddMinutes(60), TimeSpan.FromSeconds(5));
+        // Assert: window end should be shop-local now + 60 minutes
+        capturedNow.Should().Be(now);
+        capturedWindowEnd.Should().Be(now.AddMinutes(60));
 
-        // Assert: window start should be approximately windowEnd - 10 minutes
-        capturedWindowStart.Should().NotBeNull();
-        capturedWindowStart!.Value.Should().BeCloseTo(now.AddMinutes(50), TimeSpan.FromSeconds(5));
+        // Assert: window start should be windowEnd - 10 minutes
+        capturedWindowStart.Should().Be(now.AddMinutes(50));
     }
 
     [Fact]
@@ -127,7 +130,7 @@ public class ReminderBackgroundServiceTests
         var appt2 = BuildAcceptedAppointment();
 
         _appointments
-            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .GetPendingRemindersAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(new List<Appointment> { appt1, appt2 });
 
         // First appointment throws; second should still be processed
@@ -148,5 +151,26 @@ public class ReminderBackgroundServiceTests
         await _notifications.Received(1).SendReminderAsync(appt2, Arg.Any<CancellationToken>());
         appt2.ReminderSentAt.Should().NotBeNull("second appointment should have been marked");
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+    [Fact]
+    public async Task ProcessReminders_WindowFollowsShopWallClock_NotUtc()
+    {
+        // ScheduledAt é horário de parede: às 18:58 na barbearia, o lembrete de 60 min
+        // procura agendamentos até 19:58. Contra DateTime.UtcNow (21:58) a janela ia até
+        // 22:58 e o cliente das 22:00 era lembrado 3 horas antes da hora.
+        _settings.GetAsync("notifications:reminderMinutesBefore", Arg.Any<CancellationToken>())
+            .Returns("60");
+        DateTime? capturedWindowEnd = null;
+        _appointments
+            .GetPendingRemindersAsync(
+                Arg.Any<DateTime>(),
+                Arg.Any<DateTime>(),
+                Arg.Do<DateTime>(d => capturedWindowEnd = d),
+                Arg.Any<CancellationToken>())
+            .Returns(new List<Appointment>());
+
+        await _svc.ProcessRemindersAsync(CancellationToken.None);
+
+        capturedWindowEnd.Should().Be(new DateTime(2026, 9, 10, 19, 58, 0));
     }
 }

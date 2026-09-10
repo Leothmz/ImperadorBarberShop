@@ -27,7 +27,7 @@ public class GetAppointmentByTokenQueryHandlerTests
     [Fact]
     public async Task Handle_TokenFound_ReturnsDto()
     {
-        var appointment = Appointment.Create("João", "+5511999990000", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        var appointment = Appointment.Create("João", "+5511999990000", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, new[] { Service.Create("Corte", "Desc", 30, 35m) });
         _appointmentRepository.GetByAccessTokenAsync(appointment.AccessToken, Arg.Any<CancellationToken>())
             .Returns(appointment);
 

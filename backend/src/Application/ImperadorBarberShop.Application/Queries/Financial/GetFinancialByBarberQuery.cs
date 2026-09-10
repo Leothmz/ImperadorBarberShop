@@ -25,7 +25,7 @@ public class GetFinancialByBarberQueryHandler : IRequestHandler<GetFinancialByBa
                 g.Key.BarberId,
                 g.Key.Name,
                 g.Count(),
-                g.SelectMany(a => a.AppointmentServices).Sum(s => s.Service.Price)))
+                g.SelectMany(a => a.AppointmentServices).Sum(s => s.UnitPrice)))
             .OrderByDescending(x => x.Revenue)
             .ToList();
     }

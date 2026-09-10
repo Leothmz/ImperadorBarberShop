@@ -26,7 +26,7 @@ public class GetFinancialByServiceQueryHandler : IRequestHandler<GetFinancialByS
                 g.Key.ServiceId,
                 g.Key.Name,
                 g.Count(),
-                g.Sum(aps => aps.Service.Price)))
+                g.Sum(aps => aps.UnitPrice)))
             .OrderByDescending(x => x.Revenue)
             .ToList();
     }

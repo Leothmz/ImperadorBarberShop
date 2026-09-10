@@ -19,7 +19,7 @@ public class UpdatePaymentMethodCommandHandlerTests
 
     private static Appointment MakeCompleted(Guid barberId)
     {
-        var appt = Appointment.Create("João", "+55119", barberId, DateTime.UtcNow.AddDays(1), 30, null, [Guid.NewGuid()]);
+        var appt = Appointment.Create("João", "+55119", barberId, DateTime.UtcNow.AddDays(1), 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
         appt.Complete();
         return appt;
     }

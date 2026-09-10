@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { LogoutButton } from '@/components/auth/LogoutButton'
+import { useAuth } from '@/hooks/useAuth'
+import { Spinner } from '@/components/ui/Spinner'
 
 const NAV = [
   { href: '/admin/dashboard', label: 'Dashboard' },
@@ -16,6 +18,18 @@ const NAV = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
+
+  // Segunda linha de defesa, igual à de /barber: o middleware só vê que existe um
+  // cookie de sessão; quem confirma o papel é a resposta da API guardada no AuthProvider.
+  const isAdmin = user?.role === 'Admin'
+
+  useEffect(() => {
+    if (!isLoading && !isAdmin) {
+      router.replace('/login')
+    }
+  }, [isAdmin, isLoading, router])
 
   useEffect(() => {
     if (!open) return
@@ -23,6 +37,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
+
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+
+  if (!isAdmin) {
+    return null
+  }
 
   return (
     <div className="flex min-h-screen">
