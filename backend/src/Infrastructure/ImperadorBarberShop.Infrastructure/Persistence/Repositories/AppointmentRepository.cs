@@ -48,9 +48,25 @@ public class AppointmentRepository : IAppointmentRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> CountCreatedByPhoneSinceAsync(string clientPhone, DateTime since, CancellationToken cancellationToken = default)
+    public async Task<int> CountCreatedByClientSinceAsync(Guid clientId, DateTime since, CancellationToken cancellationToken = default)
         => await _context.Appointments
-            .CountAsync(a => a.ClientPhone == clientPhone && a.CreatedAt >= since, cancellationToken);
+            .CountAsync(a => a.ClientId == clientId && a.CreatedAt >= since, cancellationToken);
+
+    public async Task<HashSet<Guid>> GetClientIdsWithUpcomingAsync(
+        IReadOnlyCollection<Guid> clientIds, DateTime now, CancellationToken cancellationToken = default)
+    {
+        if (clientIds.Count == 0) return [];
+
+        var ids = await _context.Appointments
+            .Where(a => a.ClientId != null
+                && clientIds.Contains(a.ClientId.Value)
+                && a.Status == AppointmentStatus.Accepted
+                && a.ScheduledAt > now)
+            .Select(a => a.ClientId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        return ids.ToHashSet();
+    }
 
     public async Task AddAsync(Appointment appointment, CancellationToken cancellationToken = default)
         => await _context.Appointments.AddAsync(appointment, cancellationToken);

@@ -9,4 +9,5 @@ public interface INotificationService
     Task SendAppointmentCancelledAsync(Appointment appointment, CancellationToken ct = default);
     Task SendAppointmentCompletedAsync(Appointment appointment, CancellationToken ct = default);
     Task SendReminderAsync(Appointment appointment, CancellationToken ct = default);
+    Task SendClientReinviteAsync(Client client, CancellationToken ct = default);
 }

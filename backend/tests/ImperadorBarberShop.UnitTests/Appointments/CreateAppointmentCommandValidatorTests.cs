@@ -1,5 +1,6 @@
 using FluentAssertions;
 using ImperadorBarberShop.Application.Commands.Appointments;
+using ImperadorBarberShop.Domain.ValueObjects;
 
 namespace ImperadorBarberShop.UnitTests.Appointments;
 
@@ -29,5 +30,32 @@ public class CreateAppointmentCommandValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(CreateAppointmentCommand.ScheduledAt))
             .Which.ErrorMessage.Should().Be("O horário escolhido já passou. Escolha um horário futuro.");
+    }
+
+    private static CreateAppointmentCommand CommandWithPhone(string phone) => new(
+        "João", phone, Guid.NewGuid(), new DateTime(2026, 9, 11, 10, 0, 0), new List<Guid> { Guid.NewGuid() }, null);
+
+    [Theory]
+    [InlineData("+5511999990000")]
+    [InlineData("11 9 9999-0000")]
+    [InlineData("11 9999-0000")]
+    [InlineData("(11) 99999-0000")]
+    [InlineData("011 99999-0000")]
+    public void Validate_AnyParseableBrazilianMobile_IsAccepted(string phone)
+    {
+        _validator.Validate(CommandWithPhone(phone)).IsValid.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("99999")]
+    [InlineData("+1 555 123 4567")]
+    [InlineData("11 3333-4444")]
+    public void Validate_UnparseablePhone_IsRejectedWithAClearMessage(string phone)
+    {
+        var result = _validator.Validate(CommandWithPhone(phone));
+
+        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(CreateAppointmentCommand.ClientPhone))
+            .Which.ErrorMessage.Should().Be(BrazilianPhone.InvalidMessage);
     }
 }

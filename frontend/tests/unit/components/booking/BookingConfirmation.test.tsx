@@ -56,6 +56,8 @@ describe('BookingConfirmation', () => {
     ['+5511999998888', 'formato canônico'],
     ['(11) 99999-8888', 'com máscara'],
     ['+55 11 99999-8888', 'igual ao placeholder'],
+    ['11 9999-8888', 'sem o nono dígito'],
+    ['011 99999-8888', 'com zero de discagem'],
   ])('habilita o botão com %s (%s)', (phone) => {
     renderConfirmation(phone)
     expect(confirmButton()).toBeEnabled()
@@ -64,6 +66,7 @@ describe('BookingConfirmation', () => {
   it.each([
     ['', 'vazio'],
     ['11999', 'curto demais'],
+    ['11 3333-4444', 'fixo, sem WhatsApp'],
   ])('mantém o botão desabilitado com %s (%s)', (phone) => {
     renderConfirmation(phone)
     expect(confirmButton()).toBeDisabled()

@@ -2,6 +2,7 @@ using FluentAssertions;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Entities;
 using ImperadorBarberShop.Domain.Interfaces;
+using ImperadorBarberShop.Domain.ValueObjects;
 using ImperadorBarberShop.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
@@ -151,5 +152,80 @@ public class NotificationServiceTests
             appt.ClientPhone,
             Arg.Is<string>(m => m.Contains("10/09/2026 23:00")),
             Arg.Any<CancellationToken>());
+    }
+
+    private static Client ReinviteTarget()
+        => Client.Create("João", BrazilianPhone.Parse("11 9999-0000"), DateTime.UtcNow.AddDays(-60));
+
+    private NotificationService ServiceWithFrontendUrl(string? frontendUrl)
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["FrontendUrl"] = frontendUrl })
+            .Build();
+        return new NotificationService(_email, _wa, _settings, config);
+    }
+
+    [Fact]
+    public async Task Reinvite_WhatsApp_SendsTheInviteWithTheSiteUrlToTheClientsCanonicalPhone()
+    {
+        SetChannels("email,whatsapp");
+        var client = ReinviteTarget();
+
+        await _svc.SendClientReinviteAsync(client, CancellationToken.None);
+
+        await _wa.Received(1).SendAsync(
+            "+5511999990000",
+            "Olá João! Sentimos sua falta no O Imperador. Que tal agendar seu próximo corte? http://localhost:3000",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Reinvite_EmailOnly_SendsNothing()
+    {
+        SetChannels("email");
+
+        await _svc.SendClientReinviteAsync(ReinviteTarget(), CancellationToken.None);
+
+        await _wa.DidNotReceiveWithAnyArgs().SendAsync(default!, default!, default);
+    }
+
+    [Fact]
+    public async Task Reinvite_WithoutFrontendUrl_SendsJustTheText()
+    {
+        SetChannels("whatsapp");
+        var svc = ServiceWithFrontendUrl(null);
+
+        await svc.SendClientReinviteAsync(ReinviteTarget(), CancellationToken.None);
+
+        await _wa.Received(1).SendAsync(
+            Arg.Any<string>(),
+            "Olá João! Sentimos sua falta no O Imperador. Que tal agendar seu próximo corte?",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Reinvite_FrontendUrlListingSeveralOrigins_LinksTheFirst()
+    {
+        SetChannels("whatsapp");
+        var svc = ServiceWithFrontendUrl("https://imperador.com.br/, https://www.imperador.com.br");
+
+        await svc.SendClientReinviteAsync(ReinviteTarget(), CancellationToken.None);
+
+        await _wa.Received(1).SendAsync(
+            Arg.Any<string>(),
+            Arg.Is<string>(m => m.EndsWith("corte? https://imperador.com.br")),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Reinvite_WhatsAppFailure_IsSwallowed()
+    {
+        SetChannels("whatsapp");
+        _wa.SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new HttpRequestException("Evolution fora do ar")));
+
+        var act = () => _svc.SendClientReinviteAsync(ReinviteTarget(), CancellationToken.None);
+
+        await act.Should().NotThrowAsync();
     }
 }

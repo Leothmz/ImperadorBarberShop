@@ -3,6 +3,7 @@ using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Entities;
 using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
+using ImperadorBarberShop.Domain.ValueObjects;
 using MediatR;
 
 namespace ImperadorBarberShop.Application.Commands.Appointments;
@@ -22,9 +23,10 @@ public class CreateAppointmentCommandValidator : AbstractValidator<CreateAppoint
     public CreateAppointmentCommandValidator(TimeProvider clock)
     {
         RuleFor(x => x.ClientName).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.ClientPhone).NotEmpty()
-            .Matches(@"^\+55\d{11}$")
-            .WithMessage("ClientPhone must be in the format +55DDDXXXXXXXXX.");
+        // Aceita o número do jeito que o cliente digitou; o handler guarda a forma canônica
+        RuleFor(x => x.ClientPhone)
+            .Must(phone => BrazilianPhone.TryParse(phone, out _))
+            .WithMessage(BrazilianPhone.InvalidMessage);
         RuleFor(x => x.BarberId).NotEmpty();
         // ScheduledAt é horário de parede da barbearia: compara com o "agora" dela, não com UTC
         RuleFor(x => x.ScheduledAt).Must(scheduledAt => scheduledAt > clock.GetLocalNow().DateTime)
@@ -39,6 +41,7 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
     private readonly IBarberRepository _barberRepository;
     private readonly IServiceRepository _serviceRepository;
     private readonly IAppointmentRepository _appointmentRepository;
+    private readonly IClientRepository _clientRepository;
     private readonly INotificationQueue _notifications;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -46,14 +49,16 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         IBarberRepository barberRepository,
         IServiceRepository serviceRepository,
         IAppointmentRepository appointmentRepository,
+        IClientRepository clientRepository,
         INotificationQueue notifications,
         IUnitOfWork unitOfWork)
     {
-        _barberRepository      = barberRepository;
-        _serviceRepository     = serviceRepository;
+        _barberRepository = barberRepository;
+        _serviceRepository = serviceRepository;
         _appointmentRepository = appointmentRepository;
-        _notifications         = notifications;
-        _unitOfWork            = unitOfWork;
+        _clientRepository = clientRepository;
+        _notifications = notifications;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<CreateAppointmentResult> Handle(CreateAppointmentCommand request, CancellationToken cancellationToken)
@@ -66,13 +71,20 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         if (services.Count != request.ServiceIds.Count)
             throw new KeyNotFoundException("One or more services were not found.");
 
+        var phone = BrazilianPhone.Parse(request.ClientPhone);
+        var client = await _clientRepository.GetByMatchKeyAsync(phone.MatchKey, cancellationToken);
+
         // Anti-spam: cap appointment creation per phone number, independent of the
-        // per-IP rate limit applied at the HTTP layer (Task 11).
-        var recentCount = await _appointmentRepository.CountCreatedByPhoneSinceAsync(
-            request.ClientPhone, DateTime.UtcNow.AddHours(-1), cancellationToken);
-        if (recentCount >= 3)
-            throw new InvalidOperationException(
-                "Este WhatsApp já fez vários agendamentos na última hora. Aguarde um pouco ou fale com a barbearia.");
+        // per-IP rate limit applied at the HTTP layer (Task 11). Counts the person, not
+        // the typing: "11 9999-0000" and "+5511999990000" share one cap.
+        if (client is not null)
+        {
+            var recentCount = await _appointmentRepository.CountCreatedByClientSinceAsync(
+                client.Id, DateTime.UtcNow.AddHours(-1), cancellationToken);
+            if (recentCount >= 3)
+                throw new InvalidOperationException(
+                    "Este WhatsApp já fez vários agendamentos na última hora. Aguarde um pouco ou fale com a barbearia.");
+        }
 
         // Check slot availability — ensure no overlap with existing appointments
         var date = DateOnly.FromDateTime(request.ScheduledAt);
@@ -89,14 +101,23 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
                 throw new ConflictException(Appointment.SlotTakenMessage);
         }
 
+        // Primeiro agendamento deste telefone: nasce o cliente, com o nome digitado agora.
+        // Nos seguintes o nome do cliente fica — o agendamento guarda o que veio desta vez.
+        if (client is null)
+        {
+            client = Client.Create(request.ClientName, phone, DateTime.UtcNow);
+            await _clientRepository.AddAsync(client, cancellationToken);
+        }
+
         var appointment = Appointment.Create(
             request.ClientName,
-            request.ClientPhone,
+            phone.Canonical,
             request.BarberId,
             request.ScheduledAt,
             totalDuration,
             request.Notes,
-            services);
+            services,
+            client.Id);
 
         await _appointmentRepository.AddAsync(appointment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

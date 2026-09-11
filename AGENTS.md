@@ -43,7 +43,11 @@ Entities: `backend/src/Domain/ImperadorBarberShop.Domain/Entities/`.
 - `Service` — Id, Name, Description, DurationMinutes, Price, IsActive, PhotoUrl. One global catalog.
 - `ServiceAddon` — ParentServiceId, AddonServiceId (self-join).
 - `Appointment` — Id, ClientName, ClientPhone, AccessToken (unique), BarberId, ScheduledAt,
-  TotalDurationMinutes, Status, Notes?, CreatedAt, UpdatedAt, ReminderSentAt?, PaymentMethod?, PaidAt?.
+  TotalDurationMinutes, Status, Notes?, CreatedAt, UpdatedAt, ReminderSentAt?, PaymentMethod?, PaidAt?,
+  ClientId? (null only for legacy rows whose phone didn't parse).
+- `Client` — Id, Phone (canonical), MatchKey (unique), Name (from the first booking, never
+  overwritten), FirstSeenAt (UTC), LastVisitAt? / LastInviteAt? (wall-clock), VisitCount. A
+  recognition record derived from bookings, not an account.
 - `AppointmentService` — AppointmentId, ServiceId, `UnitPrice` (price snapshot at booking; financial
   reports read this, never the live price).
 - `Review` — Id, AppointmentId, BarberId, Rating (1–5), Comment?, CreatedAt.
@@ -67,14 +71,21 @@ survives because integration fixtures use `User.CreateClient(...)` as a test dou
 - Appointment duration = the sum of the selected services' `DurationMinutes`.
 - Clients book without an account: name + WhatsApp phone + barber + services + slot. Appointments are
   created already `Accepted` (no approval step).
+- The phone may be typed any way. `BrazilianPhone` (`Domain/ValueObjects/`) is the only normalizer:
+  canonical `+55DDD9XXXXXXXX` is what gets stored, and people match on DDD + last 8 digits (the mobile
+  9th digit is ignored). Each booking upserts a `Client` on that key; only completion counts a visit.
 - Each appointment gets a unique `AccessToken`; the public `/agendamento/{token}` link is the client's
   only handle (view, cancel, review).
 - A review requires `Status == Completed`; a client cancel requires `Accepted` AND more than 2h before
   `ScheduledAt`.
 - A barber cannot hold two overlapping `Accepted` appointments; a unique `(BarberId, ScheduledAt)`
   index guards the race.
-- Anti-spam on creation: 5/hour per IP (rate-limiter middleware) and 3/hour per `ClientPhone`
-  (application handler).
+- Anti-spam on creation: 5/hour per IP (rate-limiter middleware) and 3/hour per client, i.e. per
+  match key (application handler).
+- Recurrence (`/admin/dashboard`): clients whose last completed visit was 25–30 calendar days ago,
+  not invited in the last 10 and with no future `Accepted` booking (`Client.IsDueForReinvite` + the
+  query handler). The reinvite command refuses when the `whatsapp` channel is off, since the send would
+  be dropped silently while the client left the list.
 - Two authorization policies (`Program.cs`): `RequireBarberRole`, `RequireAdminRole`. Admin commands
   take a nullable `RequesterBarberId`; barber endpoints pass the JWT's `barberId` (IDOR check), admin
   endpoints pass `null` (check skipped).
@@ -94,7 +105,7 @@ Channels live in `AppSettings["notifications:channels"]` (`email`, `whatsapp` or
 editable at `/admin/whatsapp` → Notificações. Sends are fire-and-forget: handlers call
 `INotificationQueue.Enqueue(...)`; `NotificationDispatcher` drains an in-memory queue in its own DI
 scope. Pending notifications are lost on process death. Email delivery exists only for *appointment
-created*; cancelled/completed/reminder honour `whatsapp` only (`NotificationService.cs`).
+created*; cancelled/completed/reminder/reinvite honour `whatsapp` only (`NotificationService.cs`).
 
 ## Deploy config
 
@@ -135,6 +146,14 @@ CI (`.github/workflows/ci.yml`) runs three jobs on every PR: Backend, Frontend, 
   (localStorage).
 - `frontend/src/lib/api/client.ts` and the MSW handlers fall back to port `5000` when
   `NEXT_PUBLIC_API_URL` is unset, but the HTTP profile serves `5044`. Always set the env var.
+- `frontend/src/lib/utils/phone.ts` mirrors `BrazilianPhone` so the booking button enables for exactly
+  what the API accepts. Change both together; their tests share cases.
+- Migrations may call `imperador_phone_canonical/_match_key` (`Persistence/PhoneSqlFunctions.cs`,
+  registered on every `AppDbContext` command), so `dotnet ef migrations script` output won't run in
+  plain sqlite3. Migrations are applied by the app at boot.
+- Adding a FK to an existing SQLite table makes EF rebuild the table outside a transaction (warning
+  20410; a crash mid-boot leaves it half-applied). `AddClients` adds the column with an inline
+  `REFERENCES` via raw SQL instead.
 
 ## Maintaining this file
 

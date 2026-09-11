@@ -5,6 +5,7 @@ using ImperadorBarberShop.Domain.Entities;
 using ImperadorBarberShop.Domain.Enums;
 using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
+using ImperadorBarberShop.Domain.ValueObjects;
 using NSubstitute;
 
 namespace ImperadorBarberShop.UnitTests.Appointments;
@@ -12,13 +13,14 @@ namespace ImperadorBarberShop.UnitTests.Appointments;
 public class CompleteAppointmentCommandHandlerTests
 {
     private readonly IAppointmentRepository _appointmentRepository = Substitute.For<IAppointmentRepository>();
+    private readonly IClientRepository _clientRepository = Substitute.For<IClientRepository>();
     private readonly INotificationQueue _notifications = Substitute.For<INotificationQueue>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CompleteAppointmentCommandHandler _handler;
 
     public CompleteAppointmentCommandHandlerTests()
     {
-        _handler = new CompleteAppointmentCommandHandler(_appointmentRepository, _notifications, _unitOfWork);
+        _handler = new CompleteAppointmentCommandHandler(_appointmentRepository, _clientRepository, _notifications, _unitOfWork);
     }
 
     [Fact]
@@ -97,5 +99,61 @@ public class CompleteAppointmentCommandHandlerTests
 
         appointment.Status.Should().Be(AppointmentStatus.Completed);
         appointment.PaymentMethod.Should().Be(PaymentMethod.Pix);
+    }
+
+    private (Appointment appointment, Client client) LinkedAppointment(Guid barberId, DateTime scheduledAt)
+    {
+        var client = Client.Create("João", BrazilianPhone.Parse("+5511999990000"), DateTime.UtcNow.AddDays(-60));
+        var appointment = Appointment.Create("João", client.Phone, barberId, scheduledAt, 30, null,
+            [Service.Create("Corte", "Desc", 30, 35m)], client.Id);
+        _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
+        _clientRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
+        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
+        return (appointment, client);
+    }
+
+    [Fact]
+    public async Task Handle_LinkedClient_CountsTheVisitAtTheScheduledTime()
+    {
+        var barberId = Guid.NewGuid();
+        var scheduledAt = new DateTime(2026, 9, 10, 10, 0, 0);
+        var (appointment, client) = LinkedAppointment(barberId, scheduledAt);
+
+        await _handler.Handle(new CompleteAppointmentCommand(appointment.Id, barberId), CancellationToken.None);
+
+        client.VisitCount.Should().Be(1);
+        client.LastVisitAt.Should().Be(scheduledAt);
+        await _clientRepository.Received(1).UpdateAsync(client, Arg.Any<CancellationToken>());
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_CompletionRejected_DoesNotCountAVisit()
+    {
+        var barberId = Guid.NewGuid();
+        var (appointment, client) = LinkedAppointment(barberId, new DateTime(2026, 9, 10, 10, 0, 0));
+        appointment.Cancel();
+
+        var act = () => _handler.Handle(new CompleteAppointmentCommand(appointment.Id, barberId), CancellationToken.None);
+
+        // Cancelado não vira visita: só a conclusão conta
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        client.VisitCount.Should().Be(0);
+        client.LastVisitAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_LegacyAppointmentWithoutClient_CompletesWithoutTouchingClients()
+    {
+        var barberId = Guid.NewGuid();
+        var appointment = Appointment.Create("João", "telefone ilegível", barberId, DateTime.UtcNow.AddDays(1), 30, null,
+            [Service.Create("Corte", "Desc", 30, 35m)]);
+        _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
+        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
+
+        await _handler.Handle(new CompleteAppointmentCommand(appointment.Id, barberId), CancellationToken.None);
+
+        appointment.Status.Should().Be(AppointmentStatus.Completed);
+        await _clientRepository.DidNotReceiveWithAnyArgs().GetByIdAsync(default, default);
     }
 }

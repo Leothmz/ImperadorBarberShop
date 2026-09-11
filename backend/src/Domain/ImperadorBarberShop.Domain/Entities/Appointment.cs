@@ -25,6 +25,8 @@ public class Appointment
     public DateTime? ReminderSentAt { get; private set; }
     public PaymentMethod? PaymentMethod { get; private set; }
     public DateTime? PaidAt { get; private set; }
+    /// <summary>Cliente reconhecido pelo telefone. Nulo só em agendamento legado com telefone ilegível.</summary>
+    public Guid? ClientId { get; private set; }
     public Barber Barber { get; private set; } = null!;
     public IReadOnlyCollection<AppointmentService> AppointmentServices => _appointmentServices.AsReadOnly();
 
@@ -38,7 +40,8 @@ public class Appointment
         DateTime scheduledAt,
         int totalDurationMinutes,
         string? notes,
-        IEnumerable<Service> services)
+        IEnumerable<Service> services,
+        Guid? clientId = null)
     {
         var now = DateTime.UtcNow;
         var appointment = new Appointment
@@ -52,6 +55,7 @@ public class Appointment
             TotalDurationMinutes = totalDurationMinutes,
             Status = AppointmentStatus.Accepted,
             Notes = notes,
+            ClientId = clientId,
             CreatedAt = now,
             UpdatedAt = now
         };

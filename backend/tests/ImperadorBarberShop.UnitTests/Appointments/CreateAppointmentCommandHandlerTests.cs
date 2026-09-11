@@ -4,6 +4,7 @@ using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Entities;
 using ImperadorBarberShop.Domain.Exceptions;
 using ImperadorBarberShop.Domain.Interfaces;
+using ImperadorBarberShop.Domain.ValueObjects;
 using NSubstitute;
 
 namespace ImperadorBarberShop.UnitTests.Appointments;
@@ -13,6 +14,7 @@ public class CreateAppointmentCommandHandlerTests
     private readonly IBarberRepository _barberRepository = Substitute.For<IBarberRepository>();
     private readonly IServiceRepository _serviceRepository = Substitute.For<IServiceRepository>();
     private readonly IAppointmentRepository _appointmentRepository = Substitute.For<IAppointmentRepository>();
+    private readonly IClientRepository _clientRepository = Substitute.For<IClientRepository>();
     private readonly INotificationQueue _notifications = Substitute.For<INotificationQueue>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CreateAppointmentCommandHandler _handler;
@@ -20,7 +22,7 @@ public class CreateAppointmentCommandHandlerTests
     public CreateAppointmentCommandHandlerTests()
     {
         _handler = new CreateAppointmentCommandHandler(
-            _barberRepository, _serviceRepository, _appointmentRepository, _notifications, _unitOfWork);
+            _barberRepository, _serviceRepository, _appointmentRepository, _clientRepository, _notifications, _unitOfWork);
     }
 
     private void SetupHappyPath(Guid barberId, Service service)
@@ -32,8 +34,6 @@ public class CreateAppointmentCommandHandlerTests
             .Returns(new List<Service> { service });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(barberId, Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
             .Returns(new List<Appointment>());
-        _appointmentRepository.CountCreatedByPhoneSinceAsync(Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
-            .Returns(0);
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
     }
 
@@ -114,8 +114,6 @@ public class CreateAppointmentCommandHandlerTests
             .Returns(new List<Service> { service });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(barberId, Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
             .Returns(new List<Appointment> { existingAppt });
-        _appointmentRepository.CountCreatedByPhoneSinceAsync(Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
-            .Returns(0);
 
         var command = new CreateAppointmentCommand(
             "João", "+5511999990000", barberId, scheduledAt, new List<Guid> { Guid.NewGuid() }, null);
@@ -132,7 +130,8 @@ public class CreateAppointmentCommandHandlerTests
         var barberId = Guid.NewGuid();
         var service = Service.Create("Corte", "Corte", 30, 35.00m);
         SetupHappyPath(barberId, service);
-        _appointmentRepository.CountCreatedByPhoneSinceAsync(Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+        var client = ExistingClient("João", "+5511999990000");
+        _appointmentRepository.CountCreatedByClientSinceAsync(client.Id, Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(3);
 
         var command = new CreateAppointmentCommand(
@@ -163,5 +162,98 @@ public class CreateAppointmentCommandHandlerTests
         var line = saved!.AppointmentServices.Should().ContainSingle().Subject;
         line.ServiceId.Should().Be(service.Id);
         line.UnitPrice.Should().Be(35.00m);
+    }
+
+    private Client ExistingClient(string name, string phone)
+    {
+        var client = Client.Create(name, BrazilianPhone.Parse(phone), DateTime.UtcNow.AddDays(-60));
+        _clientRepository.GetByMatchKeyAsync(client.MatchKey, Arg.Any<CancellationToken>()).Returns(client);
+        return client;
+    }
+
+    [Fact]
+    public async Task Handle_FirstBookingFromAPhone_CreatesTheClientFromThisBooking()
+    {
+        var barberId = Guid.NewGuid();
+        var service = Service.Create("Corte", "Corte moderno", 30, 35.00m);
+        SetupHappyPath(barberId, service);
+        Client? newClient = null;
+        _ = _clientRepository.AddAsync(Arg.Do<Client>(c => newClient = c), Arg.Any<CancellationToken>());
+        Appointment? saved = null;
+        _ = _appointmentRepository.AddAsync(Arg.Do<Appointment>(a => saved = a), Arg.Any<CancellationToken>());
+
+        // Digitado sem o nono dígito e com máscara
+        var command = new CreateAppointmentCommand(
+            "João", "(11) 9999-0000", barberId, DateTime.UtcNow.AddDays(1), new List<Guid> { service.Id }, null);
+        await _handler.Handle(command, CancellationToken.None);
+
+        newClient.Should().NotBeNull();
+        newClient!.Name.Should().Be("João");
+        newClient.Phone.Should().Be("+5511999990000");
+        newClient.MatchKey.Should().Be("1199990000");
+        newClient.VisitCount.Should().Be(0, "agendar não é visitar");
+        saved!.ClientId.Should().Be(newClient.Id);
+        saved.ClientPhone.Should().Be("+5511999990000", "o agendamento guarda a forma canônica");
+        await _clientRepository.Received(1).GetByMatchKeyAsync("1199990000", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ReturningClientTypingANewName_KeepsTheFirstNameAndLinksTheBooking()
+    {
+        var barberId = Guid.NewGuid();
+        var service = Service.Create("Corte", "Corte moderno", 30, 35.00m);
+        SetupHappyPath(barberId, service);
+        var client = ExistingClient("João", "+5511999990000");
+        Appointment? saved = null;
+        _ = _appointmentRepository.AddAsync(Arg.Do<Appointment>(a => saved = a), Arg.Any<CancellationToken>());
+
+        var command = new CreateAppointmentCommand(
+            "Joao Silva", "+55 11 9 9999-0000", barberId, DateTime.UtcNow.AddDays(1), new List<Guid> { service.Id }, null);
+        await _handler.Handle(command, CancellationToken.None);
+
+        client.Name.Should().Be("João");
+        saved!.ClientId.Should().Be(client.Id);
+        saved.ClientName.Should().Be("Joao Silva", "o agendamento guarda o nome desta vez");
+        await _clientRepository.DidNotReceive().AddAsync(Arg.Any<Client>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_SamePersonTypingThePhoneDifferently_SharesThePerPhoneCap()
+    {
+        var barberId = Guid.NewGuid();
+        var service = Service.Create("Corte", "Corte", 30, 35.00m);
+        SetupHappyPath(barberId, service);
+        var client = ExistingClient("João", "+5511999990000");
+        _appointmentRepository.CountCreatedByClientSinceAsync(client.Id, Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(3);
+
+        // Mesma pessoa, sem +55 e sem o nono dígito: não abre uma cota nova
+        var command = new CreateAppointmentCommand(
+            "João", "11 9999-0000", barberId, DateTime.UtcNow.AddDays(1), new List<Guid> { service.Id }, null);
+
+        var act = () => _handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*vários agendamentos*");
+        await _appointmentRepository.DidNotReceive().AddAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_SlotTaken_DoesNotCreateAClient()
+    {
+        var barberId = Guid.NewGuid();
+        var scheduledAt = DateTime.UtcNow.AddDays(1).Date.AddHours(10);
+        var service = Service.Create("Corte", "Corte", 30, 35.00m);
+        SetupHappyPath(barberId, service);
+        var existingAppt = Appointment.Create("Maria", "+5511999990001", barberId, scheduledAt, 30, null, new[] { service });
+        _appointmentRepository.GetActiveByBarberIdAndDateAsync(barberId, Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
+            .Returns(new List<Appointment> { existingAppt });
+
+        var command = new CreateAppointmentCommand(
+            "João", "+5511999990000", barberId, scheduledAt, new List<Guid> { service.Id }, null);
+
+        var act = () => _handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<ConflictException>();
+        await _clientRepository.DidNotReceive().AddAsync(Arg.Any<Client>(), Arg.Any<CancellationToken>());
     }
 }

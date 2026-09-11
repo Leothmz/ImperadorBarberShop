@@ -40,6 +40,7 @@ O Imperador Barber Shop é uma aplicação full-stack moderna que conecta client
 - Gerenciamento de despesas operacionais (texto livre, valor, data)
 - Visualização de atendimentos por barbeiro com registro de pagamento
 - Gerenciamento de bloqueios de agenda por barbeiro
+- Recorrência: lista de clientes quase perdidos (25–30 dias sem visitar) com botão para reconvite via WhatsApp
 - Configuração de notificações (canais: e-mail, WhatsApp ou ambos)
 - Integração com WhatsApp via Evolution API (QR code, status de conexão)
 
@@ -138,6 +139,8 @@ User ──< Barber ──< BarberAvailability
   └──< Expense
   └──< AppSettings
   └──< RefreshToken
+
+Client ──< Appointment   (ClientId opcional; reconhece clientes recorrentes pelo telefone)
 ```
 
 ### Entidades Principais
@@ -147,8 +150,9 @@ User ──< Barber ──< BarberAvailability
 | `User` | Id, Name, Email, PasswordHash, Role (Barber\|Admin) |
 | `Barber` | Id, UserId, Availability[], AverageRating |
 | `Service` | Id, Name, DurationMinutes, Price, IsActive |
-| `Appointment` | Id, ClientName, ClientPhone, AccessToken, BarberId, ScheduledAt, Status, PaymentMethod?, PaidAt?, Notes? |
+| `Appointment` | Id, ClientName, ClientPhone, ClientId?, AccessToken, BarberId, ScheduledAt, Status, PaymentMethod?, PaidAt?, Notes? |
 | `AppointmentService` | AppointmentId, ServiceId (M:N) |
+| `Client` | Id, Phone, MatchKey, Name (do 1º agendamento), FirstSeenAt, LastVisitAt?, LastInviteAt?, VisitCount |
 | `Review` | Id, AppointmentId, BarberId, Rating (1–5), Comment? |
 | `BarberBlock` | Id, BarberId, StartsAt, EndsAt, Description?, IsRecurring, RecurrenceDays? (bitmask), RecurrenceEndsAt? |
 | `Expense` | Id, Amount, Description (max 200), Date, CreatedAt, CreatedByUserId |
@@ -373,6 +377,8 @@ cd frontend && npx playwright test
 | POST | `/admin/whatsapp/disconnect` | Desconectar |
 | GET | `/admin/notifications/settings` | Configurações de notificações |
 | PUT | `/admin/notifications/settings` | Atualizar canais de notificação |
+| GET | `/admin/clients/reinvite-candidates` | Clientes quase perdidos (25–30 dias sem visitar) elegíveis para reconvite |
+| POST | `/admin/clients/{id}/reinvite` | Enviar convite de retorno via WhatsApp e registrar `LastInviteAt` |
 
 ---
 
