@@ -53,12 +53,12 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         INotificationQueue notifications,
         IUnitOfWork unitOfWork)
     {
-        _barberRepository      = barberRepository;
-        _serviceRepository     = serviceRepository;
+        _barberRepository = barberRepository;
+        _serviceRepository = serviceRepository;
         _appointmentRepository = appointmentRepository;
-        _clientRepository      = clientRepository;
-        _notifications         = notifications;
-        _unitOfWork            = unitOfWork;
+        _clientRepository = clientRepository;
+        _notifications = notifications;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<CreateAppointmentResult> Handle(CreateAppointmentCommand request, CancellationToken cancellationToken)

@@ -22,9 +22,9 @@ public class GetReinviteCandidatesQueryHandler : IRequestHandler<GetReinviteCand
         IAppointmentRepository appointmentRepository,
         TimeProvider clock)
     {
-        _clientRepository      = clientRepository;
+        _clientRepository = clientRepository;
         _appointmentRepository = appointmentRepository;
-        _clock                 = clock;
+        _clock = clock;
     }
 
     public async Task<List<ReinviteCandidateDto>> Handle(GetReinviteCandidatesQuery request, CancellationToken cancellationToken)

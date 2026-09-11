@@ -36,10 +36,10 @@ public class ReinviteClientCommandHandler : IRequestHandler<ReinviteClientComman
         TimeProvider clock)
     {
         _clientRepository = clientRepository;
-        _settings         = settings;
-        _notifications    = notifications;
-        _unitOfWork       = unitOfWork;
-        _clock            = clock;
+        _settings = settings;
+        _notifications = notifications;
+        _unitOfWork = unitOfWork;
+        _clock = clock;
     }
 
     public async Task Handle(ReinviteClientCommand request, CancellationToken cancellationToken)

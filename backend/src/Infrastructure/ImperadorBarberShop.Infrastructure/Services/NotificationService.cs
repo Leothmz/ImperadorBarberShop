@@ -23,12 +23,12 @@ public class NotificationService : INotificationService
         IConfiguration config,
         ILogger<NotificationService> logger)
     {
-        _email       = email;
-        _wa          = wa;
-        _settings    = settings;
-        _logger      = logger;
+        _email = email;
+        _wa = wa;
+        _settings = settings;
+        _logger = logger;
         // FrontendUrl é a lista de origens do CORS: a primeira é o endereço público do site
-        _siteUrl     = config["FrontendUrl"]?
+        _siteUrl = config["FrontendUrl"]?
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(origin => origin.TrimEnd('/'))
             .FirstOrDefault();
@@ -49,16 +49,16 @@ public class NotificationService : INotificationService
     public async Task SendAppointmentCreatedAsync(
         Appointment appointment, Barber barber, List<Service> services, CancellationToken ct = default)
     {
-        var channels     = await GetChannelsAsync(ct);
+        var channels = await GetChannelsAsync(ct);
         var serviceNames = string.Join(", ", services.Select(s => s.Name));
-        var scheduledAt  = appointment.ScheduledAt.ToString("dd/MM/yyyy HH:mm");
+        var scheduledAt = appointment.ScheduledAt.ToString("dd/MM/yyyy HH:mm");
 
         if (channels.Contains("email"))
         {
             try
             {
                 var barberEmail = barber.User?.Email ?? string.Empty;
-                var barberName  = barber.User?.Name ?? string.Empty;
+                var barberName = barber.User?.Name ?? string.Empty;
                 await _email.SendAppointmentCreatedAsync(
                     barberEmail, barberName,
                     appointment.ClientName, appointment.ClientPhone,
@@ -103,7 +103,7 @@ public class NotificationService : INotificationService
 
     public async Task SendAppointmentCancelledAsync(Appointment appointment, CancellationToken ct = default)
     {
-        var channels    = await GetChannelsAsync(ct);
+        var channels = await GetChannelsAsync(ct);
         var scheduledAt = appointment.ScheduledAt.ToString("dd/MM/yyyy HH:mm");
 
         if (channels.Contains("whatsapp"))
@@ -136,8 +136,8 @@ public class NotificationService : INotificationService
 
     public async Task SendAppointmentCompletedAsync(Appointment appointment, CancellationToken ct = default)
     {
-        var channels    = await GetChannelsAsync(ct);
-        var reviewLink  = $"{_frontendUrl}/agendamento/{appointment.AccessToken}";
+        var channels = await GetChannelsAsync(ct);
+        var reviewLink = $"{_frontendUrl}/agendamento/{appointment.AccessToken}";
 
         if (channels.Contains("whatsapp"))
         {
@@ -155,8 +155,8 @@ public class NotificationService : INotificationService
 
     public async Task SendReminderAsync(Appointment appointment, CancellationToken ct = default)
     {
-        var channels     = await GetChannelsAsync(ct);
-        var scheduledAt  = appointment.ScheduledAt.ToString("dd/MM/yyyy HH:mm");
+        var channels = await GetChannelsAsync(ct);
+        var scheduledAt = appointment.ScheduledAt.ToString("dd/MM/yyyy HH:mm");
         var serviceNames = string.Join(", ",
             appointment.AppointmentServices.Select(s => s.Service?.Name ?? string.Empty));
 

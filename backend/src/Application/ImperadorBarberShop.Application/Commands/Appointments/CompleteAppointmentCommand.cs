@@ -37,9 +37,9 @@ public class CompleteAppointmentCommandHandler : IRequestHandler<CompleteAppoint
         IUnitOfWork unitOfWork)
     {
         _appointmentRepository = appointmentRepository;
-        _clientRepository      = clientRepository;
-        _notifications         = notifications;
-        _unitOfWork            = unitOfWork;
+        _clientRepository = clientRepository;
+        _notifications = notifications;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task Handle(CompleteAppointmentCommand request, CancellationToken cancellationToken)
