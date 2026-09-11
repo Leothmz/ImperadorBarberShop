@@ -20,15 +20,18 @@ public class CancelAppointmentByTokenCommandHandler : IRequestHandler<CancelAppo
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly INotificationQueue _notifications;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly TimeProvider _clock;
 
     public CancelAppointmentByTokenCommandHandler(
         IAppointmentRepository appointmentRepository,
         INotificationQueue notifications,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        TimeProvider clock)
     {
         _appointmentRepository = appointmentRepository;
         _notifications         = notifications;
         _unitOfWork            = unitOfWork;
+        _clock                 = clock;
     }
 
     public async Task Handle(CancelAppointmentByTokenCommand request, CancellationToken cancellationToken)
@@ -37,9 +40,11 @@ public class CancelAppointmentByTokenCommandHandler : IRequestHandler<CancelAppo
         if (appointment is null)
             throw new KeyNotFoundException("Appointment not found for the given token.");
 
-        // Rule: ScheduledAt must be MORE THAN 2 hours away; "exactly 2h" is not enough — use <=
-        if (appointment.ScheduledAt - DateTime.UtcNow <= TimeSpan.FromHours(2))
-            throw new InvalidOperationException("Cannot cancel an appointment within 2 hours of the scheduled time.");
+        // Rule: ScheduledAt must be MORE THAN 2 hours away; "exactly 2h" is not enough — use <=.
+        // ScheduledAt é horário de parede da barbearia, então o "agora" também tem de ser.
+        if (appointment.ScheduledAt - _clock.GetLocalNow().DateTime <= TimeSpan.FromHours(2))
+            throw new InvalidOperationException(
+                "Não é possível cancelar pelo site com menos de 2 horas de antecedência. Fale com a barbearia.");
 
         appointment.Cancel();
         await _appointmentRepository.UpdateAsync(appointment, cancellationToken);

@@ -13,7 +13,7 @@ public class GetFinancialTimelineQueryHandlerTests
     private static Appointment MakeCompleted(DateTime scheduledAt)
     {
         var appt = Appointment.Create("João", "+55119", Guid.NewGuid(),
-            scheduledAt, 30, null, [Guid.NewGuid()]);
+            scheduledAt, 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
         appt.Complete();
         return appt;
     }

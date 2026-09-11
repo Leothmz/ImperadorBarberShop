@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
 using ImperadorBarberShop.Infrastructure.Persistence.Configurations;
+using ImperadorBarberShop.Infrastructure.Services;
 
 namespace ImperadorBarberShop.IntegrationTests.Appointments;
 
@@ -53,13 +54,15 @@ public class AppointmentsEdgeCaseTests : IClassFixture<WebAppFixture>
         var (_, barberId) = await RegisterBarber();
         // Within the 2-hour cancellation cutoff — must still be far enough in the
         // future to pass slot-availability validation, but inside the no-cancel window.
-        var scheduledAt = DateTime.UtcNow.AddHours(1);
+        // ScheduledAt is the shop's wall-clock time, sent without an offset like the UI does.
+        var shopNow = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, ShopTimeProvider.ShopTimeZone).DateTime;
+        var scheduledAt = shopNow.AddHours(1);
         var createResp = await _client.PostAsJsonAsync("/api/v1/appointments", new
         {
             clientName = "Cliente Teste",
             clientPhone = "+5511999990009",
             barberId,
-            scheduledAt = scheduledAt.ToString("o"),
+            scheduledAt = scheduledAt.ToString("yyyy-MM-ddTHH:mm:ss"),
             serviceIds = new[] { ServiceConfiguration.BarbaId }
         });
         var created = await createResp.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);

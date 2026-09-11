@@ -25,7 +25,7 @@ public class CompleteAppointmentCommandHandlerTests
     public async Task Handle_ValidComplete_CompletesAppointment()
     {
         var barberId = Guid.NewGuid();
-        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Service.Create("Corte", "Desc", 30, 35m) });
 
         _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
@@ -49,7 +49,7 @@ public class CompleteAppointmentCommandHandlerTests
     public async Task Handle_WrongBarber_ThrowsForbiddenException()
     {
         var realBarberId = Guid.NewGuid();
-        var appointment = Appointment.Create("João", "+5511999990000", realBarberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        var appointment = Appointment.Create("João", "+5511999990000", realBarberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Service.Create("Corte", "Desc", 30, 35m) });
         _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
 
         var act = () => _handler.Handle(new CompleteAppointmentCommand(appointment.Id, Guid.NewGuid()), CancellationToken.None);
@@ -62,7 +62,7 @@ public class CompleteAppointmentCommandHandlerTests
     {
         // RequesterBarberId nulo = admin: conclui o atendimento de qualquer barbeiro.
         var otherBarberId = Guid.NewGuid();
-        var appointment = Appointment.Create("João", "+5511999990000", otherBarberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        var appointment = Appointment.Create("João", "+5511999990000", otherBarberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Service.Create("Corte", "Desc", 30, 35m) });
         _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
 
@@ -76,7 +76,7 @@ public class CompleteAppointmentCommandHandlerTests
     public async Task Handle_AlreadyCompleted_ThrowsInvalidOperationException()
     {
         var barberId = Guid.NewGuid();
-        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Service.Create("Corte", "Desc", 30, 35m) });
         appointment.Complete();
         _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
 
@@ -89,7 +89,7 @@ public class CompleteAppointmentCommandHandlerTests
     public async Task Handle_WithPaymentMethod_SetsPaymentOnCompletion()
     {
         var barberId = Guid.NewGuid();
-        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, [Guid.NewGuid()]);
+        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
         _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
 

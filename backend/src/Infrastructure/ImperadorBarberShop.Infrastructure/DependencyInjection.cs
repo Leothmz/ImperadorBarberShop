@@ -47,6 +47,9 @@ public static class DependencyInjection
         services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
         services.Configure<CloudinarySettings>(configuration.GetSection(CloudinarySettings.SectionName));
 
+        // Relógio da barbearia: GetLocalNow() dá o horário de parede de São Paulo
+        services.AddSingleton<TimeProvider, ShopTimeProvider>();
+
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IEmailService, SmtpEmailService>();

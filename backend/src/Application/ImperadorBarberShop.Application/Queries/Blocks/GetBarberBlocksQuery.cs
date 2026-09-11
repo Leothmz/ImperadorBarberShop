@@ -18,13 +18,20 @@ public record GetBarberBlocksQuery(Guid BarberId) : IRequest<List<BarberBlockDto
 public class GetBarberBlocksQueryHandler : IRequestHandler<GetBarberBlocksQuery, List<BarberBlockDto>>
 {
     private readonly IBarberBlockRepository _repo;
+    private readonly TimeProvider _clock;
 
-    public GetBarberBlocksQueryHandler(IBarberBlockRepository repo) => _repo = repo;
+    public GetBarberBlocksQueryHandler(IBarberBlockRepository repo, TimeProvider clock)
+    {
+        _repo = repo;
+        _clock = clock;
+    }
 
     public async Task<List<BarberBlockDto>> Handle(GetBarberBlocksQuery request, CancellationToken cancellationToken)
     {
         var blocks = await _repo.GetByBarberIdAsync(request.BarberId, cancellationToken);
-        var now = DateTime.UtcNow;
+        // EndsAt é horário de parede da barbearia: com UtcNow, um bloqueio ainda em
+        // curso sumia da lista até 3 horas antes de terminar
+        var now = _clock.GetLocalNow().DateTime;
         var activeBlocks = blocks.Where(b => b.IsRecurring || b.EndsAt >= now).ToList();
         return activeBlocks.Select(b => new BarberBlockDto(
             b.Id, b.StartsAt, b.EndsAt, b.Description,

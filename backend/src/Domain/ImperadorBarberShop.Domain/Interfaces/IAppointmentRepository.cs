@@ -12,7 +12,8 @@ public interface IAppointmentRepository
     Task AddAsync(Appointment appointment, CancellationToken cancellationToken = default);
     Task UpdateAsync(Appointment appointment, CancellationToken cancellationToken = default);
     Task<List<Appointment>> GetCompletedByDateRangeAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default);
-    Task<List<Appointment>> GetPendingRemindersAsync(DateTime windowStart, DateTime windowEnd, CancellationToken ct = default);
+    /// <param name="now">Horário de parede da barbearia — o mesmo relógio de ScheduledAt.</param>
+    Task<List<Appointment>> GetPendingRemindersAsync(DateTime now, DateTime windowStart, DateTime windowEnd, CancellationToken ct = default);
     Task<bool> AnyByBarberIdAsync(Guid barberId, CancellationToken cancellationToken = default);
     Task<bool> AnyByServiceIdAsync(Guid serviceId, CancellationToken cancellationToken = default);
 }

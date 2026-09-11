@@ -39,7 +39,7 @@ public class GetFinancialTimelineQueryHandler : IRequestHandler<GetFinancialTime
             .OrderBy(g => g.Key)
             .Select(g => new FinancialTimelineItemDto(
                 g.Key,
-                g.SelectMany(a => a.AppointmentServices).Sum(s => s.Service?.Price ?? 0m),
+                g.SelectMany(a => a.AppointmentServices).Sum(s => s.UnitPrice),
                 g.Count()))
             .ToList();
 

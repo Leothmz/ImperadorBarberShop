@@ -11,9 +11,8 @@ import {
 import type { UserRole, LoginResult } from '@/types/api.types'
 import {
   setAccessToken,
-  storeRefreshData,
+  storeUserId,
   clearStoredAuth,
-  getStoredRefreshToken,
   getStoredUserId,
 } from '@/lib/api/client'
 import { authApi } from '@/lib/api/auth.api'
@@ -37,26 +36,11 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
-const ROLE_COOKIE = 'imperador_access_role'
-
-// SECURITY NOTE — role cookie:
-// This cookie is set via document.cookie (client-side JS) and therefore cannot
-// carry the HttpOnly flag, making it readable by JavaScript. It stores only the
-// user's role ('Client' | 'Barber') — not the access token — and is used
-// exclusively by the Next.js middleware for route protection redirects.
-// An attacker who reads this cookie gains no authentication credential; the
-// actual Bearer token is never written to any cookie. The ideal improvement is
-// to have the backend issue this cookie as HttpOnly via a Set-Cookie response
-// header, which would require a coordinated backend change.
-function setCookie(name: string, value: string) {
-  if (typeof document === 'undefined') return
-  document.cookie = `${name}=${value};path=/;max-age=${60 * 60 * 24 * 7}`
-}
-
-function deleteCookie(name: string) {
-  if (typeof document === 'undefined') return
-  document.cookie = `${name}=;path=/;max-age=0`
-}
+// SECURITY NOTE — route guard:
+// There is no client-written cookie any more. The API sets the refresh token as
+// an HttpOnly cookie on login/refresh; the Next.js middleware only lets /admin and
+// /barber render when that cookie is present, and the area layouts then check the
+// role this provider holds — which only ever comes from an API response.
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null)
@@ -64,8 +48,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = useCallback((result: LoginResult) => {
     setAccessToken(result.accessToken)
-    storeRefreshData(result.refreshToken, result.userId)
-    setCookie(ROLE_COOKIE, result.role)
+    storeUserId(result.userId)
     setUser({
       userId: result.userId,
       role: result.role,
@@ -76,28 +59,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = useCallback(() => {
     setAccessToken(null)
     clearStoredAuth()
-    deleteCookie(ROLE_COOKIE)
     setUser(null)
+    // The HttpOnly cookie can only be cleared by the API. Best effort: if this
+    // fails, the stored userId is already gone, so the session is not restored.
+    authApi.logout().catch(() => {})
   }, [])
 
-  // On mount: attempt to restore session via refresh token
+  // On mount: attempt to restore the session from the HttpOnly refresh cookie
   useEffect(() => {
-    const refreshToken = getStoredRefreshToken()
     const userId = getStoredUserId()
 
-    if (!refreshToken || !userId) {
+    // JS cannot see the cookie; without the stored userId there is no session to
+    // restore, and anonymous visitors do not fire a refresh that can only fail
+    if (!userId) {
       setIsLoading(false)
       return
     }
 
     authApi
-      .refresh(userId, refreshToken)
+      .refresh(userId)
       .then((res) => {
         login(res.data)
       })
       .catch(() => {
         clearStoredAuth()
-        deleteCookie(ROLE_COOKIE)
       })
       .finally(() => {
         setIsLoading(false)

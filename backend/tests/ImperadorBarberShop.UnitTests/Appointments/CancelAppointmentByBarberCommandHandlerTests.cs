@@ -25,7 +25,7 @@ public class CancelAppointmentByBarberCommandHandlerTests
     public async Task Handle_ValidCancel_CancelsAppointment()
     {
         var barberId = Guid.NewGuid();
-        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Service.Create("Corte", "Desc", 30, 35m) });
 
         _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
@@ -50,7 +50,7 @@ public class CancelAppointmentByBarberCommandHandlerTests
     public async Task Handle_WrongBarber_ThrowsForbiddenException()
     {
         var realBarberId = Guid.NewGuid();
-        var appointment = Appointment.Create("João", "+5511999990000", realBarberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        var appointment = Appointment.Create("João", "+5511999990000", realBarberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Service.Create("Corte", "Desc", 30, 35m) });
         _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
 
         var act = () => _handler.Handle(new CancelAppointmentByBarberCommand(appointment.Id, Guid.NewGuid()), CancellationToken.None);
@@ -63,7 +63,7 @@ public class CancelAppointmentByBarberCommandHandlerTests
     {
         // RequesterBarberId nulo = admin: cancela o atendimento de qualquer barbeiro.
         var otherBarberId = Guid.NewGuid();
-        var appointment = Appointment.Create("João", "+5511999990000", otherBarberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        var appointment = Appointment.Create("João", "+5511999990000", otherBarberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Service.Create("Corte", "Desc", 30, 35m) });
         _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
 
@@ -76,7 +76,7 @@ public class CancelAppointmentByBarberCommandHandlerTests
     public async Task Handle_AlreadyCancelled_ThrowsInvalidOperationException()
     {
         var barberId = Guid.NewGuid();
-        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Guid.NewGuid() });
+        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, new[] { Service.Create("Corte", "Desc", 30, 35m) });
         appointment.Cancel();
         _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
 

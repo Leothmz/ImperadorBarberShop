@@ -35,7 +35,7 @@ public class NotificationServiceTests
         var barber = Barber.Create(user.Id);
         var svc = Service.Create("Corte", "Desc", 30, 35m);
         var appt = Appointment.Create("João", "+5511999990000", barber.Id,
-            DateTime.UtcNow.AddDays(1), 30, null, new[] { svc.Id });
+            DateTime.UtcNow.AddDays(1), 30, null, new[] { svc });
         return (appt, barber, new List<Service> { svc });
     }
 
@@ -101,7 +101,7 @@ public class NotificationServiceTests
     {
         SetChannels("whatsapp");
         var appt = Appointment.Create("João", "+5511999990000", Guid.NewGuid(),
-            DateTime.UtcNow.AddDays(1), 30, null, Array.Empty<Guid>());
+            DateTime.UtcNow.AddDays(1), 30, null, Array.Empty<Service>());
         await _svc.SendAppointmentCancelledAsync(appt, CancellationToken.None);
         await _wa.Received(1).SendAsync(
             appt.ClientPhone,
@@ -114,11 +114,42 @@ public class NotificationServiceTests
     {
         SetChannels("whatsapp");
         var appt = Appointment.Create("João", "+5511999990000", Guid.NewGuid(),
-            DateTime.UtcNow.AddDays(1), 30, null, Array.Empty<Guid>());
+            DateTime.UtcNow.AddDays(1), 30, null, Array.Empty<Service>());
         await _svc.SendAppointmentCompletedAsync(appt, CancellationToken.None);
         await _wa.Received(1).SendAsync(
             appt.ClientPhone,
             Arg.Is<string>(m => m.Contains(appt.AccessToken)),
+            Arg.Any<CancellationToken>());
+    }
+    // ScheduledAt já é horário de parede da barbearia. O AddHours(-3) antigo tratava o
+    // valor como UTC e mandava ao cliente um horário 3 horas adiantado (23:00 → 20:00).
+    [Fact]
+    public async Task Cancelled_WhatsApp_ShowsTheBookedWallClockTime()
+    {
+        SetChannels("whatsapp");
+        var appt = Appointment.Create("João", "+5511999990000", Guid.NewGuid(),
+            new DateTime(2026, 9, 10, 23, 0, 0), 30, null, Array.Empty<Service>());
+
+        await _svc.SendAppointmentCancelledAsync(appt, CancellationToken.None);
+
+        await _wa.Received(1).SendAsync(
+            appt.ClientPhone,
+            Arg.Is<string>(m => m.Contains("10/09/2026 23:00")),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Reminder_WhatsApp_ShowsTheBookedWallClockTime()
+    {
+        SetChannels("whatsapp");
+        var appt = Appointment.Create("João", "+5511999990000", Guid.NewGuid(),
+            new DateTime(2026, 9, 10, 23, 0, 0), 30, null, Array.Empty<Service>());
+
+        await _svc.SendReminderAsync(appt, CancellationToken.None);
+
+        await _wa.Received(1).SendAsync(
+            appt.ClientPhone,
+            Arg.Is<string>(m => m.Contains("10/09/2026 23:00")),
             Arg.Any<CancellationToken>());
     }
 }

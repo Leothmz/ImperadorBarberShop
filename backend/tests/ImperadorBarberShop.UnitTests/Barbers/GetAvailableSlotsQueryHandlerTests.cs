@@ -2,6 +2,7 @@ using FluentAssertions;
 using ImperadorBarberShop.Application.Queries.Barbers;
 using ImperadorBarberShop.Domain.Entities;
 using ImperadorBarberShop.Domain.Interfaces;
+using ImperadorBarberShop.Infrastructure.Services;
 using NSubstitute;
 
 namespace ImperadorBarberShop.UnitTests.Barbers;
@@ -29,7 +30,8 @@ public class GetAvailableSlotsQueryHandlerTests
     public GetAvailableSlotsQueryHandlerTests()
     {
         _handler = new GetAvailableSlotsQueryHandler(
-            _availabilityRepository, _appointmentRepository, _serviceRepository, _blockRepository);
+            _availabilityRepository, _appointmentRepository, _serviceRepository, _blockRepository,
+            new ShopTimeProvider());
 
         // 09:00 - 18:00 on Monday
         _mondayAvailability = BarberAvailability.Create(
@@ -103,7 +105,7 @@ public class GetAvailableSlotsQueryHandlerTests
         var existingAppt = Appointment.Create(
             "João", "+5511999990000", _barberId,
             mondayDate.ToDateTime(new TimeOnly(9, 0)),
-            30, null, new[] { Guid.NewGuid() });
+            30, null, new[] { MakeService(30) });
 
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(_barberId, mondayDate, Arg.Any<CancellationToken>())
             .Returns(new List<Appointment> { existingAppt });
@@ -182,7 +184,7 @@ public class GetAvailableSlotsQueryHandlerTests
         var existingAppt = Appointment.Create(
             "João", "+5511999990000", _barberId,
             _monday.ToDateTime(new TimeOnly(10, 0)),
-            30, null, new[] { Guid.NewGuid() });
+            30, null, new[] { MakeService(30) });
         _appointmentRepository.GetActiveByBarberIdAndDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
             .Returns(new List<Appointment> { existingAppt });
         _blockRepository.GetActiveOnDateAsync(_barberId, _monday, Arg.Any<CancellationToken>())
@@ -256,5 +258,69 @@ public class GetAvailableSlotsQueryHandlerTests
         result.Should().NotContain(new TimeOnly(9, 0));
         result.Should().NotContain(new TimeOnly(9, 15));
         result.Should().Contain(new TimeOnly(10, 0));
+    }
+    // ── Mesmo dia: o corte de "já passou" é o relógio da barbearia ─────────────────
+    // Servidor em UTC às 21:58, barbearia em São Paulo às 18:58. Com a comparação
+    // antiga contra DateTime.UtcNow, o primeiro horário do dia saía às 22:00 — as três
+    // horas seguintes sumiam da agenda todo dia.
+
+    private GetAvailableSlotsQueryHandler HandlerAt(DateTimeOffset utcNow) => new(
+        _availabilityRepository, _appointmentRepository, _serviceRepository, _blockRepository,
+        new FixedShopClock(utcNow));
+
+    private void SetupEmptyThursday(DateOnly thursday, TimeOnly start, TimeOnly end)
+    {
+        _availabilityRepository.GetByBarberIdAndDayAsync(_barberId, DayOfWeek.Thursday, Arg.Any<CancellationToken>())
+            .Returns(BarberAvailability.Create(_barberId, DayOfWeek.Thursday, start, end));
+        _serviceRepository.GetByIdsAsync(Arg.Any<List<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<Service> { MakeService(30) });
+        _appointmentRepository.GetActiveByBarberIdAndDateAsync(_barberId, thursday, Arg.Any<CancellationToken>())
+            .Returns(new List<Appointment>());
+        _blockRepository.GetActiveOnDateAsync(_barberId, thursday, Arg.Any<CancellationToken>())
+            .Returns(new List<BarberBlock>());
+    }
+
+    [Fact]
+    public async Task Handle_Today_OffersEverySlotAfterShopLocalNow()
+    {
+        var today = new DateOnly(2026, 9, 10); // quinta-feira
+        SetupEmptyThursday(today, new TimeOnly(8, 0), new TimeOnly(23, 45));
+
+        var result = await HandlerAt(FixedShopClock.EveningUtc).Handle(
+            new GetAvailableSlotsQuery(_barberId, today, new List<Guid> { Guid.NewGuid() }),
+            CancellationToken.None);
+
+        // 18:58 em São Paulo: 19:00 é o próximo horário, e 19:00–21:45 não podem sumir
+        result.First().Should().Be(new TimeOnly(19, 0));
+        result.Should().Contain(new[] { new TimeOnly(19, 15), new TimeOnly(20, 0), new TimeOnly(21, 45) });
+        result.Last().Should().Be(new TimeOnly(23, 15));
+    }
+
+    [Fact]
+    public async Task Handle_Today_HidesSlotsAlreadyPastInShopLocalTime()
+    {
+        var today = new DateOnly(2026, 9, 10);
+        SetupEmptyThursday(today, new TimeOnly(8, 0), new TimeOnly(23, 45));
+
+        var result = await HandlerAt(FixedShopClock.EveningUtc).Handle(
+            new GetAvailableSlotsQuery(_barberId, today, new List<Guid> { Guid.NewGuid() }),
+            CancellationToken.None);
+
+        result.Should().NotContain(new TimeOnly(18, 45));
+        result.Should().NotContain(new TimeOnly(8, 0));
+    }
+
+    [Fact]
+    public async Task Handle_ShopDateStillTodayWhileUtcIsTomorrow_OffersTonightsSlots()
+    {
+        // 01:30 UTC de sexta = 22:30 de quinta em São Paulo: a agenda de quinta ainda está aberta
+        var thursday = new DateOnly(2026, 9, 10);
+        SetupEmptyThursday(thursday, new TimeOnly(8, 0), new TimeOnly(23, 45));
+
+        var result = await HandlerAt(new DateTimeOffset(2026, 9, 11, 1, 30, 0, TimeSpan.Zero)).Handle(
+            new GetAvailableSlotsQuery(_barberId, thursday, new List<Guid> { Guid.NewGuid() }),
+            CancellationToken.None);
+
+        result.Should().Equal(new TimeOnly(22, 45), new TimeOnly(23, 0), new TimeOnly(23, 15));
     }
 }

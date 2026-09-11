@@ -139,9 +139,9 @@ export interface FinancialByServiceItem {
   revenue: number
 }
 
+// The refresh token is not here: the API sets it as an HttpOnly cookie.
 export interface LoginResult {
   accessToken: string
-  refreshToken: string
   role: UserRole
   userId: string
   barberId: string | null
