@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // antigo cookie de papel, que qualquer um forjava com "imperador_access_role=Admin".
 const SESSION_COOKIE = 'imperador_refresh_token'
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Primeira linha: sem sessão emitida pela API, a área restrita nem renderiza. O

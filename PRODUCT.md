@@ -40,7 +40,7 @@ registration cannot copy this without becoming a different product.
 ## Operating Context
 
 - Traffic arrives from Instagram bio and WhatsApp links — external, mobile, one tap in.
-- Booking is a 4-step wizard at `/agendar`: service(s) → barber → slot → name + phone.
+- Booking is a 4-step wizard at `/agendar`: barber → service(s) → slot → name + phone.
 - Total appointment duration is the **sum** of the selected services' durations, so slot
   availability shifts with the cart.
 - Post-booking life happens entirely at `/agendamento/[token]`: view, cancel (only while

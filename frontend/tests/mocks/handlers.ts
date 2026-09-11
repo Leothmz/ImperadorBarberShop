@@ -184,10 +184,6 @@ export const handlers = [
     return HttpResponse.json(mockBarberLoginResult)
   }),
 
-  http.post(`${BASE_URL}/auth/register/barber`, async () => {
-    return HttpResponse.json(mockBarberLoginResult, { status: 201 })
-  }),
-
   http.post('*/api/v1/auth/refresh', async () => {
     return HttpResponse.json(mockBarberLoginResult)
   }),
