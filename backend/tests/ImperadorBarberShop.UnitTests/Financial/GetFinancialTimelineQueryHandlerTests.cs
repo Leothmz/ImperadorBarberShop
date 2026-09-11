@@ -1,7 +1,10 @@
 using FluentAssertions;
+using ImperadorBarberShop.Application.DTOs;
 using ImperadorBarberShop.Application.Queries.Financial;
 using ImperadorBarberShop.Domain.Entities;
+using ImperadorBarberShop.Domain.Enums;
 using ImperadorBarberShop.Domain.Interfaces;
+using ImperadorBarberShop.Domain.ValueObjects;
 using NSubstitute;
 
 namespace ImperadorBarberShop.UnitTests.Financial;
@@ -52,6 +55,28 @@ public class GetFinancialTimelineQueryHandlerTests
         result.Should().HaveCount(2);
         result[0].Period.Should().Be("2026-07-01");
         result[1].Period.Should().Be("2026-08-01");
+    }
+
+    [Fact]
+    public async Task Handle_PlanAppointments_UseTheChargedAmountAndStillCountAsVisits()
+    {
+        var day1 = new DateTime(2026, 7, 10, 10, 0, 0);
+        var day2 = new DateTime(2026, 7, 11, 10, 0, 0);
+        var recurrence = MakeCompleted(day1.AddHours(1));
+        var planPayment = Appointment.Create("Ana", "+55119", Guid.NewGuid(), day2, 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
+        planPayment.Complete(AppointmentPayment.PlanPayment(150m, PaymentMethod.Pix));
+        var normal = MakeCompleted(day1);
+        recurrence.SetPayment(AppointmentPayment.PlanRecurrence());
+        _repo.GetCompletedByDateRangeAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(new List<Appointment> { normal, recurrence, planPayment });
+
+        var result = await new GetFinancialTimelineQueryHandler(_repo).Handle(
+            new GetFinancialTimelineQuery(new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31), "day"),
+            CancellationToken.None);
+
+        result.Should().Equal(
+            new FinancialTimelineItemDto("2026-07-10", 35m, 2),
+            new FinancialTimelineItemDto("2026-07-11", 150m, 1));
     }
 
     [Fact]

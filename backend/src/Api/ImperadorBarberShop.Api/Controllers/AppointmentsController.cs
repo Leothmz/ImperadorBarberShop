@@ -108,7 +108,7 @@ public class AppointmentsController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Mark an accepted appointment as completed (barber only). Optionally accepts payment method.</summary>
+    /// <summary>Mark an accepted appointment as completed (barber only). Optionally accepts the payment, plan details included.</summary>
     [HttpPatch("{id:guid}/complete")]
     [Authorize(Policy = "RequireBarberRole")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -121,11 +121,13 @@ public class AppointmentsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var barberId = Guid.Parse(User.FindFirstValue("barberId")!);
-        await _mediator.Send(new CompleteAppointmentCommand(id, barberId, request?.PaymentMethod), cancellationToken);
+        await _mediator.Send(new CompleteAppointmentCommand(
+            id, barberId, request?.PaymentMethod, request?.PlanKind, request?.PlanTender, request?.ChargedAmount),
+            cancellationToken);
         return NoContent();
     }
 
-    /// <summary>Update the payment method for a completed appointment (barber only).</summary>
+    /// <summary>Register or change the payment of a completed appointment (barber only), plan details included.</summary>
     [HttpPatch("{id:guid}/payment")]
     [Authorize(Policy = "RequireBarberRole")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -138,10 +140,23 @@ public class AppointmentsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var barberId = Guid.Parse(User.FindFirstValue("barberId")!);
-        await _mediator.Send(new UpdatePaymentMethodCommand(id, request.PaymentMethod, barberId), cancellationToken);
+        await _mediator.Send(new UpdatePaymentMethodCommand(
+            id, request.PaymentMethod, barberId, request.PlanKind, request.PlanTender, request.ChargedAmount),
+            cancellationToken);
         return NoContent();
     }
 }
 
-public record CompleteAppointmentRequest(PaymentMethod? PaymentMethod);
-public record UpdatePaymentMethodRequest(PaymentMethod PaymentMethod);
+/// <summary>Plan fields only with <c>PaymentMethod = Plano</c>; the rules live in <c>AppointmentPayment</c>.</summary>
+public record CompleteAppointmentRequest(
+    PaymentMethod? PaymentMethod,
+    PlanKind? PlanKind = null,
+    PaymentMethod? PlanTender = null,
+    decimal? ChargedAmount = null);
+
+/// <summary>Plan fields only with <c>PaymentMethod = Plano</c>; the rules live in <c>AppointmentPayment</c>.</summary>
+public record UpdatePaymentMethodRequest(
+    PaymentMethod PaymentMethod,
+    PlanKind? PlanKind = null,
+    PaymentMethod? PlanTender = null,
+    decimal? ChargedAmount = null);

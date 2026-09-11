@@ -1,3 +1,4 @@
+using ImperadorBarberShop.Application.DTOs;
 using ImperadorBarberShop.Domain.Interfaces;
 using MediatR;
 using System.Text;
@@ -28,6 +29,14 @@ public class ExportFinancialCsvQueryHandler : IRequestHandler<ExportFinancialCsv
             var barber = EscapeCsv(a.Barber.User.Name);
             var client = EscapeCsv(a.ClientName);
             var phone = MaskPhone(a.ClientPhone);
+
+            // Plano sai numa linha só, pelo valor cobrado — a mesma linha "Plano" do relatório por serviço
+            if (a.IsPlan)
+            {
+                sb.AppendLine(
+                    $"{date},{barber},{client},{phone},{FinancialByServiceItemDto.PlanServiceName},{a.EffectiveAmount:F2},{a.Id}");
+                continue;
+            }
 
             foreach (var aps in a.AppointmentServices)
             {

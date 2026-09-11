@@ -1,6 +1,7 @@
 using FluentAssertions;
 using ImperadorBarberShop.Domain.Entities;
 using ImperadorBarberShop.Domain.Enums;
+using ImperadorBarberShop.Domain.ValueObjects;
 
 namespace ImperadorBarberShop.UnitTests.Domain;
 
@@ -55,7 +56,7 @@ public class AppointmentPaymentMethodTests
     public void Complete_WithPaymentMethod_SetsMethodAndPaidAt()
     {
         var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
-        appt.Complete(PaymentMethod.Pix);
+        appt.Complete(AppointmentPayment.Normal(PaymentMethod.Pix));
         appt.Status.Should().Be(AppointmentStatus.Completed);
         appt.PaymentMethod.Should().Be(PaymentMethod.Pix);
         appt.PaidAt.Should().NotBeNull();
@@ -76,7 +77,7 @@ public class AppointmentPaymentMethodTests
     {
         var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
         appt.Complete();
-        appt.SetPaymentMethod(PaymentMethod.Dinheiro);
+        appt.SetPayment(AppointmentPayment.Normal(PaymentMethod.Dinheiro));
         appt.PaymentMethod.Should().Be(PaymentMethod.Dinheiro);
         appt.PaidAt.Should().NotBeNull();
     }
@@ -85,7 +86,7 @@ public class AppointmentPaymentMethodTests
     public void SetPaymentMethod_OnAccepted_ThrowsInvalidOperationException()
     {
         var appt = Appointment.Create("João", "+55119", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
-        var act = () => appt.SetPaymentMethod(PaymentMethod.Pix);
+        var act = () => appt.SetPayment(AppointmentPayment.Normal(PaymentMethod.Pix));
         act.Should().Throw<InvalidOperationException>();
     }
 }

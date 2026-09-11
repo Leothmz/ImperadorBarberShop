@@ -20,6 +20,10 @@ const mockAppointment: Appointment = {
   ],
   paymentMethod: null,
   paidAt: null,
+  planKind: null,
+  planTender: null,
+  chargedAmount: null,
+  effectiveAmount: 80.0,
 }
 
 describe('AppointmentCard', () => {
@@ -83,9 +87,59 @@ describe('AppointmentCard', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('displays total price for all services', () => {
+  it('displays the effective amount, the sum of the booked services outside the plan', () => {
     render(<AppointmentCard appointment={mockAppointment} />)
     // Total: 45 + 35 = 80
     expect(screen.getByText(/R\$\s*80/)).toBeInTheDocument()
+  })
+
+  it('shows a normal payment method on a completed appointment', () => {
+    render(<AppointmentCard appointment={{ ...mockAppointment, status: 'Completed', paymentMethod: 'Cartão' }} />)
+    expect(screen.getByText('Cartão', { exact: false })).toHaveTextContent('💳 Cartão')
+    expect(screen.queryByText(/cobrados no plano|Coberto pelo plano/)).not.toBeInTheDocument()
+  })
+
+  it('shows the plan payment details, its charged amount and keeps the services', () => {
+    render(
+      <AppointmentCard
+        appointment={{
+          ...mockAppointment,
+          status: 'Completed',
+          paymentMethod: 'Plano',
+          planKind: 'Pagamento',
+          planTender: 'Pix',
+          chargedAmount: 150,
+          effectiveAmount: 150,
+        }}
+      />
+    )
+    expect(screen.getByText('Plano · Pagamento · Pix', { exact: false })).toHaveTextContent('📋 Plano · Pagamento · Pix')
+    expect(screen.getByText(/R\$\s*150,00 cobrados no plano/)).toBeInTheDocument()
+    expect(screen.getByText('Corte Clássico')).toBeInTheDocument()
+    expect(screen.getByText('Barba')).toBeInTheDocument()
+    expect(screen.queryByText(/R\$\s*80/)).not.toBeInTheDocument()
+  })
+
+  it('shows a plan recurrence at zero, services still listed', () => {
+    render(
+      <AppointmentCard
+        appointment={{
+          ...mockAppointment,
+          status: 'Completed',
+          paymentMethod: 'Plano',
+          planKind: 'Recorrencia',
+          chargedAmount: 0,
+          effectiveAmount: 0,
+        }}
+      />
+    )
+    expect(screen.getByText('Plano · Recorrência', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText(/Coberto pelo plano: R\$\s*0,00 nesta visita/)).toBeInTheDocument()
+    expect(screen.getByText('Corte Clássico')).toBeInTheDocument()
+  })
+
+  it('marks a completed appointment without payment', () => {
+    render(<AppointmentCard appointment={{ ...mockAppointment, status: 'Completed' }} />)
+    expect(screen.getByText('— sem método')).toBeInTheDocument()
   })
 })

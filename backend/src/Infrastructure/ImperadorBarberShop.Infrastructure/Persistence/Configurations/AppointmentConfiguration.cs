@@ -22,6 +22,13 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.Property(a => a.ReminderSentAt);
         builder.Property(a => a.PaymentMethod);
         builder.Property(a => a.PaidAt);
+        builder.Property(a => a.PlanKind);
+        builder.Property(a => a.PlanTender);
+        builder.Property(a => a.ChargedAmount);
+
+        // Calculados a partir das colunas acima e dos serviços, nunca gravados
+        builder.Ignore(a => a.EffectiveAmount);
+        builder.Ignore(a => a.IsPlan);
 
         builder.HasIndex(a => new { a.BarberId, a.ScheduledAt }).IsUnique();
         builder.HasIndex(a => a.AccessToken).IsUnique();

@@ -101,6 +101,72 @@ public class CompleteAppointmentCommandHandlerTests
         appointment.PaymentMethod.Should().Be(PaymentMethod.Pix);
     }
 
+    [Fact]
+    public async Task Handle_PlanPayment_RecordsTheChargedAmountAndTender()
+    {
+        var barberId = Guid.NewGuid();
+        var appointment = Appointment.Create("João", "+5511999990000", barberId, DateTime.UtcNow.AddDays(1), 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
+        _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
+        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
+
+        await _handler.Handle(
+            new CompleteAppointmentCommand(appointment.Id, barberId, PaymentMethod.Plano, PlanKind.Pagamento, PaymentMethod.Pix, 120m),
+            CancellationToken.None);
+
+        appointment.Status.Should().Be(AppointmentStatus.Completed);
+        appointment.PaymentMethod.Should().Be(PaymentMethod.Plano);
+        appointment.PlanKind.Should().Be(PlanKind.Pagamento);
+        appointment.PlanTender.Should().Be(PaymentMethod.Pix);
+        appointment.ChargedAmount.Should().Be(120m);
+        appointment.PaidAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Handle_AdminPlanRecurrence_CompletesAtZeroAndStillCountsTheVisit()
+    {
+        var (appointment, client) = LinkedAppointment(Guid.NewGuid(), new DateTime(2026, 9, 10, 10, 0, 0));
+
+        await _handler.Handle(
+            new CompleteAppointmentCommand(appointment.Id, null, PaymentMethod.Plano, PlanKind.Recorrencia),
+            CancellationToken.None);
+
+        appointment.Status.Should().Be(AppointmentStatus.Completed);
+        appointment.PlanKind.Should().Be(PlanKind.Recorrencia);
+        appointment.EffectiveAmount.Should().Be(0m);
+        appointment.PaidAt.Should().BeNull();
+        // Visita coberta pelo plano é visita: a recorrência de clientes continua medindo
+        client.VisitCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_WrongBarberWithPlanPayload_ThrowsForbiddenAndChangesNothing()
+    {
+        var appointment = Appointment.Create("João", "+5511999990000", Guid.NewGuid(), DateTime.UtcNow.AddDays(1), 30, null, [Service.Create("Corte", "Desc", 30, 35m)]);
+        _appointmentRepository.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
+
+        var act = () => _handler.Handle(
+            new CompleteAppointmentCommand(appointment.Id, Guid.NewGuid(), PaymentMethod.Plano, PlanKind.Recorrencia),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ForbiddenException>();
+        appointment.Status.Should().Be(AppointmentStatus.Accepted);
+        appointment.PaymentMethod.Should().BeNull();
+        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+    }
+
+    [Fact]
+    public async Task Handle_InvalidPlanPayload_IsRefusedBeforeTouchingTheAppointment()
+    {
+        // O ValidationBehavior não cobre comandos sem retorno: o próprio handler recusa (400)
+        var act = () => _handler.Handle(
+            new CompleteAppointmentCommand(Guid.NewGuid(), null, PaymentMethod.Plano, PlanKind.Recorrencia, PaymentMethod.Pix),
+            CancellationToken.None);
+
+        (await act.Should().ThrowAsync<FluentValidation.ValidationException>())
+            .Which.Errors.Should().ContainSingle(e => e.PropertyName == "PlanTender");
+        await _appointmentRepository.DidNotReceiveWithAnyArgs().GetByIdAsync(default, default);
+    }
+
     private (Appointment appointment, Client client) LinkedAppointment(Guid barberId, DateTime scheduledAt)
     {
         var client = Client.Create("João", BrazilianPhone.Parse("+5511999990000"), DateTime.UtcNow.AddDays(-60));

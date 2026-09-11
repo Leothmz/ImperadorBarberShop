@@ -8,11 +8,13 @@ import {
   useAdminCancelAppointment,
 } from '@/hooks/useAdminBarberAppointments'
 import { Spinner } from '@/components/ui/Spinner'
+import { PlanPaymentModal, type PlanPaymentAction } from '@/components/appointments/PlanPaymentModal'
 import { formatDateTime, formatCurrency } from '@/lib/utils/formatDateTime'
+import { describePayment } from '@/lib/utils/payment'
 import { getStatusConfig } from '@/lib/utils/statusConfig'
-import type { Appointment, PaymentMethod } from '@/types/api.types'
+import type { Appointment, AppointmentPayment, PaymentMethod } from '@/types/api.types'
 
-const PAYMENT_METHODS: PaymentMethod[] = ['Dinheiro', 'Cartão', 'Pix']
+const PAYMENT_METHODS: PaymentMethod[] = ['Dinheiro', 'Cartão', 'Pix', 'Plano']
 
 type Filter = 'Accepted' | 'Completed' | 'Cancelled'
 
@@ -22,17 +24,18 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: 'Cancelled', label: 'Cancelados' },
 ]
 
-function total(appt: Appointment) {
-  return appt.services.reduce((s, v) => s + v.price, 0)
-}
-
-/** Escolha da forma de pagamento, usada tanto ao concluir quanto ao registrar depois. */
+/**
+ * Escolha da forma de pagamento, usada tanto ao concluir quanto ao registrar depois.
+ * Plano não é escolha direta: abre o modal que pergunta Pagamento ou Recorrência.
+ */
 function PaymentPicker({
   onPick,
+  onPlan,
   onCancel,
   allowSkip,
 }: {
-  onPick: (method?: PaymentMethod) => void
+  onPick: (payment?: AppointmentPayment) => void
+  onPlan: () => void
   onCancel: () => void
   allowSkip?: boolean
 }) {
@@ -41,7 +44,7 @@ function PaymentPicker({
       {PAYMENT_METHODS.map((m) => (
         <button
           key={m}
-          onClick={() => onPick(m)}
+          onClick={() => (m === 'Plano' ? onPlan() : onPick({ paymentMethod: m }))}
           className="rounded border border-brand-white/20 px-2 py-0.5 text-brand-white/60 transition-colors hover:border-brand-gold hover:text-brand-gold"
         >
           {m}
@@ -71,8 +74,22 @@ export default function AdminAppointmentsSection({ barberId }: { barberId: strin
   const [filter, setFilter] = useState<Filter>('Accepted')
   const [registeringId, setRegisteringId] = useState<string | null>(null)
   const [completingId, setCompletingId] = useState<string | null>(null)
+  const [planFor, setPlanFor] = useState<{ appointment: Appointment; action: PlanPaymentAction } | null>(null)
 
   if (isLoading) return <div className="py-2"><Spinner size="sm" /></div>
+
+  async function confirmPlan(payment: AppointmentPayment) {
+    if (!planFor) return
+    const { appointment, action } = planFor
+    if (action === 'complete') {
+      await completeAppointment.mutateAsync({ id: appointment.id, payment })
+      setCompletingId(null)
+    } else {
+      await updatePayment.mutateAsync({ id: appointment.id, payment })
+      setRegisteringId(null)
+    }
+    setPlanFor(null)
+  }
 
   const all = appointments ?? []
   const shown = all
@@ -107,6 +124,7 @@ export default function AdminAppointmentsSection({ barberId }: { barberId: strin
         <div className="flex flex-col gap-1">
           {shown.slice(0, 20).map((appt) => {
             const status = getStatusConfig(appt.status)
+            const payment = describePayment(appt)
             return (
               <div
                 key={appt.id}
@@ -115,25 +133,27 @@ export default function AdminAppointmentsSection({ barberId }: { barberId: strin
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="font-medium text-brand-white/80">{appt.clientName}</span>
                   <span>{formatDateTime(appt.scheduledAt)}</span>
-                  <span className="text-brand-gold">{formatCurrency(total(appt))}</span>
+                  <span className="text-brand-gold">{formatCurrency(appt.effectiveAmount)}</span>
                   <span className={`rounded-full px-2 py-0.5 ${status.bgColor} ${status.color}`}>
                     {status.label}
                   </span>
-                  {appt.paymentMethod && (
+                  {payment && (
                     <span className="rounded-full bg-brand-gold/15 px-2 py-0.5 text-brand-gold">
-                      {appt.paymentMethod}
+                      {payment}
                     </span>
                   )}
                 </div>
+                <p className="text-brand-white/40">{appt.services.map((s) => s.name).join(' + ')}</p>
 
                 {appt.status === 'Accepted' && (
                   completingId === appt.id ? (
                     <PaymentPicker
                       allowSkip
                       onCancel={() => setCompletingId(null)}
-                      onPick={async (paymentMethod) => {
+                      onPlan={() => setPlanFor({ appointment: appt, action: 'complete' })}
+                      onPick={async (payment) => {
                         try {
-                          await completeAppointment.mutateAsync({ id: appt.id, paymentMethod })
+                          await completeAppointment.mutateAsync({ id: appt.id, payment })
                         } finally {
                           setCompletingId(null)
                         }
@@ -164,10 +184,11 @@ export default function AdminAppointmentsSection({ barberId }: { barberId: strin
                   registeringId === appt.id ? (
                     <PaymentPicker
                       onCancel={() => setRegisteringId(null)}
-                      onPick={async (paymentMethod) => {
-                        if (!paymentMethod) return
+                      onPlan={() => setPlanFor({ appointment: appt, action: 'register' })}
+                      onPick={async (payment) => {
+                        if (!payment) return
                         try {
-                          await updatePayment.mutateAsync({ id: appt.id, paymentMethod })
+                          await updatePayment.mutateAsync({ id: appt.id, payment })
                         } finally {
                           setRegisteringId(null)
                         }
@@ -186,6 +207,15 @@ export default function AdminAppointmentsSection({ barberId }: { barberId: strin
             )
           })}
         </div>
+      )}
+
+      {planFor && (
+        <PlanPaymentModal
+          clientName={planFor.appointment.clientName}
+          action={planFor.action}
+          onClose={() => setPlanFor(null)}
+          onConfirm={confirmPlan}
+        />
       )}
     </div>
   )

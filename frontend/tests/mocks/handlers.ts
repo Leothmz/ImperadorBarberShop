@@ -128,6 +128,10 @@ export const mockBarberAppointments: Appointment[] = [
     ],
     paymentMethod: null,
     paidAt: null,
+    planKind: null,
+    planTender: null,
+    chargedAmount: null,
+    effectiveAmount: 45.0,
   },
   {
     id: 'appt-accepted-2',
@@ -145,6 +149,10 @@ export const mockBarberAppointments: Appointment[] = [
     ],
     paymentMethod: null,
     paidAt: null,
+    planKind: null,
+    planTender: null,
+    chargedAmount: null,
+    effectiveAmount: 70.0,
   },
 ]
 

@@ -1,6 +1,10 @@
 export type UserRole = 'Barber' | 'Admin'
 export type AppointmentStatus = 'Accepted' | 'Cancelled' | 'Completed'
-export type PaymentMethod = 'Dinheiro' | 'Cartão' | 'Pix'
+export type PaymentMethod = 'Dinheiro' | 'Cartão' | 'Pix' | 'Plano'
+/** Plano: o cliente paga o plano nesta visita, ou a visita é coberta por um plano já pago. */
+export type PlanKind = 'Pagamento' | 'Recorrencia'
+/** Como um pagamento de plano foi feito. Um "Cartão" só, sem crédito/débito. */
+export type PlanTender = Exclude<PaymentMethod, 'Plano'>
 
 export interface Service {
   id: string
@@ -73,8 +77,19 @@ export interface Appointment {
   createdAt: string
   services: ServiceRef[]
   paymentMethod: PaymentMethod | null
-  paidAt: string | null
+  paidAt: string | null // nulo também na recorrência de plano: nada foi pago na visita
+  planKind: PlanKind | null
+  planTender: PlanTender | null
+  chargedAmount: number | null
+  /** Valor do atendimento no financeiro: o cobrado no plano, senão a soma dos preços do agendamento. */
+  effectiveAmount: number
 }
+
+/** O pagamento enviado ao concluir ou ao registrar depois. Os campos do plano só existem com Plano. */
+export type AppointmentPayment =
+  | { paymentMethod: PlanTender }
+  | { paymentMethod: 'Plano'; planKind: 'Pagamento'; planTender: PlanTender; chargedAmount: number }
+  | { paymentMethod: 'Plano'; planKind: 'Recorrencia' }
 
 export interface AppointmentManage {
   id: string
