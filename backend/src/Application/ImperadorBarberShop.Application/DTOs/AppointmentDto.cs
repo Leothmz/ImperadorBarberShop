@@ -14,6 +14,11 @@ public record AppointmentDto
     public AppointmentStatus Status { get; init; }
     public PaymentMethod? PaymentMethod { get; init; }
     public DateTime? PaidAt { get; init; }
+    public PlanKind? PlanKind { get; init; }
+    public PaymentMethod? PlanTender { get; init; }
+    public decimal? ChargedAmount { get; init; }
+    /// <summary>O valor do atendimento no financeiro: o cobrado no plano, senão a soma dos preços do agendamento.</summary>
+    public decimal EffectiveAmount { get; init; }
     public string? Notes { get; init; }
     public DateTime CreatedAt { get; init; }
     public List<ServiceDto> Services { get; init; } = [];

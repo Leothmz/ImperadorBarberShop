@@ -247,7 +247,8 @@ public class AdminController : ControllerBase
         [FromBody] AdminUpdatePaymentRequest request,
         CancellationToken ct)
     {
-        await _mediator.Send(new UpdatePaymentMethodCommand(id, request.PaymentMethod, null), ct);
+        await _mediator.Send(new UpdatePaymentMethodCommand(
+            id, request.PaymentMethod, null, request.PlanKind, request.PlanTender, request.ChargedAmount), ct);
         return NoContent();
     }
 
@@ -262,7 +263,8 @@ public class AdminController : ControllerBase
         [FromBody] AdminCompleteAppointmentRequest? request,
         CancellationToken ct)
     {
-        await _mediator.Send(new CompleteAppointmentCommand(id, null, request?.PaymentMethod), ct);
+        await _mediator.Send(new CompleteAppointmentCommand(
+            id, null, request?.PaymentMethod, request?.PlanKind, request?.PlanTender, request?.ChargedAmount), ct);
         return NoContent();
     }
 
@@ -329,8 +331,16 @@ public record AdminCreateBarberBlockBody(
     int? RecurrenceDays,
     DateTime? RecurrenceEndsAt);
 
-public record AdminUpdatePaymentRequest(PaymentMethod PaymentMethod);
+public record AdminUpdatePaymentRequest(
+    PaymentMethod PaymentMethod,
+    PlanKind? PlanKind = null,
+    PaymentMethod? PlanTender = null,
+    decimal? ChargedAmount = null);
 
-public record AdminCompleteAppointmentRequest(PaymentMethod? PaymentMethod);
+public record AdminCompleteAppointmentRequest(
+    PaymentMethod? PaymentMethod,
+    PlanKind? PlanKind = null,
+    PaymentMethod? PlanTender = null,
+    decimal? ChargedAmount = null);
 
 public record CreateExpenseRequest(decimal Amount, string Description, DateOnly Date);

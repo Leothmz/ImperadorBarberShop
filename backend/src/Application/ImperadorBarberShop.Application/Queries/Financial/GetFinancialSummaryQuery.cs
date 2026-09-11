@@ -28,10 +28,11 @@ public class GetFinancialSummaryQueryHandler : IRequestHandler<GetFinancialSumma
         var totalExpenses = await _expenseRepository.GetTotalByDateRangeAsync(request.From, request.To, cancellationToken);
 
         var total = appointments.Count;
-        var revenue = appointments
-            .SelectMany(a => a.AppointmentServices)
-            .Sum(s => s.UnitPrice);
-        var average = total > 0 ? revenue / total : 0m;
+        var revenue = appointments.Sum(a => a.EffectiveAmount);
+        // Ticket médio é o do atendimento avulso: plano fica fora do valor e da contagem, porque
+        // a recorrência (R$ 0) e o plano pago de uma vez distorceriam a média
+        var ticketBase = appointments.Where(a => !a.IsPlan).ToList();
+        var average = ticketBase.Count > 0 ? ticketBase.Sum(a => a.EffectiveAmount) / ticketBase.Count : 0m;
         var netRevenue = revenue - totalExpenses;
 
         return new FinancialSummaryDto(

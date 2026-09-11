@@ -19,7 +19,8 @@ public class GetFinancialByServiceQueryHandler : IRequestHandler<GetFinancialByS
         var to = request.To.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
         var appointments = await _appointmentRepository.GetCompletedByDateRangeAsync(from, to, cancellationToken);
 
-        return appointments
+        var rows = appointments
+            .Where(a => !a.IsPlan)
             .SelectMany(a => a.AppointmentServices)
             .GroupBy(aps => new { aps.ServiceId, Name = aps.Service.Name })
             .Select(g => new FinancialByServiceItemDto(
@@ -27,7 +28,18 @@ public class GetFinancialByServiceQueryHandler : IRequestHandler<GetFinancialByS
                 g.Key.Name,
                 g.Count(),
                 g.Sum(aps => aps.UnitPrice)))
-            .OrderByDescending(x => x.Revenue)
             .ToList();
+
+        // Plano entra uma vez por atendimento, pelo valor cobrado: somar também os serviços dele
+        // contaria o mesmo atendimento duas vezes. Os serviços seguem visíveis no atendimento.
+        var plans = appointments.Where(a => a.IsPlan).ToList();
+        if (plans.Count > 0)
+            rows.Add(new FinancialByServiceItemDto(
+                FinancialByServiceItemDto.PlanServiceId,
+                FinancialByServiceItemDto.PlanServiceName,
+                plans.Count,
+                plans.Sum(a => a.EffectiveAmount)));
+
+        return rows.OrderByDescending(x => x.Revenue).ToList();
     }
 }
