@@ -44,12 +44,13 @@ Entities: `backend/src/Domain/ImperadorBarberShop.Domain/Entities/`.
 - `ServiceAddon` — ParentServiceId, AddonServiceId (self-join).
 - `Appointment` — Id, ClientName, ClientPhone, AccessToken (unique), BarberId, ScheduledAt,
   TotalDurationMinutes, Status, Notes?, CreatedAt, UpdatedAt, ReminderSentAt?, PaymentMethod?, PaidAt?,
-  ClientId? (null only for legacy rows whose phone didn't parse).
+  PlanKind?, PlanTender?, ChargedAmount? (plan only), ClientId? (null only for legacy rows whose phone
+  didn't parse). Computed `EffectiveAmount = ChargedAmount ?? sum(UnitPrice)`.
 - `Client` — Id, Phone (canonical), MatchKey (unique), Name (from the first booking, never
   overwritten), FirstSeenAt (UTC), LastVisitAt? / LastInviteAt? (wall-clock), VisitCount. A
   recognition record derived from bookings, not an account.
 - `AppointmentService` — AppointmentId, ServiceId, `UnitPrice` (price snapshot at booking; financial
-  reports read this, never the live price).
+  reports read it through `EffectiveAmount`, never the live price).
 - `Review` — Id, AppointmentId, BarberId, Rating (1–5), Comment?, CreatedAt.
 - `Expense` — Id, Amount, Description, Date, CreatedAt, CreatedByUserId.
 - `AppSettings` — Key/Value runtime settings (`notifications:*`, `whatsapp:*`).
@@ -60,7 +61,8 @@ Enums (`backend/src/Domain/.../Enums/`):
 ```csharp
 public enum UserRole          { Client = 0, Barber = 1, Admin = 2 }
 public enum AppointmentStatus { Accepted = 0, Cancelled = 1, Completed = 2 }
-public enum PaymentMethod     { Dinheiro = 0, Cartão = 1, Pix = 2 }
+public enum PaymentMethod     { Dinheiro = 0, Cartão = 1, Pix = 2, Plano = 3 }
+public enum PlanKind          { Pagamento = 0, Recorrencia = 1 }
 ```
 
 `UserRole.Client` is reachable through no endpoint — there is no client registration or login. It
@@ -86,6 +88,11 @@ survives because integration fixtures use `User.CreateClient(...)` as a test dou
   not invited in the last 10 and with no future `Accepted` booking (`Client.IsDueForReinvite` + the
   query handler). The reinvite command refuses when the `whatsapp` channel is off, since the send would
   be dropped silently while the client left the list.
+- Payment combinations live only in `AppointmentPayment` (`Domain/ValueObjects/`): a normal method
+  carries no plan data (switching back clears it); `Plano` + `Pagamento` needs a tender (Dinheiro, Cartão,
+  Pix) and an amount ≥ 0; `Plano` + `Recorrencia` stores 0, no tender and no `PaidAt`. Every financial
+  report sums `EffectiveAmount`; Ticket Médio skips `Plano` appointments (numerator and count); by-service
+  and CSV show each plan appointment once as a synthetic `Plano` row (`ServiceId = Guid.Empty`).
 - Two authorization policies (`Program.cs`): `RequireBarberRole`, `RequireAdminRole`. Admin commands
   take a nullable `RequesterBarberId`; barber endpoints pass the JWT's `barberId` (IDOR check), admin
   endpoints pass `null` (check skipped).
@@ -147,7 +154,12 @@ CI (`.github/workflows/ci.yml`) runs three jobs on every PR: Backend, Frontend, 
 - `frontend/src/lib/api/client.ts` and the MSW handlers fall back to port `5000` when
   `NEXT_PUBLIC_API_URL` is unset, but the HTTP profile serves `5044`. Always set the env var.
 - `frontend/src/lib/utils/phone.ts` mirrors `BrazilianPhone` so the booking button enables for exactly
-  what the API accepts. Change both together; their tests share cases.
+  what the API accepts. Change both together; their tests share cases. `lib/utils/payment.ts`
+  (`parseChargedAmount`) likewise mirrors `AppointmentPayment`'s amount rules (≥ 0, ≤ 2 decimals).
+- `ValidationBehavior` only matches `IRequest<T>`: validators of void (`IRequest`) commands never run in
+  the pipeline. Handlers that must refuse bad input check it themselves (payments:
+  `Application/Common/PaymentValidation.cs`); fixing the constraint would wake a dozen dormant
+  validators at once.
 - Migrations may call `imperador_phone_canonical/_match_key` (`Persistence/PhoneSqlFunctions.cs`,
   registered on every `AppDbContext` command), so `dotnet ef migrations script` output won't run in
   plain sqlite3. Migrations are applied by the app at boot.

@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/Badge'
 import { formatDateTime, formatCurrency } from '@/lib/utils/formatDateTime'
 import { formatDuration } from '@/lib/utils/formatDuration'
+import { PAYMENT_ICONS, describePayment, describePlanAmount } from '@/lib/utils/payment'
 import type { Appointment } from '@/types/api.types'
 
 interface AppointmentCardProps {
@@ -9,7 +10,8 @@ interface AppointmentCardProps {
 }
 
 export function AppointmentCard({ appointment, actions }: AppointmentCardProps) {
-  const totalPrice = appointment.services.reduce((acc, s) => acc + s.price, 0)
+  const payment = describePayment(appointment)
+  const planAmount = describePlanAmount(appointment)
 
   return (
     <article
@@ -45,26 +47,24 @@ export function AppointmentCard({ appointment, actions }: AppointmentCardProps) 
       <div className="flex flex-wrap items-center gap-4 text-sm text-brand-white/60">
         <span>{formatDateTime(appointment.scheduledAt)}</span>
         <span>{formatDuration(appointment.totalDurationMinutes)}</span>
-        <span className="font-semibold text-brand-gold">{formatCurrency(totalPrice)}</span>
+        <span className="font-semibold text-brand-gold">{formatCurrency(appointment.effectiveAmount)}</span>
       </div>
 
       {appointment.status === 'Completed' && (
-        <div className="flex items-center gap-2 text-sm">
-          {appointment.paymentMethod ? (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          {appointment.paymentMethod && payment ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-brand-gold/15 px-2.5 py-0.5 text-xs font-medium text-brand-gold">
-              {appointment.paymentMethod === 'Dinheiro' && '💵'}
-              {appointment.paymentMethod === 'Cartão' && '💳'}
-              {appointment.paymentMethod === 'Pix' && '⚡'}
-              {' '}{appointment.paymentMethod}
+              {PAYMENT_ICONS[appointment.paymentMethod]} {payment}
             </span>
           ) : (
             <span className="text-xs text-brand-white/30">— sem método</span>
           )}
+          {planAmount && <span className="text-xs text-brand-white/60">{planAmount}</span>}
         </div>
       )}
 
       {appointment.notes && (
-        <p className="text-xs text-brand-white/40 italic">"{appointment.notes}"</p>
+        <p className="text-xs text-brand-white/40 italic">&quot;{appointment.notes}&quot;</p>
       )}
 
       {/* Actions */}

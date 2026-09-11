@@ -12,7 +12,7 @@ import type {
   UpdateBarberPayload,
   CreateServicePayload,
   UpdateServicePayload,
-  PaymentMethod,
+  AppointmentPayment,
   ReinviteCandidate,
 } from '@/types/api.types'
 
@@ -102,11 +102,11 @@ export const adminApi = {
     apiClient.get<FinancialTimelineItem[]>('/admin/financial/timeline', { params: { from, to, groupBy } })
       .then((r) => r.data),
 
-  updateAppointmentPayment: (id: string, paymentMethod: PaymentMethod) =>
-    apiClient.patch(`/admin/appointments/${id}/payment`, { paymentMethod }),
+  updateAppointmentPayment: (id: string, payment: AppointmentPayment) =>
+    apiClient.patch(`/admin/appointments/${id}/payment`, payment),
 
-  completeAppointment: (id: string, paymentMethod?: PaymentMethod) =>
-    apiClient.patch(`/admin/appointments/${id}/complete`, { paymentMethod: paymentMethod ?? null }),
+  completeAppointment: (id: string, payment?: AppointmentPayment) =>
+    apiClient.patch(`/admin/appointments/${id}/complete`, payment ?? { paymentMethod: null }),
 
   cancelAppointment: (id: string) =>
     apiClient.patch(`/admin/appointments/${id}/cancel`),

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/lib/api/admin.api'
-import type { PaymentMethod } from '@/types/api.types'
+import type { AppointmentPayment } from '@/types/api.types'
 
 export function useAdminBarberAppointments(barberId: string) {
   return useQuery({
@@ -10,19 +10,9 @@ export function useAdminBarberAppointments(barberId: string) {
   })
 }
 
-export function useAdminUpdateAppointmentPayment(barberId: string) {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, paymentMethod }: { id: string; paymentMethod: PaymentMethod }) =>
-      adminApi.updateAppointmentPayment(id, paymentMethod),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'barber', 'appointments', barberId] })
-    },
-  })
-}
-
-// Concluir e cancelar mexem no faturamento do período, então além da lista do
-// barbeiro o dashboard financeiro também precisa ser recarregado.
+// Concluir, cancelar e registrar pagamento mexem no faturamento do período (o plano
+// entra pelo valor cobrado), então além da lista do barbeiro o dashboard financeiro
+// também precisa ser recarregado.
 function useAdminAppointmentMutation<TArgs>(
   barberId: string,
   mutationFn: (args: TArgs) => Promise<unknown>
@@ -37,11 +27,19 @@ function useAdminAppointmentMutation<TArgs>(
   })
 }
 
+export function useAdminUpdateAppointmentPayment(barberId: string) {
+  return useAdminAppointmentMutation(
+    barberId,
+    ({ id, payment }: { id: string; payment: AppointmentPayment }) =>
+      adminApi.updateAppointmentPayment(id, payment)
+  )
+}
+
 export function useAdminCompleteAppointment(barberId: string) {
   return useAdminAppointmentMutation(
     barberId,
-    ({ id, paymentMethod }: { id: string; paymentMethod?: PaymentMethod }) =>
-      adminApi.completeAppointment(id, paymentMethod)
+    ({ id, payment }: { id: string; payment?: AppointmentPayment }) =>
+      adminApi.completeAppointment(id, payment)
   )
 }
 

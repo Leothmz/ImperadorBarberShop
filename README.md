@@ -21,7 +21,8 @@ O Imperador Barber Shop é uma aplicação full-stack moderna que conecta client
 
 ### Para Barbeiros
 - Painel de agendamentos do dia com status em tempo real
-- Marcação de serviços como concluídos, com registro de forma de pagamento
+- Marcação de serviços como concluídos, com registro de forma de pagamento (Dinheiro, Cartão, Pix ou Plano)
+- Plano: pagamento do plano (valor cobrado + Pix, Dinheiro ou Cartão) ou recorrência (visita coberta, R$ 0)
 - Registro retroativo de pagamento em atendimentos já concluídos
 - Cancelamento de emergência de agendamentos aceitos
 - Gerenciamento de bloqueios de agenda (pontuais e recorrentes por dia da semana)
@@ -37,6 +38,7 @@ O Imperador Barber Shop é uma aplicação full-stack moderna que conecta client
   - Gráfico de receita ao longo do tempo (por dia, semana ou mês)
   - Breakdown por barbeiro e por serviço
   - Exportação CSV
+  - Plano entra pelo valor cobrado (recorrência = R$ 0), fica fora do ticket médio e aparece como uma linha "Plano" por atendimento no breakdown por serviço e no CSV
 - Gerenciamento de despesas operacionais (texto livre, valor, data)
 - Visualização de atendimentos por barbeiro com registro de pagamento
 - Gerenciamento de bloqueios de agenda por barbeiro
@@ -150,8 +152,8 @@ Client ──< Appointment   (ClientId opcional; reconhece clientes recorrentes 
 | `User` | Id, Name, Email, PasswordHash, Role (Barber\|Admin) |
 | `Barber` | Id, UserId, Availability[], AverageRating |
 | `Service` | Id, Name, DurationMinutes, Price, IsActive |
-| `Appointment` | Id, ClientName, ClientPhone, ClientId?, AccessToken, BarberId, ScheduledAt, Status, PaymentMethod?, PaidAt?, Notes? |
-| `AppointmentService` | AppointmentId, ServiceId (M:N) |
+| `Appointment` | Id, ClientName, ClientPhone, ClientId?, AccessToken, BarberId, ScheduledAt, Status, PaymentMethod?, PaidAt?, PlanKind?, PlanTender?, ChargedAmount?, Notes? |
+| `AppointmentService` | AppointmentId, ServiceId (M:N), UnitPrice (preço no momento do agendamento) |
 | `Client` | Id, Phone, MatchKey, Name (do 1º agendamento), FirstSeenAt, LastVisitAt?, LastInviteAt?, VisitCount |
 | `Review` | Id, AppointmentId, BarberId, Rating (1–5), Comment? |
 | `BarberBlock` | Id, BarberId, StartsAt, EndsAt, Description?, IsRecurring, RecurrenceDays? (bitmask), RecurrenceEndsAt? |
@@ -341,8 +343,8 @@ cd frontend && npx playwright test
 | POST | `/appointments/manage/{token}/cancel` | — | Cancelar pelo token (>2h antes) |
 | POST | `/appointments/manage/{token}/review` | — | Avaliar pelo token (após conclusão) |
 | GET | `/appointments/barber` | Barbeiro | Agendamentos do barbeiro logado |
-| PATCH | `/appointments/{id}/complete` | Barbeiro | Concluir (body opcional: `{ paymentMethod? }`) |
-| PATCH | `/appointments/{id}/payment` | Barbeiro | Registrar/atualizar pagamento |
+| PATCH | `/appointments/{id}/complete` | Barbeiro | Concluir (body opcional: [pagamento](#pagamento-de-atendimento)) |
+| PATCH | `/appointments/{id}/payment` | Barbeiro | Registrar/atualizar [pagamento](#pagamento-de-atendimento) |
 | PATCH | `/appointments/{id}/cancel-by-barber` | Barbeiro | Cancelar por emergência |
 
 ### Admin
@@ -369,9 +371,9 @@ cd frontend && npx playwright test
 | GET | `/admin/financial/expenses?from=&to=` | Listar despesas do período |
 | POST | `/admin/financial/expenses` | Registrar despesa |
 | DELETE | `/admin/financial/expenses/{id}` | Remover despesa |
-| PATCH | `/admin/appointments/{id}/complete` | Concluir atendimento (body opcional: `{ paymentMethod? }`) |
+| PATCH | `/admin/appointments/{id}/complete` | Concluir atendimento (body opcional: [pagamento](#pagamento-de-atendimento)) |
 | PATCH | `/admin/appointments/{id}/cancel` | Cancelar atendimento |
-| PATCH | `/admin/appointments/{id}/payment` | Registrar pagamento (admin) |
+| PATCH | `/admin/appointments/{id}/payment` | Registrar/atualizar [pagamento](#pagamento-de-atendimento) (admin) |
 | GET | `/admin/whatsapp/status` | Status da conexão WhatsApp |
 | GET | `/admin/whatsapp/qr` | QR code para parear o WhatsApp |
 | POST | `/admin/whatsapp/disconnect` | Desconectar |
@@ -379,6 +381,21 @@ cd frontend && npx playwright test
 | PUT | `/admin/notifications/settings` | Atualizar canais de notificação |
 | GET | `/admin/clients/reinvite-candidates` | Clientes quase perdidos (25–30 dias sem visitar) elegíveis para reconvite |
 | POST | `/admin/clients/{id}/reinvite` | Enviar convite de retorno via WhatsApp e registrar `LastInviteAt` |
+
+### Pagamento de atendimento
+
+Concluir e registrar pagamento, do barbeiro ou do admin, recebem o mesmo corpo:
+
+| Forma | Corpo |
+|-------|-------|
+| Normal | `{ "paymentMethod": "Dinheiro" }` (ou `"Cartão"`, `"Pix"`) |
+| Plano — pagamento | `{ "paymentMethod": "Plano", "planKind": "Pagamento", "planTender": "Pix", "chargedAmount": 120.00 }` — valor ≥ 0 com até 2 casas; forma Pix, Dinheiro ou Cartão |
+| Plano — recorrência | `{ "paymentMethod": "Plano", "planKind": "Recorrencia" }` — grava `chargedAmount = 0`, sem forma e sem `paidAt` |
+
+Combinação inválida (plano sem tipo, recorrência com forma ou valor, dados de plano com método normal…)
+volta 400 com o erro no campo. Trocar para um método normal apaga os dados do plano. O financeiro soma
+o valor efetivo de cada atendimento, `chargedAmount ?? soma dos UnitPrice`; os agendamentos
+(`GET /appointments/barber`, `GET /admin/barbers/{id}/appointments`) devolvem esse valor em `effectiveAmount`.
 
 ---
 

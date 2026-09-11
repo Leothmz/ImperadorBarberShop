@@ -2,11 +2,11 @@ import apiClient from './client'
 import type {
   Appointment,
   AppointmentManage,
+  AppointmentPayment,
   CreateAppointmentPayload,
   CreateAppointmentResult,
   CreateReviewByTokenPayload,
   CreateReviewByTokenResult,
-  PaymentMethod,
 } from '@/types/api.types'
 
 export const appointmentsApi = {
@@ -34,12 +34,11 @@ export const appointmentsApi = {
     return apiClient.patch<void>(`/appointments/${id}/cancel-by-barber`)
   },
 
-  complete(id: string, paymentMethod?: PaymentMethod) {
-    return apiClient.patch<Appointment>(`/appointments/${id}/complete`,
-      paymentMethod ? { paymentMethod } : undefined)
+  complete(id: string, payment?: AppointmentPayment) {
+    return apiClient.patch<Appointment>(`/appointments/${id}/complete`, payment)
   },
 
-  updatePaymentMethod(id: string, paymentMethod: PaymentMethod) {
-    return apiClient.patch<void>(`/appointments/${id}/payment`, { paymentMethod })
+  updatePaymentMethod(id: string, payment: AppointmentPayment) {
+    return apiClient.patch<void>(`/appointments/${id}/payment`, payment)
   },
 }

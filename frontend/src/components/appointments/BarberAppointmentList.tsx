@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { AppointmentCard } from './AppointmentCard'
+import { PlanPaymentModal, type PlanPaymentAction } from './PlanPaymentModal'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import {
@@ -10,14 +11,18 @@ import {
   useCompleteAppointment,
   useUpdatePaymentMethod,
 } from '@/hooks/useAppointments'
-import type { PaymentMethod } from '@/types/api.types'
+import type { Appointment, AppointmentPayment, PaymentMethod, PlanTender } from '@/types/api.types'
 
+// Plano não é uma escolha direta: abre o modal que pergunta Pagamento ou Recorrência
 const PAYMENT_OPTIONS: { value: PaymentMethod | null; label: string }[] = [
   { value: 'Dinheiro', label: '💵 Dinheiro' },
   { value: 'Cartão', label: '💳 Cartão' },
   { value: 'Pix', label: '⚡ Pix' },
+  { value: 'Plano', label: '📋 Plano' },
   { value: null, label: 'Pular' },
 ]
+
+const REGISTER_METHODS: PaymentMethod[] = ['Dinheiro', 'Cartão', 'Pix', 'Plano']
 
 export function BarberAppointmentList() {
   const { data: appointments, isLoading, isError } = useBarberAppointments()
@@ -26,7 +31,8 @@ export function BarberAppointmentList() {
   const updatePayment = useUpdatePaymentMethod()
   const [pendingCompleteId, setPendingCompleteId] = useState<string | null>(null)
   const [pendingPaymentId, setPendingPaymentId] = useState<string | null>(null)
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
+  const [selectedMethod, setSelectedMethod] = useState<PlanTender | null>(null)
+  const [planFor, setPlanFor] = useState<{ appointment: Appointment; action: PlanPaymentAction } | null>(null)
 
   if (isLoading) {
     return <div className="flex justify-center py-12"><Spinner size="lg" /></div>
@@ -42,10 +48,22 @@ export function BarberAppointmentList() {
     (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
   )
 
-  async function handleComplete(id: string, paymentMethod: PaymentMethod | null) {
-    await complete.mutateAsync({ id, paymentMethod: paymentMethod ?? undefined })
+  async function handleComplete(id: string, payment?: AppointmentPayment) {
+    await complete.mutateAsync({ id, payment })
     setPendingCompleteId(null)
     setSelectedMethod(null)
+  }
+
+  async function confirmPlan(payment: AppointmentPayment) {
+    if (!planFor) return
+    const { appointment, action } = planFor
+    if (action === 'complete') {
+      await handleComplete(appointment.id, payment)
+    } else {
+      await updatePayment.mutateAsync({ id: appointment.id, payment })
+      setPendingPaymentId(null)
+    }
+    setPlanFor(null)
   }
 
   return (
@@ -63,7 +81,11 @@ export function BarberAppointmentList() {
                     {PAYMENT_OPTIONS.map((opt) => (
                       <button
                         key={opt.label}
-                        onClick={() => setSelectedMethod(opt.value)}
+                        onClick={() =>
+                          opt.value === 'Plano'
+                            ? setPlanFor({ appointment, action: 'complete' })
+                            : setSelectedMethod(opt.value)
+                        }
                         className={[
                           'px-3 py-1.5 rounded-lg text-sm border transition-colors',
                           selectedMethod === opt.value
@@ -79,7 +101,9 @@ export function BarberAppointmentList() {
                     <Button
                       size="sm"
                       isLoading={complete.isPending}
-                      onClick={() => handleComplete(appointment.id, selectedMethod)}
+                      onClick={() =>
+                        handleComplete(appointment.id, selectedMethod ? { paymentMethod: selectedMethod } : undefined)
+                      }
                     >
                       Confirmar
                     </Button>
@@ -114,12 +138,16 @@ export function BarberAppointmentList() {
             ) : appointment.status === 'Completed' && !appointment.paymentMethod ? (
               pendingPaymentId === appointment.id ? (
                 <div className="flex flex-wrap gap-2 items-center">
-                  {(['Dinheiro', 'Cartão', 'Pix'] as PaymentMethod[]).map((m) => (
+                  {REGISTER_METHODS.map((m) => (
                     <button
                       key={m}
                       onClick={async () => {
+                        if (m === 'Plano') {
+                          setPlanFor({ appointment, action: 'register' })
+                          return
+                        }
                         try {
-                          await updatePayment.mutateAsync({ id: appointment.id, paymentMethod: m })
+                          await updatePayment.mutateAsync({ id: appointment.id, payment: { paymentMethod: m } })
                         } finally {
                           setPendingPaymentId(null)
                         }
@@ -149,6 +177,15 @@ export function BarberAppointmentList() {
           }
         />
       ))}
+
+      {planFor && (
+        <PlanPaymentModal
+          clientName={planFor.appointment.clientName}
+          action={planFor.action}
+          onClose={() => setPlanFor(null)}
+          onConfirm={confirmPlan}
+        />
+      )}
     </div>
   )
 }
