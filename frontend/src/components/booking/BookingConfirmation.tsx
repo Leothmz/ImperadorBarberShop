@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { formatCurrency, formatDateTime, toApiDate } from '@/lib/utils/formatDateTime'
 import { formatDuration } from '@/lib/utils/formatDuration'
-import { isValidBrPhone, normalizeBrPhone } from '@/lib/utils/phone'
+import { isValidBrPhone } from '@/lib/utils/phone'
 import type { Barber, Service } from '@/types/api.types'
 
 interface BookingConfirmationProps {
@@ -49,10 +49,10 @@ export function BookingConfirmation({
   const [nameTouched, setNameTouched] = useState(false)
   const [phoneTouched, setPhoneTouched] = useState(false)
 
-  // Valida o telefone já normalizado, igual ao que é enviado para a API. Validar
-  // o texto cru exigia digitar "+5511999998888" sem espaço nem traço — até o
-  // formato do placeholder reprovava, e o botão nunca habilitava.
-  const phoneIsValid = isValidBrPhone(normalizeBrPhone(clientPhone))
+  // Valida pela mesma normalização que a API aplica. Validar o texto cru exigia
+  // digitar "+5511999998888" sem espaço nem traço — até o formato do placeholder
+  // reprovava, e o botão nunca habilitava.
+  const phoneIsValid = isValidBrPhone(clientPhone)
   const canConfirm = clientName.trim().length > 0 && phoneIsValid
 
   return (

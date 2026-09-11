@@ -90,6 +90,29 @@ describe('DashboardPage', () => {
     })
   })
 
+  it('renders the client recurrence section with its invite button', async () => {
+    server.use(
+      http.get('*/admin/clients/reinvite-candidates', () =>
+        HttpResponse.json([
+          {
+            clientId: 'client-1',
+            name: 'Pedro Costa',
+            phone: '+5511999990000',
+            lastVisitAt: '2026-08-14T10:00:00',
+            daysSinceLastVisit: 27,
+            visitCount: 3,
+          },
+        ])
+      )
+    )
+
+    render(<DashboardPage />, { wrapper: createWrapper() })
+
+    expect(screen.getByRole('heading', { name: 'Clientes para chamar de volta' })).toBeInTheDocument()
+    expect(await screen.findByText('Pedro Costa')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Convidar no WhatsApp' })).toBeInTheDocument()
+  })
+
   it('shows existing expenses from mock data', async () => {
     render(<DashboardPage />, { wrapper: createWrapper() })
     await waitFor(() => {

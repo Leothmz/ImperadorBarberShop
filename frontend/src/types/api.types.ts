@@ -132,6 +132,16 @@ export interface FinancialByBarberItem {
   revenue: number
 }
 
+/** Cliente quase perdido: última visita concluída entre 25 e 30 dias atrás. */
+export interface ReinviteCandidate {
+  clientId: string
+  name: string
+  phone: string // canônico, "+5511999990000"
+  lastVisitAt: string // horário de parede, sem fuso
+  daysSinceLastVisit: number
+  visitCount: number
+}
+
 export interface FinancialByServiceItem {
   serviceId: string
   serviceName: string

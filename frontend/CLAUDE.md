@@ -30,7 +30,7 @@ Fonts: Montserrat (headings), Inter (body)
 /login                    Staff login (Barber and Admin)
 /register/barber          Legacy path — `redirect('/login')`, no registration UI
 /barber/dashboard         Barber agenda + blocks (tabs)
-/admin/dashboard          Financial dashboard
+/admin/dashboard          Financial dashboard + clients to invite back (recurrence)
 /admin/barbers            Barber CRUD, availability and blocks
 /admin/services           Service catalog CRUD
 /admin/whatsapp           WhatsApp connection + notification settings

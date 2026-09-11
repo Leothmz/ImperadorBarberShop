@@ -201,7 +201,8 @@ export default function AgendarPage() {
     try {
       const result = await createAppointment.mutateAsync({
         clientName: clientName.trim(),
-        clientPhone: normalizeBrPhone(clientPhone),
+        // O botão só habilita com número válido; a API normaliza de novo de qualquer jeito
+        clientPhone: normalizeBrPhone(clientPhone) ?? clientPhone.trim(),
         barberId: selectedBarber.id,
         scheduledAt,
         serviceIds: selectedServiceIds,

@@ -13,6 +13,7 @@ import type {
   CreateServicePayload,
   UpdateServicePayload,
   PaymentMethod,
+  ReinviteCandidate,
 } from '@/types/api.types'
 
 export const adminApi = {
@@ -109,6 +110,13 @@ export const adminApi = {
 
   cancelAppointment: (id: string) =>
     apiClient.patch(`/admin/appointments/${id}/cancel`),
+
+  // Recorrência de clientes
+  getReinviteCandidates: () =>
+    apiClient.get<ReinviteCandidate[]>('/admin/clients/reinvite-candidates').then((r) => r.data),
+
+  reinviteClient: (clientId: string) =>
+    apiClient.post(`/admin/clients/${clientId}/reinvite`),
 }
 
 export const adminServicesApi = {

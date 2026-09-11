@@ -303,4 +303,12 @@ export const handlers = [
   http.patch(`${BASE_URL}/admin/appointments/:id/payment`, () => {
     return new HttpResponse(null, { status: 204 })
   }),
+
+  http.get(`${BASE_URL}/admin/clients/reinvite-candidates`, () => {
+    return HttpResponse.json([])
+  }),
+
+  http.post(`${BASE_URL}/admin/clients/:id/reinvite`, () => {
+    return new HttpResponse(null, { status: 204 })
+  }),
 ]

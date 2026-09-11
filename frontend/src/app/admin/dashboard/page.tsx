@@ -15,6 +15,7 @@ import {
 } from '@/hooks/useAdminFinancial'
 import { adminApi } from '@/lib/api/admin.api'
 import { RevenueChart } from '@/components/ui/RevenueChart'
+import { ClientRecurrenceSection } from './ClientRecurrenceSection'
 
 function today() { return new Date().toISOString().slice(0, 10) }
 function weekStart() {
@@ -218,6 +219,9 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* Recorrência: não depende do período acima — é quem está sumindo hoje */}
+      <ClientRecurrenceSection />
 
       {/* Receita ao longo do tempo */}
       <section className={`${CARD} p-4`}>
