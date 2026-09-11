@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
 import { NextRequest } from 'next/server'
-import { middleware } from '@/middleware'
+import { proxy } from '@/proxy'
 
 function requestTo(path: string, cookie?: string) {
   return new NextRequest(`http://localhost:3000${path}`, {
@@ -14,10 +14,10 @@ function redirectTarget(response: Response) {
   return location ? new URL(location) : null
 }
 
-describe('middleware', () => {
+describe('proxy', () => {
   it('does not let a forged role cookie into /admin', () => {
     // Antes bastava isto: o cookie de papel era escrito pelo próprio JavaScript da página
-    const response = middleware(requestTo('/admin/dashboard', 'imperador_access_role=Admin'))
+    const response = proxy(requestTo('/admin/dashboard', 'imperador_access_role=Admin'))
 
     expect(response.status).toBe(307)
     const target = redirectTarget(response)
@@ -26,21 +26,21 @@ describe('middleware', () => {
   })
 
   it('does not let a forged role cookie into /barber', () => {
-    const response = middleware(requestTo('/barber/dashboard', 'imperador_access_role=Barber'))
+    const response = proxy(requestTo('/barber/dashboard', 'imperador_access_role=Barber'))
 
     expect(response.status).toBe(307)
     expect(redirectTarget(response)?.pathname).toBe('/login')
   })
 
   it('redirects to login when there is no session cookie at all', () => {
-    const response = middleware(requestTo('/admin/barbers'))
+    const response = proxy(requestTo('/admin/barbers'))
 
     expect(response.status).toBe(307)
     expect(redirectTarget(response)?.searchParams.get('redirect')).toBe('/admin/barbers')
   })
 
   it('lets the request through when the API-issued session cookie is present', () => {
-    const response = middleware(requestTo('/admin/dashboard', 'imperador_refresh_token=opaque'))
+    const response = proxy(requestTo('/admin/dashboard', 'imperador_refresh_token=opaque'))
 
     expect(response.headers.get('location')).toBeNull()
     expect(response.headers.get('x-middleware-next')).toBe('1')

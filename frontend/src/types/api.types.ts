@@ -153,13 +153,6 @@ export interface LoginPayload {
   password: string
 }
 
-export interface RegisterBarberPayload {
-  name: string
-  email: string
-  password: string
-  availability: BarberAvailability[]
-}
-
 export interface CreateAppointmentPayload {
   clientName: string
   clientPhone: string

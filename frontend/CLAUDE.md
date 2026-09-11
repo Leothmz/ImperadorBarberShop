@@ -1,7 +1,7 @@
 # O Imperador Barber Shop — Frontend
 
 ## Tech Stack
-- **Next.js 15** (App Router) + TypeScript
+- **Next.js 16** (App Router) + TypeScript
 - **Tailwind CSS v4** — brand tokens defined in `src/app/globals.css` via `@theme`
 - **TanStack Query v5** — server state, optimistic updates on barber dashboard
 - **React Hook Form + Zod** — all forms with client + server validation
@@ -27,20 +27,31 @@ Fonts: Montserrat (headings), Inter (body)
 /agendar                  Public 4-step booking wizard (no account needed)
 /agendamento/[token]      Public appointment management (cancel / leave a review)
                           `?novo=1` renders it as the post-booking confirmation
-/login                    Barber login
-/register/barber          Barber registration + availability picker
-/barber/dashboard         Barber appointment management
+/login                    Staff login (Barber and Admin)
+/register/barber          Legacy path — `redirect('/login')`, no registration UI
+/barber/dashboard         Barber agenda + blocks (tabs)
+/admin/dashboard          Financial dashboard
+/admin/barbers            Barber CRUD, availability and blocks
+/admin/services           Service catalog CRUD
+/admin/whatsapp           WhatsApp connection + notification settings
 ```
 
 ## Auth Strategy
-- Authentication exists for **barbers only** — clients never create an account.
-- **Access token**: in-memory only (React context via AuthProvider)
-- **Refresh token**: localStorage key `imperador_refresh_token`
-- **userId**: localStorage key `imperador_user_id`
-- **Route protection**: Next.js middleware reads `imperador_access_role` cookie, protects `/barber/*` only
-- **Cookie**: set by AuthProvider after login, deleted on logout
-- **Auto-refresh**: Axios 401 interceptor calls `/auth/refresh`, retries original request once
-- **Session restore**: AuthProvider on mount reads localStorage, calls refresh endpoint
+- Authentication exists for **staff only** (Barber and Admin) — clients never create an account.
+- **Access token**: in-memory only (`lib/api/client.ts`); lost on reload and recovered via refresh.
+- **Refresh token**: an `HttpOnly` cookie named `imperador_refresh_token`, set by the API on
+  `/auth/login` and `/auth/refresh`. Page JavaScript never reads it.
+- **userId**: localStorage key `imperador_user_id` — only a hint that a session may exist, and the
+  body of the refresh call; it grants no privilege.
+- **Route protection**: `src/proxy.ts` (the Next 16 rename of `middleware.ts`) gates `/admin/*` and
+  `/barber/*` on the presence of the API-issued cookie; the `admin/layout.tsx` and `barber/layout.tsx`
+  then check the role held by `AuthProvider` (which only ever comes from an API response).
+- **Same-origin auth calls**: login/refresh/logout go through `authClient` on `/api/v1/auth`, rewritten
+  to the API in `next.config.ts`, so the cookie is stored on this host where `proxy.ts` sees it.
+- **Auto-refresh**: the Axios 401 interceptor calls `/auth/refresh` once, queues concurrent requests,
+  and retries; on failure it clears storage and dispatches `auth:logout`.
+- **Session restore**: `AuthProvider` on mount reads the stored userId, calls refresh, and restores the
+  access token; anonymous visitors never fire a request.
 
 ## Test Commands
 ```bash

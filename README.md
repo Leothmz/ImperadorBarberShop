@@ -24,8 +24,9 @@ O Imperador Barber Shop é uma aplicação full-stack moderna que conecta client
 - Marcação de serviços como concluídos, com registro de forma de pagamento
 - Registro retroativo de pagamento em atendimentos já concluídos
 - Cancelamento de emergência de agendamentos aceitos
-- Configuração de disponibilidade semanal (janelas por dia da semana)
 - Gerenciamento de bloqueios de agenda (pontuais e recorrentes por dia da semana)
+
+> A disponibilidade semanal é editada pelo admin, em `/admin/barbers` — não há editor de horários no painel do barbeiro.
 
 ### Para Admins
 - Cadastro e gerenciamento de barbeiros
@@ -68,7 +69,7 @@ O Imperador Barber Shop é uma aplicação full-stack moderna que conecta client
 ### Frontend
 | Tecnologia | Uso |
 |------------|-----|
-| Next.js 15 (App Router) | Framework React |
+| Next.js 16 (App Router) | Framework React |
 | TypeScript | Tipagem estática |
 | Tailwind CSS v4 | Estilização com tokens de design |
 | TanStack Query v5 | Cache e estado de servidor |
@@ -100,9 +101,9 @@ ImperadorBarberShop/
 │   │   └── Api/                    Controllers, Middleware, Program.cs
 │   └── tests/
 │       ├── UnitTests/              Testes unitários (sem I/O)
-│       └── IntegrationTests/       Testes com banco real via Testcontainers
+│       └── IntegrationTests/       Testes HTTP com WebApplicationFactory + SQLite in-memory
 │
-└── frontend/                       Next.js 15 — App Router
+└── frontend/                       Next.js 16 — App Router
     └── src/
         ├── app/                    Páginas e layouts (rotas)
         ├── components/             Componentes React reutilizáveis
@@ -116,7 +117,7 @@ ImperadorBarberShop/
 - **Clean Architecture**: Domain sem dependências externas. Dependências apontam sempre para dentro.
 - **CQRS com MediatR**: Cada caso de uso é um Command (escrita) ou Query (leitura). Controllers são dispatchers finos.
 - **Handlers co-locados**: Record + Validator + Handler em um único arquivo `.cs`.
-- **Segurança de refresh token**: Token bruto retornado ao cliente; apenas o hash BCrypt é armazenado no banco. Rotacionado a cada uso.
+- **Segurança de refresh token**: O token bruto viaja num cookie `HttpOnly` emitido pela API; apenas o hash BCrypt é armazenado no banco. Rotacionado a cada uso.
 - **IDOR protection**: Toda mutação valida que o `sub`/`barberId` do JWT corresponde ao dono do recurso.
 - **Sem mapeamento de claims**: `options.MapInboundClaims = false` preserva nomes originais (`role`, `sub`) nos claims do JWT.
 - **Clientes sem conta**: Autenticação por token opaco por agendamento (`AccessToken`) — sem sessão, sem cadastro.
@@ -185,7 +186,9 @@ cd ImperadorBarberShop
 
 ### 2. Configure o backend
 
-Crie o arquivo `backend/src/Api/ImperadorBarberShop.Api/appsettings.Development.json`:
+As chaves aceitas e os valores de produção estão em [`.env.example`](.env.example). Para
+desenvolvimento, crie o arquivo `backend/src/Api/ImperadorBarberShop.Api/appsettings.Development.json`
+(gitignored):
 
 ```json
 {
@@ -193,41 +196,66 @@ Crie o arquivo `backend/src/Api/ImperadorBarberShop.Api/appsettings.Development.
     "DefaultConnection": "Data Source=imperador_barber.db"
   },
   "Jwt": {
-    "SecretKey": "<string-aleatória-mínimo-32-caracteres>",
+    "Secret": "<aleatório, 32+ caracteres — openssl rand -base64 48>",
     "Issuer": "ImperadorBarberShop",
     "Audience": "ImperadorBarberShopFrontend",
-    "AccessTokenExpiryMinutes": 15,
-    "RefreshTokenExpiryDays": 7
+    "ExpirationMinutes": 15
   },
   "Email": {
-    "SmtpHost": "smtp.mailtrap.io",
-    "SmtpPort": 587,
-    "Username": "<mailtrap-user>",
-    "Password": "<mailtrap-pass>",
-    "FromAddress": "noreply@imperadorbarber.com",
+    "SmtpHost": "localhost",
+    "SmtpPort": 2525,
+    "Username": "",
+    "Password": "",
+    "FromAddress": "noreply@local",
     "FromName": "O Imperador Barber Shop"
+  },
+  "Admin": {
+    "Email": "admin@local",
+    "Password": "<senha do admin, criada só no primeiro boot>"
+  },
+  "Cloudinary": {
+    "CloudName": "",
+    "ApiKey": "",
+    "ApiSecret": ""
   },
   "FrontendUrl": "http://localhost:3000"
 }
 ```
 
-> As migrações são aplicadas automaticamente na inicialização em ambiente Development.
+Pontos que derrubam o app se errados:
+
+- **Chaves do JWT**: a seção usa `Secret` e `ExpirationMinutes`. Nomes como `SecretKey` ou
+  `AccessTokenExpiryMinutes` são ignorados, e a API responde 500 em **toda** requisição
+  (a chave de assinatura fica vazia). O refresh token tem validade fixa de 7 dias.
+- **`Admin:Email` / `Admin:Password`**: obrigatórios enquanto o banco não tiver nenhum admin —
+  sem eles o processo aborta no boot. O admin é criado uma única vez; trocar a senha aqui
+  depois não altera um admin já existente.
+- **`Jwt:Secret`** precisa de 32+ caracteres.
+- **`Cloudinary`** é opcional: sem ele a API sobe e todo o painel admin funciona, mas o
+  envio de fotos responde com um erro explicativo. Preencha para habilitar upload.
+- **`Email`** só é necessário se o canal `email` estiver ativo; o envio é best-effort.
+
+> Migrações, `PRAGMA journal_mode=WAL`, seed do catálogo de serviços e o admin inicial rodam
+> automaticamente na inicialização, em **todos** os ambientes.
 
 ### 3. Inicie o backend
 
 ```bash
 cd backend
 dotnet run --project src/Api/ImperadorBarberShop.Api
-# API: http://localhost:5000
-# Swagger: http://localhost:5000/swagger
+# API: http://localhost:5044
+# Swagger: http://localhost:5044/swagger
 ```
 
 ### 4. Configure o frontend
 
 ```bash
 # frontend/.env.local
-NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_API_URL=http://localhost:5044
 ```
+
+`NEXT_PUBLIC_API_URL` é lida em tempo de build (embutida no bundle) e deve ser a origem da
+API **sem** o prefixo `/api/v1`.
 
 ### 5. Inicie o frontend
 
@@ -263,22 +291,29 @@ cd frontend && npx playwright test
 
 ## API — Endpoints
 
-**Base URL:** `http://localhost:5000/api/v1`  
-**Auth:** `Authorization: Bearer <token>`
+**Base URL:** `http://localhost:5044/api/v1`  
+**Auth:** `Authorization: Bearer <access_token>` (JWT; papéis `Barber` e `Admin` no claim `role`)
 
 ### Autenticação (público)
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| POST | `/auth/register/barber` | Cadastro de barbeiro (inclui disponibilidade) |
-| POST | `/auth/login` | Login → `{ accessToken, refreshToken, role, userId, barberId }` |
-| POST | `/auth/refresh` | Renovar token |
+| POST | `/auth/login` | Login → `{ accessToken, role, userId, barberId }`; o refresh token vai num cookie `HttpOnly` |
+| POST | `/auth/refresh` | Troca o cookie por um novo par (rotaciona o cookie) |
+| POST | `/auth/logout` | Limpa o cookie de sessão |
 
-### Serviços (público)
+### Serviços
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| GET | `/services` | Listar serviços ativos |
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| GET | `/services` | — | Listar serviços ativos |
+| POST | `/services` | Admin | Criar serviço (`multipart/form-data` com `photo` opcional) |
+| PUT | `/services/{id}` | Admin | Editar serviço |
+| PATCH | `/services/{id}/activate` | Admin | Ativar serviço |
+| PATCH | `/services/{id}/deactivate` | Admin | Desativar serviço |
+| DELETE | `/services/{id}` | Admin | Remover serviço |
+| POST | `/services/{id}/addons/{addonId}` | Admin | Associar add-on |
+| DELETE | `/services/{id}/addons/{addonId}` | Admin | Desassociar add-on |
 
 ### Barbeiros
 
@@ -286,7 +321,7 @@ cd frontend && npx playwright test
 |--------|------|------|-----------|
 | GET | `/barbers` | — | Listar barbeiros (id, nome, avaliação) |
 | GET | `/barbers/{id}` | — | Perfil + disponibilidade + avaliação |
-| GET | `/barbers/{id}/reviews` | — | Avaliações paginadas |
+| GET | `/barbers/{id}/reviews` | — | Avaliações do barbeiro (sem paginação) |
 | GET | `/barbers/{id}/slots?date=&serviceIds=` | — | Slots disponíveis |
 | PUT | `/barbers/me/availability` | Barbeiro | Atualizar disponibilidade |
 | GET | `/barbers/me/blocks` | Barbeiro | Listar bloqueios |
@@ -311,14 +346,17 @@ cd frontend && npx playwright test
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | GET | `/admin/barbers` | Listar barbeiros |
-| POST | `/admin/barbers` | Cadastrar barbeiro |
+| POST | `/admin/barbers` | Cadastrar barbeiro (`multipart/form-data`, com disponibilidade) |
+| PUT | `/admin/barbers/{id}` | Editar barbeiro |
+| DELETE | `/admin/barbers/{id}` | Remover barbeiro |
+| PATCH | `/admin/barbers/{id}/activate` | Ativar barbeiro |
+| PATCH | `/admin/barbers/{id}/deactivate` | Desativar barbeiro |
+| PATCH | `/admin/profile/password` | Trocar a própria senha |
 | GET | `/admin/barbers/{id}/blocks` | Bloqueios de um barbeiro |
 | POST | `/admin/barbers/{id}/blocks` | Criar bloqueio para barbeiro |
 | DELETE | `/admin/barbers/{id}/blocks/{blockId}` | Remover bloqueio |
 | GET | `/admin/barbers/{id}/appointments` | Atendimentos de um barbeiro |
-| GET | `/admin/services` | Listar todos os serviços |
-| POST | `/admin/services` | Criar serviço |
-| PATCH | `/admin/services/{id}` | Editar serviço |
+| GET | `/admin/services` | Listar todos os serviços (inclusive inativos) |
 | GET | `/admin/financial/summary?from=&to=` | Resumo financeiro do período |
 | GET | `/admin/financial/timeline?from=&to=&groupBy=` | Receita ao longo do tempo |
 | GET | `/admin/financial/by-barber?from=&to=` | Receita por barbeiro |
@@ -327,12 +365,14 @@ cd frontend && npx playwright test
 | GET | `/admin/financial/expenses?from=&to=` | Listar despesas do período |
 | POST | `/admin/financial/expenses` | Registrar despesa |
 | DELETE | `/admin/financial/expenses/{id}` | Remover despesa |
+| PATCH | `/admin/appointments/{id}/complete` | Concluir atendimento (body opcional: `{ paymentMethod? }`) |
+| PATCH | `/admin/appointments/{id}/cancel` | Cancelar atendimento |
 | PATCH | `/admin/appointments/{id}/payment` | Registrar pagamento (admin) |
 | GET | `/admin/whatsapp/status` | Status da conexão WhatsApp |
-| POST | `/admin/whatsapp/connect` | Iniciar conexão (gera QR) |
+| GET | `/admin/whatsapp/qr` | QR code para parear o WhatsApp |
 | POST | `/admin/whatsapp/disconnect` | Desconectar |
-| GET | `/admin/settings/notifications` | Configurações de notificações |
-| PUT | `/admin/settings/notifications` | Atualizar canais de notificação |
+| GET | `/admin/notifications/settings` | Configurações de notificações |
+| PUT | `/admin/notifications/settings` | Atualizar canais de notificação |
 
 ---
 
@@ -353,4 +393,4 @@ Fontes: **Montserrat** (títulos) · **Inter** (corpo)
 
 ## Licença
 
-MIT — veja [LICENSE](LICENSE) para detalhes.
+Repositório privado — sem arquivo `LICENSE` público.

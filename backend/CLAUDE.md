@@ -72,22 +72,24 @@ dotnet ef database update \
   --startup-project src/Api/ImperadorBarberShop.Api
 ```
 
-Migrations are also applied automatically on startup in Development (`db.Database.MigrateAsync()`).
+Migrations are also applied automatically on startup in **all** environments (`db.Database.MigrateAsync()`),
+followed by `PRAGMA journal_mode=WAL` and the admin/AppSettings seed.
 
 ## Environment Variables
 
 All sensitive config is in `appsettings.Development.json` (gitignored). See root `CLAUDE.md` for the full structure.
 
-Required keys:
+Required keys (see `.env.example` for the full list):
 - `ConnectionStrings:DefaultConnection` — SQLite connection string (e.g. `Data Source=imperador_barber.db`)
-- `Jwt:Secret` — min 256-bit random string (e.g. `openssl rand -base64 32`)
-- `Jwt:Issuer`
-- `Jwt:Audience`
-- `Email:SmtpHost`, `Email:SmtpPort`, `Email:Username`, `Email:Password`, `Email:FromAddress`
-- `FrontendUrl` — e.g. `http://localhost:3000` (used for CORS)
+- `Jwt:Secret` — min 256-bit random string (e.g. `openssl rand -base64 48`); `Jwt:Issuer`; `Jwt:Audience`; `Jwt:ExpirationMinutes`
+- `Admin:Email` / `Admin:Password` — required until an admin row exists, else the process aborts at boot
+- `FrontendUrl` — comma-separated CORS allow-list, e.g. `http://localhost:3000`
+- `Cloudinary:*` — optional; without it uploads fail but the admin API runs
+- `Email:*` — optional; only needed when the `email` channel is active
 
 ## Authorization Policies
 
 | Policy | Required JWT claim |
 |--------|--------------------|
 | `RequireBarberRole` | `role == "Barber"` |
+| `RequireAdminRole` | `role == "Admin"` |
