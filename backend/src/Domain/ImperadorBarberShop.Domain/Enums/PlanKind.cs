@@ -4,7 +4,7 @@ namespace ImperadorBarberShop.Domain.Enums;
 public enum PlanKind
 {
     /// <summary>O cliente paga o plano nesta visita: um valor digitado, em Pix, Dinheiro ou Cartão.</summary>
-    Pagamento   = 0,
+    Pagamento = 0,
     /// <summary>Visita coberta por um plano já pago: nada é cobrado agora.</summary>
     Recorrencia = 1,
 }
