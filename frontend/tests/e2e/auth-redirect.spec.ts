@@ -1,33 +1,31 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('Redirecionamento de autenticação', () => {
-  test('redireciona para /login ao visitar /barber/dashboard sem autenticação', async ({ page }) => {
-    await page.context().clearCookies()
-    await page.goto('/barber/dashboard')
-    await expect(page).toHaveURL(/\/login/)
-  })
-
-  test('a página de login é acessível sem autenticação', async ({ page }) => {
-    await page.goto('/login')
-    await expect(page).toHaveURL(/\/login/)
-    await expect(page.getByRole('heading', { name: /Bem-vindo/i })).toBeVisible()
-  })
-
-  test('a landing page é acessível sem autenticação', async ({ page }) => {
+test.describe('Acesso público e proteção das áreas restritas', () => {
+  test('a landing page é pública', async ({ page }) => {
     await page.goto('/')
-    await expect(page).toHaveURL('/')
     await expect(page.getByRole('heading', { name: /IMPERADOR/i })).toBeVisible()
   })
 
-  test('a página /agendar é acessível sem autenticação', async ({ page }) => {
+  test('a página de agendamento é pública', async ({ page }) => {
     await page.goto('/agendar')
     await expect(page).toHaveURL(/\/agendar/)
-    await expect(page.getByRole('heading', { name: /Novo Agendamento/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Agende seu horário' })).toBeVisible()
   })
 
-  test('redireciona com parâmetro de redirect na URL', async ({ page }) => {
-    await page.context().clearCookies()
+  test('a página de login é acessível e nomeia o formulário', async ({ page }) => {
+    await page.goto('/login')
+    await expect(page.getByRole('heading', { name: /Bem-vindo de volta/i })).toBeVisible()
+    await expect(page.getByLabel('E-mail')).toBeVisible()
+    await expect(page.getByLabel('Senha', { exact: true })).toBeVisible()
+  })
+
+  test('sem sessão, /barber/dashboard redireciona para o login', async ({ page }) => {
     await page.goto('/barber/dashboard')
-    await expect(page).toHaveURL(/redirect=%2Fbarber%2Fdashboard/)
+    await expect(page).toHaveURL(/\/login\?redirect=%2Fbarber%2Fdashboard/)
+  })
+
+  test('sem sessão, /admin/dashboard redireciona para o login', async ({ page }) => {
+    await page.goto('/admin/dashboard')
+    await expect(page).toHaveURL(/\/login\?redirect=%2Fadmin%2Fdashboard/)
   })
 })

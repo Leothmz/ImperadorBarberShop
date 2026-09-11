@@ -116,11 +116,15 @@ See `README.md` → "Como Rodar Localmente". Short version: backend on `http://l
 
 ## Tests
 
-CI (`.github/workflows/ci.yml`) runs both suites on every PR.
+CI (`.github/workflows/ci.yml`) runs three jobs on every PR: Backend, Frontend, E2E.
 
 - Backend: `cd backend && dotnet test ImperadorBarberShop.sln`.
-- Frontend unit/component: `cd frontend && npm test`. Playwright E2E exists but is not in CI and some
-  specs are stale.
+- Frontend unit/component: `cd frontend && npm test`.
+- E2E (Playwright, chromium): `cd frontend && npx playwright test`. `playwright.config.ts` boots both
+  servers itself — backend via `dotnet run` (temp SQLite at `/tmp/imperador-e2e-*.db`) and frontend via
+  `npm run dev`; admin credentials come from `E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD` (defaults in the
+  config mirror CI). Specs live in `frontend/tests/e2e/`; `helpers.ts` seeds barbers through the admin
+  API, the journeys themselves drive the real UI.
 
 ## Sharp edges
 
