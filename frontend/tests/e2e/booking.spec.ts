@@ -27,7 +27,9 @@ test.describe('Agendamento do cliente anônimo', () => {
     await page.getByRole('button', { name: 'Próximo' }).click()
 
     // Passo 4 — contato: nome + WhatsApp, e nada de conta.
-    await expect(page.getByText('Confirmar Agendamento')).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Confirmar Agendamento' }),
+    ).toBeVisible()
     await page.getByLabel('Nome completo').fill('Cliente E2E')
     await page.getByLabel('WhatsApp').fill(`11${String(Date.now()).slice(-9)}`)
     await page.getByRole('button', { name: 'Confirmar Agendamento' }).click()
