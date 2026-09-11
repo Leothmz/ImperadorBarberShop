@@ -1,3 +1,4 @@
+using ImperadorBarberShop.Application.Common;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Domain.Entities;
 using ImperadorBarberShop.Domain.Interfaces;
@@ -12,6 +13,7 @@ public class NotificationService : INotificationService
     private readonly IWhatsAppService _wa;
     private readonly IAppSettingsRepository _settings;
     private readonly ILogger<NotificationService> _logger;
+    private readonly string? _siteUrl;
     private readonly string _frontendUrl;
 
     public NotificationService(
@@ -25,7 +27,12 @@ public class NotificationService : INotificationService
         _wa          = wa;
         _settings    = settings;
         _logger      = logger;
-        _frontendUrl = config["FrontendUrl"] ?? "http://localhost:3000";
+        // FrontendUrl é a lista de origens do CORS: a primeira é o endereço público do site
+        _siteUrl     = config["FrontendUrl"]?
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(origin => origin.TrimEnd('/'))
+            .FirstOrDefault();
+        _frontendUrl = _siteUrl ?? "http://localhost:3000";
     }
 
     // Convenience constructor without logger (uses NullLogger — suitable for tests)
@@ -168,10 +175,29 @@ public class NotificationService : INotificationService
         }
     }
 
-    private async Task<HashSet<string>> GetChannelsAsync(CancellationToken ct)
+    public async Task SendClientReinviteAsync(Client client, CancellationToken ct = default)
     {
-        var raw = await _settings.GetAsync("notifications:channels", ct) ?? "email";
-        return raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                  .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var channels = await GetChannelsAsync(ct);
+
+        if (channels.Contains(NotificationChannels.WhatsApp))
+        {
+            try
+            {
+                await _wa.SendAsync(client.Phone, ReinviteMessage(client.Name, _siteUrl), ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send reinvite WhatsApp to client");
+            }
+        }
     }
+
+    public static string ReinviteMessage(string clientName, string? siteUrl)
+    {
+        var msg = $"Olá {clientName}! Sentimos sua falta no O Imperador. Que tal agendar seu próximo corte?";
+        return siteUrl is null ? msg : $"{msg} {siteUrl}";
+    }
+
+    private async Task<HashSet<string>> GetChannelsAsync(CancellationToken ct)
+        => NotificationChannels.Parse(await _settings.GetAsync(NotificationChannels.SettingKey, ct));
 }

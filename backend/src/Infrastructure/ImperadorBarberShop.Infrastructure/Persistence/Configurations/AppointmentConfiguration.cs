@@ -26,6 +26,12 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.HasIndex(a => new { a.BarberId, a.ScheduledAt }).IsUnique();
         builder.HasIndex(a => a.AccessToken).IsUnique();
 
+        // Agendamento é registro financeiro: apagar o cliente nunca apaga o histórico
+        builder.HasOne<Client>()
+            .WithMany()
+            .HasForeignKey(a => a.ClientId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasMany(a => a.AppointmentServices)
             .WithOne()
             .HasForeignKey(s => s.AppointmentId)

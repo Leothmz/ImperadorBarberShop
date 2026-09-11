@@ -5,11 +5,13 @@ using ImperadorBarberShop.Application.Commands.Admin;
 using ImperadorBarberShop.Application.Commands.Appointments;
 using ImperadorBarberShop.Application.Commands.Auth;
 using ImperadorBarberShop.Application.Commands.Blocks;
+using ImperadorBarberShop.Application.Commands.Clients;
 using ImperadorBarberShop.Application.Commands.Financial;
 using ImperadorBarberShop.Application.Interfaces;
 using ImperadorBarberShop.Application.Queries.Admin;
 using ImperadorBarberShop.Application.Queries.Appointments;
 using ImperadorBarberShop.Application.Queries.Blocks;
+using ImperadorBarberShop.Application.Queries.Clients;
 using ImperadorBarberShop.Application.Queries.Financial;
 using ImperadorBarberShop.Application.Queries.Services;
 using ImperadorBarberShop.Domain.Enums;
@@ -271,6 +273,21 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> CancelAppointment(Guid id, CancellationToken ct)
     {
         await _mediator.Send(new CancelAppointmentByBarberCommand(id, null), ct);
+        return NoContent();
+    }
+
+    // Recorrência: clientes quase perdidos e o convite de volta pelo WhatsApp
+    [HttpGet("clients/reinvite-candidates")]
+    public async Task<IActionResult> GetReinviteCandidates(CancellationToken ct)
+        => Ok(await _mediator.Send(new GetReinviteCandidatesQuery(), ct));
+
+    [HttpPost("clients/{id:guid}/reinvite")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> ReinviteClient(Guid id, CancellationToken ct)
+    {
+        await _mediator.Send(new ReinviteClientCommand(id), ct);
         return NoContent();
     }
 

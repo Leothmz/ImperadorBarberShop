@@ -1,6 +1,7 @@
 using FluentAssertions;
 using ImperadorBarberShop.Domain.Entities;
 using ImperadorBarberShop.Domain.Exceptions;
+using ImperadorBarberShop.Domain.ValueObjects;
 using ImperadorBarberShop.Infrastructure.Persistence;
 using ImperadorBarberShop.Infrastructure.Persistence.Configurations;
 using Microsoft.Data.Sqlite;
@@ -57,6 +58,32 @@ public sealed class AppointmentSlotRaceTests : IAsyncLifetime
         var act = () => second.SaveChangesAsync();
 
         await act.Should().ThrowAsync<ConflictException>().WithMessage(Appointment.SlotTakenMessage);
+    }
+
+    // Os dois primeiros agendamentos de um telefone novo passam juntos pelo "cliente não existe"
+    // e tentam criá-lo. O índice único de MatchKey barra o segundo — como 409, e sem culpar o horário.
+    [Fact]
+    public async Task FirstBookingsFromTheSamePhoneAtOnce_SecondThrowsConflictWithTheDuplicateClientMessage()
+    {
+        await using (var first = new AppDbContext(_options))
+        {
+            var client = Client.Create("Ana", BrazilianPhone.Parse("11 98877-6655"), DateTime.UtcNow);
+            first.Clients.Add(client);
+            first.Appointments.Add(Appointment.Create("Ana", client.Phone, _barberId,
+                new DateTime(2026, 9, 21, 10, 0, 0), 30, null, [], client.Id));
+            await first.SaveChangesAsync();
+        }
+
+        await using var second = new AppDbContext(_options);
+        // Mesma pessoa, digitado sem o nono dígito, noutro horário
+        var duplicate = Client.Create("Ana Paula", BrazilianPhone.Parse("11 8877-6655"), DateTime.UtcNow);
+        second.Clients.Add(duplicate);
+        second.Appointments.Add(Appointment.Create("Ana Paula", duplicate.Phone, _barberId,
+            new DateTime(2026, 9, 21, 15, 0, 0), 30, null, [], duplicate.Id));
+
+        var act = () => second.SaveChangesAsync();
+
+        await act.Should().ThrowAsync<ConflictException>().WithMessage(Client.DuplicateMessage);
     }
 
     [Fact]

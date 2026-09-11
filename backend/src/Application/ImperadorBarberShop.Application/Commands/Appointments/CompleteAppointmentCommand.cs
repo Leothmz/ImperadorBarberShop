@@ -26,15 +26,18 @@ public class CompleteAppointmentCommandValidator : AbstractValidator<CompleteApp
 public class CompleteAppointmentCommandHandler : IRequestHandler<CompleteAppointmentCommand>
 {
     private readonly IAppointmentRepository _appointmentRepository;
+    private readonly IClientRepository _clientRepository;
     private readonly INotificationQueue _notifications;
     private readonly IUnitOfWork _unitOfWork;
 
     public CompleteAppointmentCommandHandler(
         IAppointmentRepository appointmentRepository,
+        IClientRepository clientRepository,
         INotificationQueue notifications,
         IUnitOfWork unitOfWork)
     {
         _appointmentRepository = appointmentRepository;
+        _clientRepository      = clientRepository;
         _notifications         = notifications;
         _unitOfWork            = unitOfWork;
     }
@@ -50,6 +53,15 @@ public class CompleteAppointmentCommandHandler : IRequestHandler<CompleteAppoint
 
         appointment.Complete(request.PaymentMethod);
         await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
+
+        // Só atendimento concluído conta visita: é o que a recorrência mede
+        if (appointment.ClientId is { } clientId
+            && await _clientRepository.GetByIdAsync(clientId, cancellationToken) is { } client)
+        {
+            client.RegisterVisit(appointment.ScheduledAt);
+            await _clientRepository.UpdateAsync(client, cancellationToken);
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Fora do ciclo da requisição: SMTP/WhatsApp lento não segura a resposta

@@ -23,6 +23,10 @@ public class AppDbContext : DbContext, IUnitOfWork
     public DbSet<AppSettings> AppSettings => Set<AppSettings>();
     public DbSet<BarberBlock> BarberBlocks => Set<BarberBlock>();
     public DbSet<Expense> Expenses => Set<Expense>();
+    public DbSet<Client> Clients => Set<Client>();
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.AddInterceptors(PhoneSqlFunctions.Instance);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +40,14 @@ public class AppDbContext : DbContext, IUnitOfWork
         try
         {
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+        // Dois primeiros agendamentos do mesmo WhatsApp ao mesmo tempo: os dois não acham o
+        // cliente e tentam criá-lo. O índice único de MatchKey barra o segundo.
+        catch (DbUpdateException ex) when (
+            ex.InnerException is SqliteException { SqliteExtendedErrorCode: SqliteUniqueConstraintFailed } sqlite
+            && sqlite.Message.Contains("Clients.MatchKey", StringComparison.Ordinal))
+        {
+            throw new ConflictException(Client.DuplicateMessage);
         }
         // O índice único (BarberId, ScheduledAt) segura duas reservas simultâneas do mesmo
         // horário, que passam juntas pela checagem de sobreposição. Quem perde a corrida
